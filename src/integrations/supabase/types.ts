@@ -14,7 +14,102 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      cost_constants: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          unit: string
+          updated_at: string | null
+          value: number
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          unit: string
+          updated_at?: string | null
+          value: number
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          unit?: string
+          updated_at?: string | null
+          value?: number
+        }
+        Relationships: []
+      }
+      machine_presets: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          hourly_cost: number
+          id: string
+          name: string
+          power_consumption_watts: number | null
+          print_type: Database["public"]["Enums"]["print_type"]
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          hourly_cost: number
+          id?: string
+          name: string
+          power_consumption_watts?: number | null
+          print_type: Database["public"]["Enums"]["print_type"]
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          hourly_cost?: number
+          id?: string
+          name?: string
+          power_consumption_watts?: number | null
+          print_type?: Database["public"]["Enums"]["print_type"]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      material_presets: {
+        Row: {
+          cost_per_unit: number
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          print_type: Database["public"]["Enums"]["print_type"]
+          unit: string
+          updated_at: string | null
+        }
+        Insert: {
+          cost_per_unit: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          print_type: Database["public"]["Enums"]["print_type"]
+          unit: string
+          updated_at?: string | null
+        }
+        Update: {
+          cost_per_unit?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          print_type?: Database["public"]["Enums"]["print_type"]
+          unit?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +118,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      print_type: "FDM" | "Resin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +245,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      print_type: ["FDM", "Resin"],
+    },
   },
 } as const
