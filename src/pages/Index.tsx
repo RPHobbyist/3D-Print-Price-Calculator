@@ -2,9 +2,10 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calculator, Printer } from "lucide-react";
-import FDMCalculator from "@/components/FDMCalculator";
-import ResinCalculator from "@/components/ResinCalculator";
+import FDMCalculatorTable from "@/components/FDMCalculatorTable";
+import ResinCalculatorTable from "@/components/ResinCalculatorTable";
 import QuoteSummary from "@/components/QuoteSummary";
+import { NavLink } from "@/components/NavLink";
 
 export interface QuoteData {
   materialCost: number;
@@ -27,14 +28,17 @@ const Index = () => {
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center gap-3">
-            <div className="bg-gradient-accent p-3 rounded-xl shadow-card">
-              <Calculator className="w-6 h-6 text-accent-foreground" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="bg-gradient-accent p-3 rounded-xl shadow-card">
+                <Calculator className="w-6 h-6 text-accent-foreground" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">3D Print Quote Calculator</h1>
+                <p className="text-sm text-muted-foreground">Professional pricing estimation for FDM & Resin printing</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">3D Print Quote Calculator</h1>
-              <p className="text-sm text-muted-foreground">Professional pricing estimation for FDM & Resin printing</p>
-            </div>
+            <NavLink to="/settings">Settings</NavLink>
           </div>
         </div>
       </header>
@@ -59,11 +63,11 @@ const Index = () => {
                 </div>
 
                 <TabsContent value="fdm" className="p-6 mt-0">
-                  <FDMCalculator onCalculate={setQuoteData} />
+                  <FDMCalculatorTable onCalculate={setQuoteData} />
                 </TabsContent>
 
                 <TabsContent value="resin" className="p-6 mt-0">
-                  <ResinCalculator onCalculate={setQuoteData} />
+                  <ResinCalculatorTable onCalculate={setQuoteData} />
                 </TabsContent>
               </Tabs>
             </Card>
