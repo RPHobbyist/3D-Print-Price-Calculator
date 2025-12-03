@@ -40,6 +40,8 @@ const ResinCalculatorTable = ({ onCalculate }: ResinCalculatorProps) => {
   const [loading, setLoading] = useState(true);
 
   const [formData, setFormData] = useState({
+    projectName: "",
+    printColour: "",
     materialId: "",
     machineId: "",
     printTime: "",
@@ -85,7 +87,7 @@ const ResinCalculatorTable = ({ onCalculate }: ResinCalculatorProps) => {
   };
 
   const calculateQuote = () => {
-    if (!formData.materialId || !formData.machineId || !formData.printTime || !formData.resinVolume) {
+    if (!formData.projectName || !formData.materialId || !formData.machineId || !formData.printTime || !formData.resinVolume) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -135,6 +137,8 @@ const ResinCalculatorTable = ({ onCalculate }: ResinCalculatorProps) => {
       markup,
       totalPrice,
       printType: "Resin",
+      projectName: formData.projectName,
+      printColour: formData.printColour,
       parameters: {
         ...formData,
         materialName: selectedMaterial.name,
@@ -162,6 +166,32 @@ const ResinCalculatorTable = ({ onCalculate }: ResinCalculatorProps) => {
           </TableHeader>
           <TableBody>
             <TableRow>
+              <TableCell className="font-medium">Project Name *</TableCell>
+              <TableCell>
+                <Input
+                  type="text"
+                  placeholder="Enter project name"
+                  value={formData.projectName}
+                  onChange={(e) => setFormData({ ...formData, projectName: e.target.value })}
+                  className="bg-background"
+                />
+              </TableCell>
+            </TableRow>
+
+            <TableRow>
+              <TableCell className="font-medium">Print Colour</TableCell>
+              <TableCell>
+                <Input
+                  type="text"
+                  placeholder="e.g., Red, Blue, Black"
+                  value={formData.printColour}
+                  onChange={(e) => setFormData({ ...formData, printColour: e.target.value })}
+                  className="bg-background"
+                />
+              </TableCell>
+            </TableRow>
+
+            <TableRow>
               <TableCell className="font-medium">Material *</TableCell>
               <TableCell>
                 <Select value={formData.materialId} onValueChange={(value) => setFormData({ ...formData, materialId: value })}>
@@ -171,7 +201,7 @@ const ResinCalculatorTable = ({ onCalculate }: ResinCalculatorProps) => {
                   <SelectContent className="bg-background z-50">
                     {materials.map((material) => (
                       <SelectItem key={material.id} value={material.id}>
-                        {material.name} (${material.cost_per_unit}/{material.unit})
+                        {material.name} (₹{material.cost_per_unit}/{material.unit})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -189,7 +219,7 @@ const ResinCalculatorTable = ({ onCalculate }: ResinCalculatorProps) => {
                   <SelectContent className="bg-background z-50">
                     {machines.map((machine) => (
                       <SelectItem key={machine.id} value={machine.id}>
-                        {machine.name} (${machine.hourly_cost}/hr)
+                        {machine.name} (₹{machine.hourly_cost}/hr)
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -266,7 +296,7 @@ const ResinCalculatorTable = ({ onCalculate }: ResinCalculatorProps) => {
             </TableRow>
 
             <TableRow>
-              <TableCell className="font-medium">IPA/Cleaning Cost ($)</TableCell>
+              <TableCell className="font-medium">IPA/Cleaning Cost (₹)</TableCell>
               <TableCell>
                 <Input
                   type="number"
