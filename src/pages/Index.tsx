@@ -22,6 +22,7 @@ export interface QuoteData {
   printColour: string;
   parameters: Record<string, any>;
   createdAt?: string;
+  notes?: string;
 }
 
 const Index = () => {
@@ -32,8 +33,15 @@ const Index = () => {
     const quoteWithTimestamp = {
       ...quote,
       createdAt: new Date().toISOString(),
+      notes: "",
     };
     setSavedQuotes((prev) => [...prev, quoteWithTimestamp]);
+  };
+
+  const handleUpdateQuoteNotes = (index: number, notes: string) => {
+    setSavedQuotes((prev) =>
+      prev.map((quote, i) => (i === index ? { ...quote, notes } : quote))
+    );
   };
 
   return (
@@ -94,7 +102,11 @@ const Index = () => {
 
         {/* Saved Quotes Section */}
         <div className="mt-8">
-          <SavedQuotesTable quotes={savedQuotes} onDeleteQuote={(index) => setSavedQuotes((prev) => prev.filter((_, i) => i !== index))} />
+          <SavedQuotesTable 
+            quotes={savedQuotes} 
+            onDeleteQuote={(index) => setSavedQuotes((prev) => prev.filter((_, i) => i !== index))}
+            onUpdateNotes={handleUpdateQuoteNotes}
+          />
         </div>
       </main>
     </div>
