@@ -5,6 +5,7 @@ import { Calculator, Printer } from "lucide-react";
 import FDMCalculatorTable from "@/components/FDMCalculatorTable";
 import ResinCalculatorTable from "@/components/ResinCalculatorTable";
 import QuoteSummary from "@/components/QuoteSummary";
+import SavedQuotesTable from "@/components/SavedQuotesTable";
 import { NavLink } from "@/components/NavLink";
 
 export interface QuoteData {
@@ -17,11 +18,23 @@ export interface QuoteData {
   markup: number;
   totalPrice: number;
   printType: "FDM" | "Resin";
+  projectName: string;
+  printColour: string;
   parameters: Record<string, any>;
+  createdAt?: string;
 }
 
 const Index = () => {
   const [quoteData, setQuoteData] = useState<QuoteData | null>(null);
+  const [savedQuotes, setSavedQuotes] = useState<QuoteData[]>([]);
+
+  const handleSaveQuote = (quote: QuoteData) => {
+    const quoteWithTimestamp = {
+      ...quote,
+      createdAt: new Date().toISOString(),
+    };
+    setSavedQuotes((prev) => [...prev, quoteWithTimestamp]);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
@@ -75,8 +88,13 @@ const Index = () => {
 
           {/* Quote Summary Section */}
           <div className="lg:sticky lg:top-24 h-fit">
-            <QuoteSummary quoteData={quoteData} />
+            <QuoteSummary quoteData={quoteData} onSaveQuote={handleSaveQuote} />
           </div>
+        </div>
+
+        {/* Saved Quotes Section */}
+        <div className="mt-8">
+          <SavedQuotesTable quotes={savedQuotes} onDeleteQuote={(index) => setSavedQuotes((prev) => prev.filter((_, i) => i !== index))} />
         </div>
       </main>
     </div>
