@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,81 +10,84 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 215 25% 15%;
+    --background: 220 20% 97%;
+    --foreground: 220 25% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 15%;
+    --card-foreground: 220 25% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 15%;
+    --popover-foreground: 220 25% 12%;
 
-    --primary: 215 85% 25%;
+    --primary: 220 80% 45%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 15% 92%;
-    --secondary-foreground: 215 25% 15%;
+    --secondary: 220 15% 92%;
+    --secondary-foreground: 220 25% 12%;
 
-    --muted: 210 15% 95%;
-    --muted-foreground: 215 15% 45%;
+    --muted: 220 15% 95%;
+    --muted-foreground: 220 15% 45%;
 
-    --accent: 190 95% 45%;
+    --accent: 175 85% 40%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 75% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 210 20% 88%;
-    --input: 210 20% 88%;
-    --ring: 215 85% 25%;
+    --border: 220 20% 88%;
+    --input: 220 20% 88%;
+    --ring: 220 80% 45%;
 
     --radius: 0.75rem;
 
-    --gradient-primary: linear-gradient(135deg, hsl(215 85% 25%), hsl(215 75% 35%));
-    --gradient-accent: linear-gradient(135deg, hsl(190 95% 45%), hsl(195 90% 55%));
-    --gradient-subtle: linear-gradient(180deg, hsl(210 25% 98%), hsl(210 20% 96%));
+    --gradient-primary: linear-gradient(135deg, hsl(220 80% 45%), hsl(220 70% 55%));
+    --gradient-accent: linear-gradient(135deg, hsl(175 85% 40%), hsl(180 80% 50%));
+    --gradient-subtle: linear-gradient(180deg, hsl(220 20% 97%), hsl(220 15% 95%));
 
-    --shadow-card: 0 2px 8px hsl(215 25% 15% / 0.04);
-    --shadow-elevated: 0 8px 24px hsl(215 25% 15% / 0.08);
+    --shadow-card: 0 2px 12px hsl(220 25% 12% / 0.06);
+    --shadow-elevated: 0 8px 30px hsl(220 25% 12% / 0.1);
 
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    --font-heading: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
   }
 
   .dark {
-    --background: 215 30% 8%;
-    --foreground: 210 20% 95%;
+    --background: 220 25% 8%;
+    --foreground: 220 15% 95%;
 
-    --card: 215 28% 12%;
-    --card-foreground: 210 20% 95%;
+    --card: 220 25% 12%;
+    --card-foreground: 220 15% 95%;
 
-    --popover: 215 28% 12%;
-    --popover-foreground: 210 20% 95%;
+    --popover: 220 25% 12%;
+    --popover-foreground: 220 15% 95%;
 
-    --primary: 190 95% 45%;
-    --primary-foreground: 215 30% 8%;
+    --primary: 175 85% 45%;
+    --primary-foreground: 220 25% 8%;
 
-    --secondary: 215 25% 18%;
-    --secondary-foreground: 210 20% 95%;
+    --secondary: 220 20% 18%;
+    --secondary-foreground: 220 15% 95%;
 
-    --muted: 215 25% 16%;
-    --muted-foreground: 215 15% 60%;
+    --muted: 220 20% 16%;
+    --muted-foreground: 220 15% 60%;
 
-    --accent: 190 95% 45%;
-    --accent-foreground: 215 30% 8%;
+    --accent: 175 85% 45%;
+    --accent-foreground: 220 25% 8%;
 
     --destructive: 0 75% 55%;
-    --destructive-foreground: 210 20% 95%;
+    --destructive-foreground: 220 15% 95%;
 
-    --border: 215 25% 20%;
-    --input: 215 25% 20%;
-    --ring: 190 95% 45%;
+    --border: 220 20% 20%;
+    --input: 220 20% 20%;
+    --ring: 175 85% 45%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(190 95% 45%), hsl(195 90% 55%));
-    --gradient-accent: linear-gradient(135deg, hsl(190 95% 45%), hsl(215 85% 35%));
-    --gradient-subtle: linear-gradient(180deg, hsl(215 30% 10%), hsl(215 30% 8%));
+    --gradient-primary: linear-gradient(135deg, hsl(175 85% 45%), hsl(180 80% 55%));
+    --gradient-accent: linear-gradient(135deg, hsl(175 85% 45%), hsl(220 70% 45%));
+    --gradient-subtle: linear-gradient(180deg, hsl(220 25% 10%), hsl(220 25% 8%));
 
-    --shadow-card: 0 2px 8px hsl(0 0% 0% / 0.2);
-    --shadow-elevated: 0 8px 24px hsl(0 0% 0% / 0.4);
+    --shadow-card: 0 2px 12px hsl(0 0% 0% / 0.25);
+    --shadow-elevated: 0 8px 30px hsl(0 0% 0% / 0.45);
   }
 }
 
@@ -91,7 +96,69 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-body);
   }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    @apply tracking-tight;
+  }
+}
+
+@layer components {
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.2s ease-out;
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
 }

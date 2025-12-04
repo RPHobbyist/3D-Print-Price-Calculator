@@ -110,6 +110,63 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_quotes: {
+        Row: {
+          created_at: string
+          electricity_cost: number
+          id: string
+          labor_cost: number
+          machine_time_cost: number
+          markup: number
+          material_cost: number
+          notes: string | null
+          overhead_cost: number
+          parameters: Json
+          print_colour: string | null
+          print_type: string
+          project_name: string
+          subtotal: number
+          total_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          electricity_cost: number
+          id?: string
+          labor_cost: number
+          machine_time_cost: number
+          markup: number
+          material_cost: number
+          notes?: string | null
+          overhead_cost: number
+          parameters?: Json
+          print_colour?: string | null
+          print_type: string
+          project_name: string
+          subtotal: number
+          total_price: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          electricity_cost?: number
+          id?: string
+          labor_cost?: number
+          machine_time_cost?: number
+          markup?: number
+          material_cost?: number
+          notes?: string | null
+          overhead_cost?: number
+          parameters?: Json
+          print_colour?: string | null
+          print_type?: string
+          project_name?: string
+          subtotal?: number
+          total_price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

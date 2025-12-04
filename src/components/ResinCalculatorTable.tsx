@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calculator } from "lucide-react";
+import { Calculator, Sparkles } from "lucide-react";
 import { QuoteData } from "@/pages/Index";
 import { toast } from "sonner";
 
@@ -53,6 +53,7 @@ const ResinCalculatorTable = ({ onCalculate }: ResinCalculatorProps) => {
     laborHours: "",
     overheadPercentage: "",
     markupPercentage: "20",
+    selectedConstantId: "",
   });
 
   useEffect(() => {
@@ -84,6 +85,17 @@ const ResinCalculatorTable = ({ onCalculate }: ResinCalculatorProps) => {
   const getConstantValue = (name: string): number => {
     const constant = constants.find(c => c.name.toLowerCase().includes(name.toLowerCase()));
     return constant?.value || 0;
+  };
+
+  const handleConstantSelect = (constantId: string) => {
+    const constant = constants.find(c => c.id === constantId);
+    if (constant) {
+      setFormData(prev => ({
+        ...prev,
+        selectedConstantId: constantId,
+      }));
+      toast.info(`Selected: ${constant.name} = ${constant.value} ${constant.unit}`);
+    }
   };
 
   const calculateQuote = () => {
@@ -127,6 +139,8 @@ const ResinCalculatorTable = ({ onCalculate }: ResinCalculatorProps) => {
     const markup = (subtotal * markupPercentage) / 100;
     const totalPrice = subtotal + markup;
 
+    const selectedConstant = constants.find(c => c.id === formData.selectedConstantId);
+
     const quoteData: QuoteData = {
       materialCost,
       machineTimeCost,
@@ -143,6 +157,8 @@ const ResinCalculatorTable = ({ onCalculate }: ResinCalculatorProps) => {
         ...formData,
         materialName: selectedMaterial.name,
         machineName: selectedMachine.name,
+        constantName: selectedConstant?.name,
+        constantValue: selectedConstant?.value,
       },
     };
 
@@ -151,21 +167,28 @@ const ResinCalculatorTable = ({ onCalculate }: ResinCalculatorProps) => {
   };
 
   if (loading) {
-    return <div className="text-center py-8">Loading calculator...</div>;
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-pulse flex flex-col items-center gap-3">
+          <Sparkles className="w-8 h-8 text-primary animate-spin" />
+          <span className="text-muted-foreground">Loading calculator...</span>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
-      <div className="border border-border rounded-lg overflow-hidden">
+      <div className="border border-border rounded-xl overflow-hidden shadow-card">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="w-1/3">Parameter</TableHead>
-              <TableHead>Value</TableHead>
+            <TableRow className="bg-muted/50">
+              <TableHead className="w-1/3 font-semibold">Parameter</TableHead>
+              <TableHead className="font-semibold">Value</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            <TableRow>
+            <TableRow className="hover:bg-muted/30 transition-colors">
               <TableCell className="font-medium">Project Name *</TableCell>
               <TableCell>
                 <Input
@@ -173,12 +196,12 @@ const ResinCalculatorTable = ({ onCalculate }: ResinCalculatorProps) => {
                   placeholder="Enter project name"
                   value={formData.projectName}
                   onChange={(e) => setFormData({ ...formData, projectName: e.target.value })}
-                  className="bg-background"
+                  className="bg-background border-input"
                 />
               </TableCell>
             </TableRow>
 
-            <TableRow>
+            <TableRow className="hover:bg-muted/30 transition-colors">
               <TableCell className="font-medium">Print Colour</TableCell>
               <TableCell>
                 <Input
@@ -186,19 +209,19 @@ const ResinCalculatorTable = ({ onCalculate }: ResinCalculatorProps) => {
                   placeholder="e.g., Red, Blue, Black"
                   value={formData.printColour}
                   onChange={(e) => setFormData({ ...formData, printColour: e.target.value })}
-                  className="bg-background"
+                  className="bg-background border-input"
                 />
               </TableCell>
             </TableRow>
 
-            <TableRow>
+            <TableRow className="hover:bg-muted/30 transition-colors">
               <TableCell className="font-medium">Material *</TableCell>
               <TableCell>
                 <Select value={formData.materialId} onValueChange={(value) => setFormData({ ...formData, materialId: value })}>
                   <SelectTrigger className="bg-background">
                     <SelectValue placeholder="Select material" />
                   </SelectTrigger>
-                  <SelectContent className="bg-background z-50">
+                  <SelectContent className="bg-popover border-border z-50">
                     {materials.map((material) => (
                       <SelectItem key={material.id} value={material.id}>
                         {material.name} (₹{material.cost_per_unit}/{material.unit})
@@ -209,14 +232,14 @@ const ResinCalculatorTable = ({ onCalculate }: ResinCalculatorProps) => {
               </TableCell>
             </TableRow>
 
-            <TableRow>
+            <TableRow className="hover:bg-muted/30 transition-colors">
               <TableCell className="font-medium">Machine *</TableCell>
               <TableCell>
                 <Select value={formData.machineId} onValueChange={(value) => setFormData({ ...formData, machineId: value })}>
                   <SelectTrigger className="bg-background">
                     <SelectValue placeholder="Select machine" />
                   </SelectTrigger>
-                  <SelectContent className="bg-background z-50">
+                  <SelectContent className="bg-popover border-border z-50">
                     {machines.map((machine) => (
                       <SelectItem key={machine.id} value={machine.id}>
                         {machine.name} (₹{machine.hourly_cost}/hr)
@@ -227,7 +250,25 @@ const ResinCalculatorTable = ({ onCalculate }: ResinCalculatorProps) => {
               </TableCell>
             </TableRow>
 
-            <TableRow>
+            <TableRow className="hover:bg-muted/30 transition-colors">
+              <TableCell className="font-medium">Constant Value</TableCell>
+              <TableCell>
+                <Select value={formData.selectedConstantId} onValueChange={handleConstantSelect}>
+                  <SelectTrigger className="bg-background">
+                    <SelectValue placeholder="Select a constant (optional)" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border-border z-50">
+                    {constants.map((constant) => (
+                      <SelectItem key={constant.id} value={constant.id}>
+                        {constant.name}: {constant.value} {constant.unit}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </TableCell>
+            </TableRow>
+
+            <TableRow className="hover:bg-muted/30 transition-colors">
               <TableCell className="font-medium">Print Time (hours) *</TableCell>
               <TableCell>
                 <Input
@@ -236,12 +277,12 @@ const ResinCalculatorTable = ({ onCalculate }: ResinCalculatorProps) => {
                   placeholder="4.5"
                   value={formData.printTime}
                   onChange={(e) => setFormData({ ...formData, printTime: e.target.value })}
-                  className="bg-background"
+                  className="bg-background border-input"
                 />
               </TableCell>
             </TableRow>
 
-            <TableRow>
+            <TableRow className="hover:bg-muted/30 transition-colors">
               <TableCell className="font-medium">Resin Volume (ml) *</TableCell>
               <TableCell>
                 <Input
@@ -250,12 +291,12 @@ const ResinCalculatorTable = ({ onCalculate }: ResinCalculatorProps) => {
                   placeholder="150"
                   value={formData.resinVolume}
                   onChange={(e) => setFormData({ ...formData, resinVolume: e.target.value })}
-                  className="bg-background"
+                  className="bg-background border-input"
                 />
               </TableCell>
             </TableRow>
 
-            <TableRow>
+            <TableRow className="hover:bg-muted/30 transition-colors">
               <TableCell className="font-medium">Support Volume (ml)</TableCell>
               <TableCell>
                 <Input
@@ -264,12 +305,12 @@ const ResinCalculatorTable = ({ onCalculate }: ResinCalculatorProps) => {
                   placeholder="25"
                   value={formData.supportVolume}
                   onChange={(e) => setFormData({ ...formData, supportVolume: e.target.value })}
-                  className="bg-background"
+                  className="bg-background border-input"
                 />
               </TableCell>
             </TableRow>
 
-            <TableRow>
+            <TableRow className="hover:bg-muted/30 transition-colors">
               <TableCell className="font-medium">Washing Time (minutes)</TableCell>
               <TableCell>
                 <Input
@@ -277,12 +318,12 @@ const ResinCalculatorTable = ({ onCalculate }: ResinCalculatorProps) => {
                   placeholder="10"
                   value={formData.washingTime}
                   onChange={(e) => setFormData({ ...formData, washingTime: e.target.value })}
-                  className="bg-background"
+                  className="bg-background border-input"
                 />
               </TableCell>
             </TableRow>
 
-            <TableRow>
+            <TableRow className="hover:bg-muted/30 transition-colors">
               <TableCell className="font-medium">Curing Time (minutes)</TableCell>
               <TableCell>
                 <Input
@@ -290,26 +331,26 @@ const ResinCalculatorTable = ({ onCalculate }: ResinCalculatorProps) => {
                   placeholder="15"
                   value={formData.curingTime}
                   onChange={(e) => setFormData({ ...formData, curingTime: e.target.value })}
-                  className="bg-background"
+                  className="bg-background border-input"
                 />
               </TableCell>
             </TableRow>
 
-            <TableRow>
+            <TableRow className="hover:bg-muted/30 transition-colors">
               <TableCell className="font-medium">IPA/Cleaning Cost (₹)</TableCell>
               <TableCell>
                 <Input
                   type="number"
                   step="0.01"
-                  placeholder="2.00"
+                  placeholder="50"
                   value={formData.isopropylCost}
                   onChange={(e) => setFormData({ ...formData, isopropylCost: e.target.value })}
-                  className="bg-background"
+                  className="bg-background border-input"
                 />
               </TableCell>
             </TableRow>
 
-            <TableRow>
+            <TableRow className="hover:bg-muted/30 transition-colors">
               <TableCell className="font-medium">Labor Hours</TableCell>
               <TableCell>
                 <Input
@@ -318,12 +359,12 @@ const ResinCalculatorTable = ({ onCalculate }: ResinCalculatorProps) => {
                   placeholder="1.0"
                   value={formData.laborHours}
                   onChange={(e) => setFormData({ ...formData, laborHours: e.target.value })}
-                  className="bg-background"
+                  className="bg-background border-input"
                 />
               </TableCell>
             </TableRow>
 
-            <TableRow>
+            <TableRow className="hover:bg-muted/30 transition-colors">
               <TableCell className="font-medium">Overhead (%)</TableCell>
               <TableCell>
                 <Input
@@ -332,12 +373,12 @@ const ResinCalculatorTable = ({ onCalculate }: ResinCalculatorProps) => {
                   placeholder="15"
                   value={formData.overheadPercentage}
                   onChange={(e) => setFormData({ ...formData, overheadPercentage: e.target.value })}
-                  className="bg-background"
+                  className="bg-background border-input"
                 />
               </TableCell>
             </TableRow>
 
-            <TableRow>
+            <TableRow className="hover:bg-muted/30 transition-colors">
               <TableCell className="font-medium">Profit Markup (%)</TableCell>
               <TableCell>
                 <Input
@@ -346,7 +387,7 @@ const ResinCalculatorTable = ({ onCalculate }: ResinCalculatorProps) => {
                   placeholder="20"
                   value={formData.markupPercentage}
                   onChange={(e) => setFormData({ ...formData, markupPercentage: e.target.value })}
-                  className="bg-background"
+                  className="bg-background border-input"
                 />
               </TableCell>
             </TableRow>
@@ -356,10 +397,10 @@ const ResinCalculatorTable = ({ onCalculate }: ResinCalculatorProps) => {
 
       <Button 
         onClick={calculateQuote} 
-        className="w-full bg-gradient-accent hover:opacity-90 transition-opacity"
+        className="w-full bg-gradient-accent hover:opacity-90 transition-all shadow-elevated hover:shadow-card text-accent-foreground font-semibold"
         size="lg"
       >
-        <Calculator className="w-4 h-4 mr-2" />
+        <Calculator className="w-5 h-5 mr-2" />
         Calculate Quote
       </Button>
     </div>
