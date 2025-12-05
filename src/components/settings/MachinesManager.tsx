@@ -171,7 +171,7 @@ const MachinesManager = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="hourly_cost">Hourly Cost ($) *</Label>
+            <Label htmlFor="hourly_cost">Hourly Cost (₹) *</Label>
             <Input
               id="hourly_cost"
               type="number"
@@ -247,7 +247,7 @@ const MachinesManager = () => {
                       {machine.print_type}
                     </span>
                   </TableCell>
-                  <TableCell>${machine.hourly_cost.toFixed(2)}</TableCell>
+                  <TableCell>₹{machine.hourly_cost.toFixed(2)}</TableCell>
                   <TableCell>{machine.power_consumption_watts ? `${machine.power_consumption_watts}W` : "-"}</TableCell>
                   <TableCell className="text-muted-foreground">
                     {machine.description || "-"}
