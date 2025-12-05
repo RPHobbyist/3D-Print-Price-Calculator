@@ -175,7 +175,7 @@ const MaterialsManager = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="cost_per_unit">Cost per Unit ($) *</Label>
+            <Label htmlFor="cost_per_unit">Cost per Unit (₹) *</Label>
             <Input
               id="cost_per_unit"
               type="number"
@@ -258,7 +258,7 @@ const MaterialsManager = () => {
                       {material.print_type}
                     </span>
                   </TableCell>
-                  <TableCell>${material.cost_per_unit.toFixed(2)}</TableCell>
+                  <TableCell>₹{material.cost_per_unit.toFixed(2)}</TableCell>
                   <TableCell>{material.unit}</TableCell>
                   <TableCell className="text-muted-foreground">
                     {material.description || "-"}

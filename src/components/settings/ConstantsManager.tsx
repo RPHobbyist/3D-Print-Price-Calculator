@@ -166,7 +166,7 @@ const ConstantsManager = () => {
               id="unit"
               value={formData.unit}
               onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-              placeholder="e.g., $/kWh, $/hr, %"
+              placeholder="e.g., ₹/kWh, ₹/hr, %"
               required
             />
           </div>
