@@ -163,12 +163,15 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
+      {/* Glow effect */}
+      <div className="fixed inset-0 bg-gradient-glow pointer-events-none" />
+      
       {/* Header */}
-      <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-50 shadow-card">
-        <div className="container mx-auto px-4 py-5">
+      <header className="border-b border-border glass sticky top-0 z-50 shadow-card">
+        <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="bg-gradient-accent p-3 rounded-2xl shadow-elevated">
+              <div className="bg-gradient-accent p-3 rounded-2xl shadow-elevated hover-lift">
                 <Calculator className="w-7 h-7 text-accent-foreground" />
               </div>
               <div>
@@ -181,24 +184,24 @@ const Index = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 relative">
         <div className="grid lg:grid-cols-[1fr_380px] gap-8">
           {/* Calculator Section */}
-          <div className="space-y-6">
-            <Card className="shadow-elevated border-border bg-card overflow-hidden">
+          <div className="space-y-6 animate-fade-in">
+            <Card className="shadow-elevated border-border bg-card overflow-hidden hover-glow">
               <Tabs defaultValue="fdm" className="w-full">
                 <div className="border-b border-border px-6 pt-6">
-                  <TabsList className="bg-secondary/50 p-1 rounded-xl">
+                  <TabsList className="bg-secondary/50 p-1.5 rounded-xl">
                     <TabsTrigger 
                       value="fdm" 
-                      className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-card rounded-lg px-6 py-2.5 transition-all"
+                      className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-card rounded-lg px-6 py-2.5 transition-all duration-200"
                     >
                       <Printer className="w-4 h-4 mr-2" />
                       FDM Printing
                     </TabsTrigger>
                     <TabsTrigger 
                       value="resin" 
-                      className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-card rounded-lg px-6 py-2.5 transition-all"
+                      className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-card rounded-lg px-6 py-2.5 transition-all duration-200"
                     >
                       <Printer className="w-4 h-4 mr-2" />
                       Resin Printing
@@ -206,11 +209,11 @@ const Index = () => {
                   </TabsList>
                 </div>
 
-                <TabsContent value="fdm" className="p-6 mt-0">
+                <TabsContent value="fdm" className="p-6 mt-0 animate-fade-in">
                   <FDMCalculatorTable onCalculate={setQuoteData} />
                 </TabsContent>
 
-                <TabsContent value="resin" className="p-6 mt-0">
+                <TabsContent value="resin" className="p-6 mt-0 animate-fade-in">
                   <ResinCalculatorTable onCalculate={setQuoteData} />
                 </TabsContent>
               </Tabs>
@@ -218,18 +221,20 @@ const Index = () => {
           </div>
 
           {/* Quote Summary Section */}
-          <div className="lg:sticky lg:top-28 h-fit">
+          <div className="lg:sticky lg:top-24 h-fit animate-fade-in stagger-2">
             <QuoteSummary quoteData={quoteData} onSaveQuote={handleSaveQuote} />
           </div>
         </div>
 
         {/* Saved Quotes Section */}
-        <div className="mt-10">
+        <div className="mt-10 animate-fade-in stagger-3">
           {loading ? (
-            <Card className="p-8 shadow-card">
-              <div className="flex items-center justify-center gap-3">
-                <Sparkles className="w-6 h-6 text-primary animate-spin" />
-                <span className="text-muted-foreground">Loading saved quotes...</span>
+            <Card className="p-10 shadow-card">
+              <div className="flex flex-col items-center justify-center gap-4">
+                <div className="relative">
+                  <Sparkles className="w-8 h-8 text-primary animate-pulse-soft" />
+                </div>
+                <span className="text-muted-foreground font-medium">Loading saved quotes...</span>
               </div>
             </Card>
           ) : (
