@@ -1,98 +1,91 @@
-import { useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Upload, FileCode, Loader2 } from "lucide-react";
-import { parseGcode, parse3mf, GcodeData } from "@/lib/gcodeParser";
-import { toast } from "sonner";
+import JSZip from "jszip";
 
-interface GcodeUploadProps {
-  onDataExtracted: (data: GcodeData) => void;
+export interface GcodeData {
+  printTimeHours: number;
+  filamentWeightGrams: number;
 }
 
-const GcodeUpload = ({ onDataExtracted }: GcodeUploadProps) => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isLoading, setIsLoading] = useState(false);
+/* -----------------------------------------------------------
+   PARSE RAW G-CODE TEXT (Your original function improved)
+------------------------------------------------------------ */
+export function parseGcode(content: string): GcodeData {
+  let filamentWeight = 0;
+  let timeHours = 0;
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  // --- FIXED: supports your actual file format ---
+  const weightPatterns = [
+    /total filament weight\s*\[g\]\s*[:=]\s*([\d.]+)/i,
+    /total filament used\s*\[g\]\s*[:=]\s*([\d.]+)/i,
+    /filament used\s*\[g\]\s*[:=]\s*([\d.]+)/i,
+    /total filament used\s*[:=]\s*([\d.]+)\s*g/i,
+    /filament used\s*[:=]\s*([\d.]+)\s*g/i
+  ];
 
-    // Check file extension
-    const validExtensions = ['.gcode', '.gco', '.g', '.3mf'];
-    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
-    
-    if (!validExtensions.includes(fileExtension)) {
-      toast.error("Please upload a valid file (.gcode, .gco, .g, or .3mf)");
-      return;
+  for (const pattern of weightPatterns) {
+    const match = content.match(pattern);
+    if (match) {
+      filamentWeight = parseFloat(match[1]);
+      break;
     }
+  }
 
-    setIsLoading(true);
+  // --- FIXED: time extraction more robust ---
+  let timeString: string | null = null;
+  const timePatterns = [
+    /estimated printing time\s*[:=]\s*(.+)/i,
+    /estimated time\s*[:=]\s*(.+)/i,
+    /; *TIME:\s*(\d+)/i // Cura seconds
+  ];
 
-    try {
-      let data: GcodeData;
-
-      if (fileExtension === '.3mf') {
-        // Parse 3MF file (ZIP archive with XML metadata)
-        data = await parse3mf(file);
-      } else {
-        // Parse G-code file
-        const content = await file.text();
-        data = parseGcode(content);
-      }
-
-      if (data.printTimeHours === 0 && data.filamentWeightGrams === 0) {
-        toast.warning("Could not extract data from file. Please enter values manually.");
-        return;
-      }
-
-      onDataExtracted(data);
-      
-      const extractedInfo = [];
-      if (data.printTimeHours > 0) extractedInfo.push(`Print Time: ${data.printTimeHours}h`);
-      if (data.filamentWeightGrams > 0) extractedInfo.push(`Filament: ${data.filamentWeightGrams}g`);
-      
-      toast.success(`Extracted: ${extractedInfo.join(', ')}`);
-    } catch (error) {
-      console.error('File parsing error:', error);
-      toast.error("Failed to parse file");
-    } finally {
-      setIsLoading(false);
-      // Reset input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+  for (const pattern of timePatterns) {
+    const m = content.match(pattern);
+    if (m) {
+      timeString = m[1].trim();
+      break;
     }
+  }
+
+  if (timeString) {
+    if (/^\d+$/.test(timeString)) {
+      // Cura seconds format
+      timeHours = parseInt(timeString, 10) / 3600;
+    } else {
+      // Format: 1h 1m 13s
+      const h = content.match(/(\d+)h/);
+      const m = content.match(/(\d+)m/);
+      const s = content.match(/(\d+)s/);
+
+      timeHours =
+        (h ? parseFloat(h[1]) : 0) +
+        (m ? parseFloat(m[1]) / 60 : 0) +
+        (s ? parseFloat(s[1]) / 3600 : 0);
+    }
+  }
+
+  return {
+    printTimeHours: timeHours || 0,
+    filamentWeightGrams: filamentWeight || 0
   };
+}
 
-  return (
-    <div className="flex items-center gap-2">
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".gcode,.gco,.g,.3mf"
-        onChange={handleFileChange}
-        className="hidden"
-        disabled={isLoading}
-      />
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={() => fileInputRef.current?.click()}
-        disabled={isLoading}
-        className="flex items-center gap-2 border-dashed border-2 hover:border-primary hover:bg-primary/5 transition-all"
-      >
-        {isLoading ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
-        ) : (
-          <>
-            <Upload className="w-4 h-4" />
-            <FileCode className="w-4 h-4" />
-          </>
-        )}
-        {isLoading ? 'Parsing...' : 'Upload G-code / 3MF'}
-      </Button>
-    </div>
+/* -----------------------------------------------------------
+   PARSE 3MF (Your original logic but fixed + supports .Gcode.3mf)
+------------------------------------------------------------ */
+export async function parse3mf(file: File): Promise<GcodeData> {
+  const zip = await JSZip.loadAsync(file);
+
+  // --- FIXED: correctly find gcode inside Metadata/ ---
+  const gcodePath = Object.keys(zip.files).find(
+    (p) => p.startsWith("Metadata/") && p.endsWith(".gcode")
   );
-};
 
-export default GcodeUpload;
+  if (!gcodePath) {
+    return { printTimeHours: 0, filamentWeightGrams: 0 };
+  }
+
+  // --- read gcode text ---
+  const gcodeText = await zip.files[gcodePath].async("string");
+
+  // --- reuse your original parser ---
+  return parseGcode(gcodeText);
+}
