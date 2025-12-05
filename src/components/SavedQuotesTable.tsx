@@ -2,9 +2,9 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2, FileSpreadsheet, Edit, Eye, Database } from "lucide-react";
+import { Trash2, FileSpreadsheet, Edit, Eye, Database, AlertTriangle } from "lucide-react";
 import { QuoteData } from "@/pages/Index";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
@@ -19,6 +19,7 @@ const SavedQuotesTable = ({ quotes, onDeleteQuote, onUpdateNotes }: SavedQuotesT
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editNotes, setEditNotes] = useState("");
   const [viewingQuote, setViewingQuote] = useState<QuoteData | null>(null);
+  const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
 
   const exportToExcel = () => {
     if (quotes.length === 0) {
@@ -72,17 +73,24 @@ const SavedQuotesTable = ({ quotes, onDeleteQuote, onUpdateNotes }: SavedQuotesT
     }
   };
 
+  const handleDeleteConfirm = () => {
+    if (deleteIndex !== null) {
+      onDeleteQuote(deleteIndex);
+      setDeleteIndex(null);
+    }
+  };
+
   if (quotes.length === 0) {
     return (
-      <Card className="p-8 shadow-card bg-card border-dashed border-2 border-border">
-        <div className="flex flex-col items-center justify-center text-center gap-4">
-          <div className="p-4 bg-muted rounded-full">
-            <Database className="w-8 h-8 text-muted-foreground" />
+      <Card className="p-10 shadow-card bg-card border-dashed border-2 border-border animate-fade-in">
+        <div className="flex flex-col items-center justify-center text-center gap-5">
+          <div className="p-5 bg-gradient-subtle rounded-2xl shadow-card">
+            <Database className="w-10 h-10 text-muted-foreground" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-foreground">No Saved Quotes</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Calculate and save quotes to see them here. All quotes are stored permanently.
+            <h3 className="text-xl font-semibold text-foreground">No Saved Quotes</h3>
+            <p className="text-sm text-muted-foreground mt-2 max-w-sm">
+              Calculate and save quotes to see them here. All quotes are stored permanently in the database.
             </p>
           </div>
         </div>
@@ -92,17 +100,20 @@ const SavedQuotesTable = ({ quotes, onDeleteQuote, onUpdateNotes }: SavedQuotesT
 
   return (
     <>
-      <Card className="shadow-elevated bg-card overflow-hidden border-border">
+      <Card className="shadow-elevated bg-card overflow-hidden border-border animate-fade-in">
         <div className="bg-gradient-primary p-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Database className="w-5 h-5 text-primary-foreground" />
-            <h2 className="text-xl font-bold text-primary-foreground">Saved Quotes ({quotes.length})</h2>
+            <h2 className="text-xl font-bold text-primary-foreground">
+              Saved Quotes 
+              <span className="ml-2 text-sm font-normal opacity-75">({quotes.length})</span>
+            </h2>
           </div>
           <Button
             onClick={exportToExcel}
             variant="secondary"
             size="sm"
-            className="bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground border-0"
+            className="bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground border-0 shadow-card"
           >
             <FileSpreadsheet className="w-4 h-4 mr-2" />
             Export to Excel
@@ -112,26 +123,29 @@ const SavedQuotesTable = ({ quotes, onDeleteQuote, onUpdateNotes }: SavedQuotesT
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/50">
-                <TableHead className="w-12 font-semibold">S.No</TableHead>
-                <TableHead className="font-semibold">Project Name</TableHead>
-                <TableHead className="font-semibold">Type</TableHead>
-                <TableHead className="font-semibold">Colour</TableHead>
-                <TableHead className="font-semibold">Material</TableHead>
-                <TableHead className="font-semibold">Machine</TableHead>
-                <TableHead className="text-right font-semibold">Total (₹)</TableHead>
-                <TableHead className="font-semibold">Notes</TableHead>
-                <TableHead className="text-right font-semibold">Date</TableHead>
-                <TableHead className="w-28 font-semibold">Actions</TableHead>
+              <TableRow className="bg-muted/50 hover:bg-muted/50">
+                <TableHead className="w-12 font-semibold text-foreground">S.No</TableHead>
+                <TableHead className="font-semibold text-foreground">Project Name</TableHead>
+                <TableHead className="font-semibold text-foreground">Type</TableHead>
+                <TableHead className="font-semibold text-foreground">Colour</TableHead>
+                <TableHead className="font-semibold text-foreground">Material</TableHead>
+                <TableHead className="font-semibold text-foreground">Machine</TableHead>
+                <TableHead className="text-right font-semibold text-foreground">Total (₹)</TableHead>
+                <TableHead className="font-semibold text-foreground">Notes</TableHead>
+                <TableHead className="text-right font-semibold text-foreground">Date</TableHead>
+                <TableHead className="w-28 font-semibold text-foreground">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {quotes.map((quote, index) => (
-                <TableRow key={quote.id || index} className="hover:bg-muted/30 transition-colors">
+                <TableRow 
+                  key={quote.id || index} 
+                  className="hover:bg-muted/40 transition-colors group"
+                >
                   <TableCell className="font-medium text-muted-foreground">{index + 1}</TableCell>
                   <TableCell className="font-semibold text-foreground">{quote.projectName}</TableCell>
                   <TableCell>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
                       quote.printType === "FDM" 
                         ? "bg-primary/10 text-primary" 
                         : "bg-accent/10 text-accent"
@@ -139,23 +153,25 @@ const SavedQuotesTable = ({ quotes, onDeleteQuote, onUpdateNotes }: SavedQuotesT
                       {quote.printType}
                     </span>
                   </TableCell>
-                  <TableCell>{quote.printColour || "-"}</TableCell>
-                  <TableCell className="text-sm">{quote.parameters.materialName}</TableCell>
-                  <TableCell className="text-sm">{quote.parameters.machineName}</TableCell>
-                  <TableCell className="text-right font-bold text-foreground">₹{quote.totalPrice.toFixed(2)}</TableCell>
+                  <TableCell className="text-muted-foreground">{quote.printColour || "-"}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{quote.parameters.materialName}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{quote.parameters.machineName}</TableCell>
+                  <TableCell className="text-right font-bold text-foreground tabular-nums">
+                    ₹{quote.totalPrice.toFixed(2)}
+                  </TableCell>
                   <TableCell className="max-w-[150px] truncate text-sm text-muted-foreground">
                     {quote.notes || "-"}
                   </TableCell>
-                  <TableCell className="text-right text-sm text-muted-foreground">
+                  <TableCell className="text-right text-sm text-muted-foreground tabular-nums">
                     {quote.createdAt ? new Date(quote.createdAt).toLocaleDateString() : "-"}
                   </TableCell>
                   <TableCell>
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => setViewingQuote(quote)}
-                        className="text-muted-foreground hover:text-primary hover:bg-primary/10"
+                        className="text-muted-foreground hover:text-primary hover:bg-primary/10 h-8 w-8"
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
@@ -163,15 +179,15 @@ const SavedQuotesTable = ({ quotes, onDeleteQuote, onUpdateNotes }: SavedQuotesT
                         variant="ghost"
                         size="icon"
                         onClick={() => handleEditClick(index)}
-                        className="text-muted-foreground hover:text-accent hover:bg-accent/10"
+                        className="text-muted-foreground hover:text-accent hover:bg-accent/10 h-8 w-8"
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => onDeleteQuote(index)}
-                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => setDeleteIndex(index)}
+                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-8 w-8"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -183,6 +199,30 @@ const SavedQuotesTable = ({ quotes, onDeleteQuote, onUpdateNotes }: SavedQuotesT
           </Table>
         </div>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteIndex !== null} onOpenChange={(open) => !open && setDeleteIndex(null)}>
+        <DialogContent className="bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="text-foreground flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              Confirm Delete
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Are you sure you want to delete the quote "{deleteIndex !== null && quotes[deleteIndex]?.projectName}"? 
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setDeleteIndex(null)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm}>
+              Delete Quote
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit Notes Dialog */}
       <Dialog open={editingIndex !== null} onOpenChange={(open) => !open && setEditingIndex(null)}>
@@ -196,9 +236,9 @@ const SavedQuotesTable = ({ quotes, onDeleteQuote, onUpdateNotes }: SavedQuotesT
             placeholder="Add additional details or notes for this quote..."
             value={editNotes}
             onChange={(e) => setEditNotes(e.target.value)}
-            className="min-h-[120px] bg-background border-input"
+            className="min-h-[120px] bg-background border-input focus:ring-2 focus:ring-ring"
           />
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setEditingIndex(null)}>
               Cancel
             </Button>
@@ -216,56 +256,41 @@ const SavedQuotesTable = ({ quotes, onDeleteQuote, onUpdateNotes }: SavedQuotesT
             <DialogTitle className="text-foreground">Quote Details - {viewingQuote?.projectName}</DialogTitle>
           </DialogHeader>
           {viewingQuote && (
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Print Type:</span>
-                  <p className="font-medium text-foreground">{viewingQuote.printType}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Colour:</span>
-                  <p className="font-medium text-foreground">{viewingQuote.printColour || "-"}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Material:</span>
-                  <p className="font-medium text-foreground">{viewingQuote.parameters.materialName}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Machine:</span>
-                  <p className="font-medium text-foreground">{viewingQuote.parameters.machineName}</p>
-                </div>
+                <DetailItem label="Print Type" value={viewingQuote.printType} />
+                <DetailItem label="Colour" value={viewingQuote.printColour || "-"} />
+                <DetailItem label="Material" value={viewingQuote.parameters.materialName} />
+                <DetailItem label="Machine" value={viewingQuote.parameters.machineName} />
               </div>
 
               <div className="border-t border-border pt-4 space-y-3">
-                <h4 className="font-semibold text-foreground">Cost Breakdown</h4>
+                <h4 className="font-semibold text-foreground text-sm uppercase tracking-wide">Cost Breakdown</h4>
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  <span className="text-muted-foreground">Material Cost:</span>
-                  <span className="text-right text-foreground">₹{viewingQuote.materialCost.toFixed(2)}</span>
-                  <span className="text-muted-foreground">Machine Time:</span>
-                  <span className="text-right text-foreground">₹{viewingQuote.machineTimeCost.toFixed(2)}</span>
-                  <span className="text-muted-foreground">Electricity:</span>
-                  <span className="text-right text-foreground">₹{viewingQuote.electricityCost.toFixed(2)}</span>
-                  <span className="text-muted-foreground">Labor:</span>
-                  <span className="text-right text-foreground">₹{viewingQuote.laborCost.toFixed(2)}</span>
-                  <span className="text-muted-foreground">Overhead:</span>
-                  <span className="text-right text-foreground">₹{viewingQuote.overheadCost.toFixed(2)}</span>
-                  <span className="text-muted-foreground">Subtotal:</span>
-                  <span className="text-right text-foreground">₹{viewingQuote.subtotal.toFixed(2)}</span>
-                  <span className="text-muted-foreground">Markup:</span>
-                  <span className="text-right text-foreground">₹{viewingQuote.markup.toFixed(2)}</span>
+                  <CostDetailRow label="Material Cost" value={viewingQuote.materialCost} />
+                  <CostDetailRow label="Machine Time" value={viewingQuote.machineTimeCost} />
+                  <CostDetailRow label="Electricity" value={viewingQuote.electricityCost} />
+                  <CostDetailRow label="Labor" value={viewingQuote.laborCost} />
+                  <CostDetailRow label="Overhead" value={viewingQuote.overheadCost} />
+                  <CostDetailRow label="Subtotal" value={viewingQuote.subtotal} highlight />
+                  <CostDetailRow label="Markup" value={viewingQuote.markup} />
                 </div>
-                <div className="bg-gradient-accent rounded-lg p-4 mt-4">
+                <div className="bg-gradient-accent rounded-xl p-4 mt-4 shadow-card">
                   <div className="flex justify-between items-center">
                     <span className="font-semibold text-accent-foreground">Total Price:</span>
-                    <span className="text-2xl font-bold text-accent-foreground">₹{viewingQuote.totalPrice.toFixed(2)}</span>
+                    <span className="text-2xl font-bold text-accent-foreground tabular-nums">
+                      ₹{viewingQuote.totalPrice.toFixed(2)}
+                    </span>
                   </div>
                 </div>
               </div>
 
               {viewingQuote.notes && (
                 <div className="border-t border-border pt-4">
-                  <h4 className="font-semibold mb-2 text-foreground">Notes</h4>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{viewingQuote.notes}</p>
+                  <h4 className="font-semibold mb-2 text-foreground text-sm uppercase tracking-wide">Notes</h4>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap bg-muted/50 p-3 rounded-lg">
+                    {viewingQuote.notes}
+                  </p>
                 </div>
               )}
             </div>
@@ -275,5 +300,21 @@ const SavedQuotesTable = ({ quotes, onDeleteQuote, onUpdateNotes }: SavedQuotesT
     </>
   );
 };
+
+const DetailItem = ({ label, value }: { label: string; value: string }) => (
+  <div>
+    <span className="text-muted-foreground text-xs uppercase tracking-wide">{label}</span>
+    <p className="font-medium text-foreground mt-0.5">{value}</p>
+  </div>
+);
+
+const CostDetailRow = ({ label, value, highlight }: { label: string; value: number; highlight?: boolean }) => (
+  <>
+    <span className={`text-muted-foreground ${highlight ? 'font-medium' : ''}`}>{label}:</span>
+    <span className={`text-right tabular-nums ${highlight ? 'font-semibold text-foreground' : 'text-foreground'}`}>
+      ₹{value.toFixed(2)}
+    </span>
+  </>
+);
 
 export default SavedQuotesTable;
