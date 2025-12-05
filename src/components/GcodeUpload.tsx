@@ -1,7 +1,7 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Upload, FileCode } from "lucide-react";
-import { parseGcode, GcodeData } from "@/lib/gcodeParser";
+import { Upload, FileCode, Loader2 } from "lucide-react";
+import { parseGcode, parse3mf, GcodeData } from "@/lib/gcodeParser";
 import { toast } from "sonner";
 
 interface GcodeUploadProps {
@@ -10,26 +10,37 @@ interface GcodeUploadProps {
 
 const GcodeUpload = ({ onDataExtracted }: GcodeUploadProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     // Check file extension
-    const validExtensions = ['.gcode', '.gco', '.g'];
+    const validExtensions = ['.gcode', '.gco', '.g', '.3mf'];
     const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
     
     if (!validExtensions.includes(fileExtension)) {
-      toast.error("Please upload a valid G-code file (.gcode, .gco, .g)");
+      toast.error("Please upload a valid file (.gcode, .gco, .g, or .3mf)");
       return;
     }
 
+    setIsLoading(true);
+
     try {
-      const content = await file.text();
-      const data = parseGcode(content);
+      let data: GcodeData;
+
+      if (fileExtension === '.3mf') {
+        // Parse 3MF file (ZIP archive with XML metadata)
+        data = await parse3mf(file);
+      } else {
+        // Parse G-code file
+        const content = await file.text();
+        data = parseGcode(content);
+      }
 
       if (data.printTimeHours === 0 && data.filamentWeightGrams === 0) {
-        toast.warning("Could not extract data from G-code. Please enter values manually.");
+        toast.warning("Could not extract data from file. Please enter values manually.");
         return;
       }
 
@@ -41,12 +52,14 @@ const GcodeUpload = ({ onDataExtracted }: GcodeUploadProps) => {
       
       toast.success(`Extracted: ${extractedInfo.join(', ')}`);
     } catch (error) {
-      toast.error("Failed to parse G-code file");
-    }
-
-    // Reset input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      console.error('File parsing error:', error);
+      toast.error("Failed to parse file");
+    } finally {
+      setIsLoading(false);
+      // Reset input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -55,20 +68,28 @@ const GcodeUpload = ({ onDataExtracted }: GcodeUploadProps) => {
       <input
         ref={fileInputRef}
         type="file"
-        accept=".gcode,.gco,.g"
+        accept=".gcode,.gco,.g,.3mf"
         onChange={handleFileChange}
         className="hidden"
+        disabled={isLoading}
       />
       <Button
         type="button"
         variant="outline"
         size="sm"
         onClick={() => fileInputRef.current?.click()}
+        disabled={isLoading}
         className="flex items-center gap-2 border-dashed border-2 hover:border-primary hover:bg-primary/5 transition-all"
       >
-        <Upload className="w-4 h-4" />
-        <FileCode className="w-4 h-4" />
-        Upload G-code
+        {isLoading ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : (
+          <>
+            <Upload className="w-4 h-4" />
+            <FileCode className="w-4 h-4" />
+          </>
+        )}
+        {isLoading ? 'Parsing...' : 'Upload G-code / 3MF'}
       </Button>
     </div>
   );
