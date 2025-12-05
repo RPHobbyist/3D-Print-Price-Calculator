@@ -124,66 +124,82 @@ export const parse3mf = async (file: File): Promise<GcodeData> => {
     const zip = new JSZip();
     const contents = await zip.loadAsync(file);
     
-    // Look for metadata files in common locations
-    const metadataFiles = [
-      'Metadata/Slic3r_PE.config',
-      'Metadata/slice_info.config',
-      'Metadata/model_settings.config',
-      '3D/3dmodel.model',
-      'Metadata/project_settings.config',
-    ];
+    console.log('3MF file contents:', Object.keys(contents.files));
 
     for (const [filename, zipEntry] of Object.entries(contents.files)) {
       if (zipEntry.dir) continue;
       
       const lowerFilename = filename.toLowerCase();
+      console.log('Processing file:', filename);
       
-      // Check for config/metadata files
-      if (lowerFilename.includes('config') || 
-          lowerFilename.includes('metadata') || 
-          lowerFilename.includes('slice') ||
-          lowerFilename.endsWith('.gcode')) {
-        
+      // Read all text-based files to search for metadata
+      try {
         const content = await zipEntry.async('string');
         
-        // Try to extract print time
-        // BambuStudio/PrusaSlicer format: estimated_time = 12345 (seconds)
-        const timeSecondsMatch = content.match(/estimated[_\s]?time["\s:=]+(\d+)/i) ||
-                                  content.match(/print[_\s]?time["\s:=]+(\d+)/i) ||
-                                  content.match(/"time"[:\s]+(\d+)/i);
-        if (timeSecondsMatch && printTimeHours === 0) {
-          printTimeHours = parseInt(timeSecondsMatch[1]) / 3600;
+        // Log first 500 chars for debugging
+        if (content.length > 0) {
+          console.log(`File ${filename} preview:`, content.substring(0, 500));
         }
 
-        // Format: 2h 30m 15s
-        const timeHMSMatch = content.match(/(\d+)h\s*(\d+)m\s*(\d+)s/i) ||
-                             content.match(/(\d+)h\s*(\d+)m/i);
-        if (timeHMSMatch && printTimeHours === 0) {
-          const hours = parseInt(timeHMSMatch[1]) || 0;
-          const minutes = parseInt(timeHMSMatch[2]) || 0;
-          const seconds = parseInt(timeHMSMatch[3]) || 0;
-          printTimeHours = hours + (minutes / 60) + (seconds / 3600);
+        // BambuStudio/OrcaSlicer: Look for plate_X.json files with prediction data
+        if (lowerFilename.endsWith('.json')) {
+          try {
+            const jsonData = JSON.parse(content);
+            console.log('JSON data found:', JSON.stringify(jsonData).substring(0, 1000));
+            
+            // Check for prediction/time fields
+            if (jsonData.prediction !== undefined) {
+              printTimeHours = jsonData.prediction / 3600;
+              console.log('Found prediction time:', printTimeHours);
+            }
+            if (jsonData.weight !== undefined) {
+              filamentWeightGrams = jsonData.weight;
+              console.log('Found weight:', filamentWeightGrams);
+            }
+            // BambuStudio format
+            if (jsonData.filament_used_g !== undefined) {
+              filamentWeightGrams = jsonData.filament_used_g;
+            }
+            if (jsonData.print_time !== undefined) {
+              printTimeHours = jsonData.print_time / 3600;
+            }
+          } catch (e) {
+            // Not valid JSON, continue
+          }
         }
 
-        // Try to extract filament weight
-        // Format: filament_used_g = 123.45 or "weight": 123.45
-        const weightMatch = content.match(/filament[_\s]?(?:used[_\s]?)?(?:weight[_\s]?)?g["\s:=]+(\d+\.?\d*)/i) ||
-                           content.match(/(?:total[_\s]?)?weight["\s:=]+(\d+\.?\d*)/i) ||
-                           content.match(/"filament[_\s]?weight"[:\s]+(\d+\.?\d*)/i);
-        if (weightMatch && filamentWeightGrams === 0) {
-          filamentWeightGrams = parseFloat(weightMatch[1]);
+        // Look for XML metadata (PrusaSlicer style)
+        if (lowerFilename.endsWith('.xml') || lowerFilename.endsWith('.config') || lowerFilename.endsWith('.model')) {
+          // Extract estimated_time from XML
+          const timeMatch = content.match(/estimated[_-]?time["\s:=>]+(\d+)/i) ||
+                           content.match(/print[_-]?time["\s:=>]+(\d+)/i) ||
+                           content.match(/<metadata\s+name="estimated_time"[^>]*>(\d+)</i);
+          if (timeMatch && printTimeHours === 0) {
+            printTimeHours = parseInt(timeMatch[1]) / 3600;
+            console.log('Found time in XML:', printTimeHours);
+          }
+
+          // Extract filament weight
+          const weightMatch = content.match(/filament[_-]?weight[_-]?total["\s:=>]+(\d+\.?\d*)/i) ||
+                             content.match(/filament[_-]?used[_-]?g["\s:=>]+(\d+\.?\d*)/i) ||
+                             content.match(/<metadata\s+name="filament_weight_total"[^>]*>(\d+\.?\d*)</i);
+          if (weightMatch && filamentWeightGrams === 0) {
+            filamentWeightGrams = parseFloat(weightMatch[1]);
+            console.log('Found weight in XML:', filamentWeightGrams);
+          }
+
+          // Extract filament length
+          const lengthMatch = content.match(/filament[_-]?total["\s:=>]+(\d+\.?\d*)/i) ||
+                             content.match(/filament[_-]?used[_-]?mm["\s:=>]+(\d+\.?\d*)/i);
+          if (lengthMatch && filamentLengthMm === 0) {
+            filamentLengthMm = parseFloat(lengthMatch[1]);
+            console.log('Found length in XML:', filamentLengthMm);
+          }
         }
 
-        // Try to extract filament length
-        // Format: filament_used_mm = 12345.67
-        const lengthMatch = content.match(/filament[_\s]?(?:used[_\s]?)?mm["\s:=]+(\d+\.?\d*)/i) ||
-                           content.match(/filament[_\s]?length["\s:=]+(\d+\.?\d*)/i);
-        if (lengthMatch && filamentLengthMm === 0) {
-          filamentLengthMm = parseFloat(lengthMatch[1]);
-        }
-
-        // If it's an embedded gcode file, parse it with the gcode parser
+        // Check for embedded gcode
         if (lowerFilename.endsWith('.gcode')) {
+          console.log('Found embedded gcode');
           const gcodeData = parseGcode(content);
           if (gcodeData.printTimeHours > 0 && printTimeHours === 0) {
             printTimeHours = gcodeData.printTimeHours;
@@ -195,6 +211,33 @@ export const parse3mf = async (file: File): Promise<GcodeData> => {
             filamentLengthMm = gcodeData.filamentLengthMm;
           }
         }
+
+        // Generic search in any file for common patterns
+        const genericTimeMatch = content.match(/[";]estimated[_\s]?(?:printing[_\s]?)?time["\s:=]+(\d+)/i);
+        if (genericTimeMatch && printTimeHours === 0) {
+          printTimeHours = parseInt(genericTimeMatch[1]) / 3600;
+        }
+
+        const genericWeightMatch = content.match(/[";](?:total[_\s]?)?filament[_\s]?weight[_\s]?(?:total)?["\s:=]+(\d+\.?\d*)/i);
+        if (genericWeightMatch && filamentWeightGrams === 0) {
+          filamentWeightGrams = parseFloat(genericWeightMatch[1]);
+        }
+
+        // BambuStudio/OrcaSlicer specific patterns in config files
+        const bambuTimeMatch = content.match(/;?\s*time[_\s]?=\s*(\d+)/i) ||
+                              content.match(/prediction["\s:=]+(\d+)/i);
+        if (bambuTimeMatch && printTimeHours === 0) {
+          printTimeHours = parseInt(bambuTimeMatch[1]) / 3600;
+        }
+
+        const bambuWeightMatch = content.match(/;?\s*(?:filament[_\s]?)?weight["\s:=]+(\d+\.?\d*)/i);
+        if (bambuWeightMatch && filamentWeightGrams === 0) {
+          filamentWeightGrams = parseFloat(bambuWeightMatch[1]);
+        }
+
+      } catch (e) {
+        // Binary file, skip
+        console.log('Could not read file as text:', filename);
       }
     }
 
@@ -206,6 +249,8 @@ export const parse3mf = async (file: File): Promise<GcodeData> => {
   } catch (error) {
     console.error('Error parsing 3MF file:', error);
   }
+
+  console.log('Final extracted data:', { printTimeHours, filamentWeightGrams, filamentLengthMm });
 
   return {
     printTimeHours: Math.round(printTimeHours * 100) / 100,
