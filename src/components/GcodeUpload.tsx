@@ -49,6 +49,7 @@ const GcodeUpload = ({ onDataExtracted }: GcodeUploadProps) => {
       const extractedInfo = [];
       if (data.printTimeHours > 0) extractedInfo.push(`Print Time: ${data.printTimeHours}h`);
       if (data.filamentWeightGrams > 0) extractedInfo.push(`Filament: ${data.filamentWeightGrams}g`);
+      if (data.printerModel) extractedInfo.push(`Printer: ${data.printerModel}`);
       
       toast.success(`Extracted: ${extractedInfo.join(', ')}`);
     } catch (error) {

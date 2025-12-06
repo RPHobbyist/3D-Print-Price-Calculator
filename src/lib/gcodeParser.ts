@@ -5,6 +5,7 @@ export interface GcodeData {
   printTimeHours: number;
   filamentWeightGrams: number;
   filamentLengthMm?: number;
+  printerModel?: string;
 }
 
 /**
@@ -14,6 +15,7 @@ export function parseGcode(content: string): GcodeData {
   let filamentWeight = 0;
   let timeHours = 0;
   let filamentLengthMm = 0;
+  let printerModel = '';
 
   // --- Filament weight patterns (supports various slicer formats) ---
   const weightPatterns = [
@@ -97,10 +99,28 @@ export function parseGcode(content: string): GcodeData {
     filamentWeight = filamentLengthMm * 0.00298;
   }
 
+  // --- Printer model extraction ---
+  const printerPatterns = [
+    /;\s*printer_model\s*[:=]\s*(.+)/i,
+    /;\s*machine_model\s*[:=]\s*(.+)/i,
+    /;\s*printer\s*[:=]\s*(.+)/i,
+    /;\s*machine\s*[:=]\s*(.+)/i,
+    /;\s*printer_type\s*[:=]\s*(.+)/i,
+  ];
+
+  for (const pattern of printerPatterns) {
+    const match = content.match(pattern);
+    if (match) {
+      printerModel = match[1].trim();
+      break;
+    }
+  }
+
   return {
     printTimeHours: Math.round((timeHours || 0) * 100) / 100,
     filamentWeightGrams: Math.round((filamentWeight || 0) * 10) / 10,
     filamentLengthMm: Math.round(filamentLengthMm * 10) / 10,
+    printerModel: printerModel || undefined,
   };
 }
 
@@ -142,6 +162,7 @@ export async function parse3mf(file: File): Promise<GcodeData> {
     // Step 3: Fallback - search JSON files for metadata (BambuStudio/OrcaSlicer)
     let printTimeHours = 0;
     let filamentWeightGrams = 0;
+    let printerModel = '';
 
     for (const filename of fileNames) {
       if (zip.files[filename].dir) continue;
@@ -167,6 +188,13 @@ export async function parse3mf(file: File): Promise<GcodeData> {
           if (jsonData.print_time !== undefined && printTimeHours === 0) {
             printTimeHours = jsonData.print_time / 3600;
           }
+          // Extract printer model
+          if (jsonData.printer_model && !printerModel) {
+            printerModel = jsonData.printer_model;
+          }
+          if (jsonData.machine && !printerModel) {
+            printerModel = jsonData.machine;
+          }
         } catch {
           // Not valid JSON, continue
         }
@@ -186,17 +214,24 @@ export async function parse3mf(file: File): Promise<GcodeData> {
           if (weightMatch && filamentWeightGrams === 0) {
             filamentWeightGrams = parseFloat(weightMatch[1]);
           }
+
+          // Extract printer model from XML
+          const printerMatch = content.match(/printer[_-]?model["\s:=>]+([^"<\n]+)/i);
+          if (printerMatch && !printerModel) {
+            printerModel = printerMatch[1].trim();
+          }
         } catch {
           // Could not read file
         }
       }
     }
 
-    console.log('Fallback extraction result:', { printTimeHours, filamentWeightGrams });
+    console.log('Fallback extraction result:', { printTimeHours, filamentWeightGrams, printerModel });
 
     return {
       printTimeHours: Math.round(printTimeHours * 100) / 100,
       filamentWeightGrams: Math.round(filamentWeightGrams * 10) / 10,
+      printerModel: printerModel || undefined,
     };
 
   } catch (error) {

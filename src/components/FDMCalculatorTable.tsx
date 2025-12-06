@@ -87,10 +87,26 @@ const FDMCalculatorTable = ({ onCalculate }: FDMCalculatorProps) => {
   };
 
   const handleGcodeData = (data: GcodeData) => {
+    let matchedMachineId = '';
+    
+    // Auto-select machine based on printer_model
+    if (data.printerModel) {
+      const printerModelLower = data.printerModel.toLowerCase();
+      const matchedMachine = machines.find(m => 
+        m.name.toLowerCase().includes(printerModelLower) || 
+        printerModelLower.includes(m.name.toLowerCase())
+      );
+      if (matchedMachine) {
+        matchedMachineId = matchedMachine.id;
+        toast.info(`Auto-selected machine: ${matchedMachine.name}`);
+      }
+    }
+
     setFormData(prev => ({
       ...prev,
       printTime: data.printTimeHours > 0 ? data.printTimeHours.toString() : prev.printTime,
       filamentWeight: data.filamentWeightGrams > 0 ? data.filamentWeightGrams.toString() : prev.filamentWeight,
+      machineId: matchedMachineId || prev.machineId,
     }));
   };
 
