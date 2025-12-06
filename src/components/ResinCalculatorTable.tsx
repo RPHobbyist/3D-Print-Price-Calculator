@@ -46,7 +46,7 @@ const ResinCalculatorTable = ({ onCalculate }: ResinCalculatorProps) => {
     machineId: "",
     printTime: "",
     resinVolume: "",
-    supportVolume: "",
+    
     washingTime: "",
     curingTime: "",
     isopropylCost: "",
@@ -114,7 +114,6 @@ const ResinCalculatorTable = ({ onCalculate }: ResinCalculatorProps) => {
 
     const printTimeHours = parseFloat(formData.printTime);
     const resinVolumeLiters = parseFloat(formData.resinVolume) / 1000;
-    const supportVolumeLiters = formData.supportVolume ? parseFloat(formData.supportVolume) / 1000 : 0;
     const washingTimeHours = formData.washingTime ? parseFloat(formData.washingTime) / 60 : 0;
     const curingTimeHours = formData.curingTime ? parseFloat(formData.curingTime) / 60 : 0;
     const isopropylCost = formData.isopropylCost ? parseFloat(formData.isopropylCost) : 0;
@@ -125,7 +124,7 @@ const ResinCalculatorTable = ({ onCalculate }: ResinCalculatorProps) => {
     const electricityRate = getConstantValue("electricity");
     const laborRate = getConstantValue("labor");
 
-    const materialCost = (resinVolumeLiters + supportVolumeLiters) * selectedMaterial.cost_per_unit + isopropylCost;
+    const materialCost = resinVolumeLiters * selectedMaterial.cost_per_unit + isopropylCost;
     const totalProcessTime = printTimeHours + washingTimeHours + curingTimeHours;
     const machineTimeCost = totalProcessTime * selectedMachine.hourly_cost;
     const powerConsumptionKw = selectedMachine.power_consumption_watts ? selectedMachine.power_consumption_watts / 1000 : 0;
@@ -296,19 +295,6 @@ const ResinCalculatorTable = ({ onCalculate }: ResinCalculatorProps) => {
               </TableCell>
             </TableRow>
 
-            <TableRow className="hover:bg-muted/30 transition-colors">
-              <TableCell className="font-medium">Support Volume (ml)</TableCell>
-              <TableCell>
-                <Input
-                  type="number"
-                  step="0.1"
-                  placeholder="25"
-                  value={formData.supportVolume}
-                  onChange={(e) => setFormData({ ...formData, supportVolume: e.target.value })}
-                  className="bg-background border-input"
-                />
-              </TableCell>
-            </TableRow>
 
             <TableRow className="hover:bg-muted/30 transition-colors">
               <TableCell className="font-medium">Washing Time (minutes)</TableCell>

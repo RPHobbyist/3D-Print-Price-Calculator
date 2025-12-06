@@ -48,7 +48,7 @@ const FDMCalculatorTable = ({ onCalculate }: FDMCalculatorProps) => {
     machineId: "",
     printTime: "",
     filamentWeight: "",
-    supportWeight: "",
+    
     laborHours: "",
     overheadPercentage: "",
     markupPercentage: "20",
@@ -121,7 +121,6 @@ const FDMCalculatorTable = ({ onCalculate }: FDMCalculatorProps) => {
 
     const printTimeHours = parseFloat(formData.printTime);
     const filamentWeightKg = parseFloat(formData.filamentWeight) / 1000;
-    const supportWeightKg = formData.supportWeight ? parseFloat(formData.supportWeight) / 1000 : 0;
     const laborHours = formData.laborHours ? parseFloat(formData.laborHours) : 0;
     const overheadPercentage = formData.overheadPercentage ? parseFloat(formData.overheadPercentage) : 0;
     const markupPercentage = parseFloat(formData.markupPercentage);
@@ -129,7 +128,7 @@ const FDMCalculatorTable = ({ onCalculate }: FDMCalculatorProps) => {
     const electricityRate = getConstantValue("electricity");
     const laborRate = getConstantValue("labor");
 
-    const materialCost = (filamentWeightKg + supportWeightKg) * selectedMaterial.cost_per_unit;
+    const materialCost = filamentWeightKg * selectedMaterial.cost_per_unit;
     const machineTimeCost = printTimeHours * selectedMachine.hourly_cost;
     const powerConsumptionKw = selectedMachine.power_consumption_watts ? selectedMachine.power_consumption_watts / 1000 : 0;
     const electricityCost = printTimeHours * powerConsumptionKw * electricityRate;
@@ -313,19 +312,6 @@ const FDMCalculatorTable = ({ onCalculate }: FDMCalculatorProps) => {
               </TableCell>
             </TableRow>
 
-            <TableRow className="hover:bg-muted/30 transition-colors">
-              <TableCell className="font-medium">Support Material (grams)</TableCell>
-              <TableCell>
-                <Input
-                  type="number"
-                  step="0.1"
-                  placeholder="50"
-                  value={formData.supportWeight}
-                  onChange={(e) => setFormData({ ...formData, supportWeight: e.target.value })}
-                  className="bg-background border-input"
-                />
-              </TableCell>
-            </TableRow>
 
             <TableRow className="hover:bg-muted/30 transition-colors">
               <TableCell className="font-medium">Labor Hours</TableCell>
