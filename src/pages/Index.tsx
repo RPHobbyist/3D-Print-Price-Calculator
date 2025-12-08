@@ -1,171 +1,58 @@
-import { useState, useEffect } from "react";
+import { useState, useCallback, memo } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calculator, Printer, Sparkles } from "lucide-react";
+import { Calculator, Printer, Sparkles, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import FDMCalculatorTable from "@/components/FDMCalculatorTable";
 import ResinCalculatorTable from "@/components/ResinCalculatorTable";
 import QuoteSummary from "@/components/QuoteSummary";
 import SavedQuotesTable from "@/components/SavedQuotesTable";
+import { QuotesDashboard } from "@/components/dashboard/QuotesDashboard";
 import { NavLink } from "@/components/NavLink";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { QuoteData } from "@/types/quote";
+import { useSavedQuotes } from "@/hooks/useSavedQuotes";
 
-export interface QuoteData {
-  id?: string;
-  materialCost: number;
-  machineTimeCost: number;
-  electricityCost: number;
-  laborCost: number;
-  overheadCost: number;
-  subtotal: number;
-  markup: number;
-  totalPrice: number;
-  printType: "FDM" | "Resin";
-  projectName: string;
-  printColour: string;
-  parameters: Record<string, any>;
-  createdAt?: string;
-  notes?: string;
-}
-
-const Index = () => {
+const Index = memo(() => {
   const [quoteData, setQuoteData] = useState<QuoteData | null>(null);
-  const [savedQuotes, setSavedQuotes] = useState<QuoteData[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    quotes,
+    loading,
+    stats,
+    saveQuote,
+    deleteQuote,
+    updateNotes,
+    duplicateQuote,
+    refetch,
+  } = useSavedQuotes();
 
-  useEffect(() => {
-    loadSavedQuotes();
-  }, []);
+  const handleSaveQuote = useCallback(async (quote: QuoteData) => {
+    await saveQuote(quote);
+  }, [saveQuote]);
 
-  const loadSavedQuotes = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("saved_quotes")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-
-      const quotes: QuoteData[] = (data || []).map((row: any) => ({
-        id: row.id,
-        materialCost: Number(row.material_cost),
-        machineTimeCost: Number(row.machine_time_cost),
-        electricityCost: Number(row.electricity_cost),
-        laborCost: Number(row.labor_cost),
-        overheadCost: Number(row.overhead_cost),
-        subtotal: Number(row.subtotal),
-        markup: Number(row.markup),
-        totalPrice: Number(row.total_price),
-        printType: row.print_type as "FDM" | "Resin",
-        projectName: row.project_name,
-        printColour: row.print_colour || "",
-        parameters: (typeof row.parameters === 'object' && row.parameters !== null) ? row.parameters : {},
-        createdAt: row.created_at,
-        notes: row.notes || "",
-      }));
-
-      setSavedQuotes(quotes);
-    } catch (error: any) {
-      toast.error("Failed to load saved quotes");
-    } finally {
-      setLoading(false);
+  const handleDeleteQuote = useCallback(async (index: number) => {
+    const quote = quotes[index];
+    if (quote.id) {
+      await deleteQuote(quote.id);
     }
-  };
+  }, [quotes, deleteQuote]);
 
-  const handleSaveQuote = async (quote: QuoteData) => {
-    try {
-      const { data, error } = await supabase
-        .from("saved_quotes")
-        .insert({
-          project_name: quote.projectName,
-          print_type: quote.printType,
-          print_colour: quote.printColour,
-          material_cost: quote.materialCost,
-          machine_time_cost: quote.machineTimeCost,
-          electricity_cost: quote.electricityCost,
-          labor_cost: quote.laborCost,
-          overhead_cost: quote.overheadCost,
-          subtotal: quote.subtotal,
-          markup: quote.markup,
-          total_price: quote.totalPrice,
-          parameters: quote.parameters,
-          notes: "",
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      const newQuote: QuoteData = {
-        id: data.id,
-        materialCost: Number(data.material_cost),
-        machineTimeCost: Number(data.machine_time_cost),
-        electricityCost: Number(data.electricity_cost),
-        laborCost: Number(data.labor_cost),
-        overheadCost: Number(data.overhead_cost),
-        subtotal: Number(data.subtotal),
-        markup: Number(data.markup),
-        totalPrice: Number(data.total_price),
-        printType: data.print_type as "FDM" | "Resin",
-        projectName: data.project_name,
-        printColour: data.print_colour || "",
-        parameters: (typeof data.parameters === 'object' && data.parameters !== null && !Array.isArray(data.parameters)) 
-          ? (data.parameters as Record<string, any>) 
-          : {},
-        createdAt: data.created_at,
-        notes: data.notes || "",
-      };
-
-      setSavedQuotes((prev) => [newQuote, ...prev]);
-    } catch (error: any) {
-      toast.error("Failed to save quote permanently");
+  const handleUpdateNotes = useCallback(async (index: number, notes: string) => {
+    const quote = quotes[index];
+    if (quote.id) {
+      await updateNotes(quote.id, notes);
     }
-  };
+  }, [quotes, updateNotes]);
 
-  const handleDeleteQuote = async (index: number) => {
-    const quote = savedQuotes[index];
-    if (!quote.id) return;
-
-    try {
-      const { error } = await supabase
-        .from("saved_quotes")
-        .delete()
-        .eq("id", quote.id);
-
-      if (error) throw error;
-
-      setSavedQuotes((prev) => prev.filter((_, i) => i !== index));
-      toast.success("Quote deleted successfully");
-    } catch (error: any) {
-      toast.error("Failed to delete quote");
-    }
-  };
-
-  const handleUpdateQuoteNotes = async (index: number, notes: string) => {
-    const quote = savedQuotes[index];
-    if (!quote.id) return;
-
-    try {
-      const { error } = await supabase
-        .from("saved_quotes")
-        .update({ notes })
-        .eq("id", quote.id);
-
-      if (error) throw error;
-
-      setSavedQuotes((prev) =>
-        prev.map((q, i) => (i === index ? { ...q, notes } : q))
-      );
-    } catch (error: any) {
-      toast.error("Failed to update notes");
-    }
-  };
+  const handleDuplicateQuote = useCallback(async (index: number) => {
+    const quote = quotes[index];
+    await duplicateQuote(quote);
+  }, [quotes, duplicateQuote]);
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
       {/* Glow effect */}
       <div className="fixed inset-0 bg-gradient-glow pointer-events-none" />
-      
+
       {/* Header */}
       <header className="border-b border-border glass sticky top-0 z-50 shadow-card">
         <div className="container mx-auto px-4 py-4">
@@ -179,12 +66,30 @@ const Index = () => {
                 <p className="text-sm text-muted-foreground">Professional pricing estimation for FDM & Resin printing</p>
               </div>
             </div>
-            <NavLink to="/settings">Settings</NavLink>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={refetch}
+                className="hover:bg-secondary"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh
+              </Button>
+              <NavLink to="/settings">Settings</NavLink>
+            </div>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-8 relative">
+        {/* Stats Dashboard */}
+        {stats.totalQuotes > 0 && (
+          <div className="mb-8">
+            <QuotesDashboard stats={stats} />
+          </div>
+        )}
+
         <div className="grid lg:grid-cols-[1fr_380px] gap-8">
           {/* Calculator Section */}
           <div className="space-y-6 animate-fade-in">
@@ -192,15 +97,15 @@ const Index = () => {
               <Tabs defaultValue="fdm" className="w-full">
                 <div className="border-b border-border px-6 pt-6">
                   <TabsList className="bg-secondary/50 p-1.5 rounded-xl">
-                    <TabsTrigger 
-                      value="fdm" 
+                    <TabsTrigger
+                      value="fdm"
                       className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-card rounded-lg px-6 py-2.5 transition-all duration-200"
                     >
                       <Printer className="w-4 h-4 mr-2" />
                       FDM Printing
                     </TabsTrigger>
-                    <TabsTrigger 
-                      value="resin" 
+                    <TabsTrigger
+                      value="resin"
                       className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-card rounded-lg px-6 py-2.5 transition-all duration-200"
                     >
                       <Printer className="w-4 h-4 mr-2" />
@@ -238,16 +143,19 @@ const Index = () => {
               </div>
             </Card>
           ) : (
-            <SavedQuotesTable 
-              quotes={savedQuotes} 
+            <SavedQuotesTable
+              quotes={quotes}
               onDeleteQuote={handleDeleteQuote}
-              onUpdateNotes={handleUpdateQuoteNotes}
+              onUpdateNotes={handleUpdateNotes}
+              onDuplicateQuote={handleDuplicateQuote}
             />
           )}
         </div>
       </main>
     </div>
   );
-};
+});
+
+Index.displayName = "Index";
 
 export default Index;

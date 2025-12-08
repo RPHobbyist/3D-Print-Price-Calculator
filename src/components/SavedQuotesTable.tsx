@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, memo, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2, FileSpreadsheet, Edit, Eye, Database, AlertTriangle } from "lucide-react";
-import { QuoteData } from "@/pages/Index";
+import { Trash2, FileSpreadsheet, Edit, Eye, Database, AlertTriangle, Copy } from "lucide-react";
+import { QuoteData } from "@/types/quote";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 
@@ -13,15 +13,16 @@ interface SavedQuotesTableProps {
   quotes: QuoteData[];
   onDeleteQuote: (index: number) => void;
   onUpdateNotes: (index: number, notes: string) => void;
+  onDuplicateQuote?: (index: number) => void;
 }
 
-const SavedQuotesTable = ({ quotes, onDeleteQuote, onUpdateNotes }: SavedQuotesTableProps) => {
+const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplicateQuote }: SavedQuotesTableProps) => {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editNotes, setEditNotes] = useState("");
   const [viewingQuote, setViewingQuote] = useState<QuoteData | null>(null);
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
 
-  const exportToExcel = () => {
+  const exportToExcel = useCallback(() => {
     if (quotes.length === 0) {
       toast.error("No quotes to export");
       return;
@@ -57,28 +58,27 @@ const SavedQuotesTable = ({ quotes, onDeleteQuote, onUpdateNotes }: SavedQuotesT
 
     XLSX.writeFile(workbook, `3d-print-quotes-${Date.now()}.xlsx`);
     toast.success("Quotes exported to Excel!");
-  };
+  }, [quotes]);
 
-  const handleEditClick = (index: number) => {
+  const handleEditClick = useCallback((index: number) => {
     setEditingIndex(index);
     setEditNotes(quotes[index].notes || "");
-  };
+  }, [quotes]);
 
-  const handleSaveNotes = () => {
+  const handleSaveNotes = useCallback(() => {
     if (editingIndex !== null) {
       onUpdateNotes(editingIndex, editNotes);
       setEditingIndex(null);
       setEditNotes("");
-      toast.success("Notes updated successfully!");
     }
-  };
+  }, [editingIndex, editNotes, onUpdateNotes]);
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = useCallback(() => {
     if (deleteIndex !== null) {
       onDeleteQuote(deleteIndex);
       setDeleteIndex(null);
     }
-  };
+  }, [deleteIndex, onDeleteQuote]);
 
   if (quotes.length === 0) {
     return (
@@ -105,7 +105,7 @@ const SavedQuotesTable = ({ quotes, onDeleteQuote, onUpdateNotes }: SavedQuotesT
           <div className="flex items-center gap-3">
             <Database className="w-5 h-5 text-primary-foreground" />
             <h2 className="text-xl font-bold text-primary-foreground">
-              Saved Quotes 
+              Saved Quotes
               <span className="ml-2 text-sm font-normal opacity-75">({quotes.length})</span>
             </h2>
           </div>
@@ -133,21 +133,21 @@ const SavedQuotesTable = ({ quotes, onDeleteQuote, onUpdateNotes }: SavedQuotesT
                 <TableHead className="text-right font-semibold text-foreground">Total (₹)</TableHead>
                 <TableHead className="font-semibold text-foreground">Notes</TableHead>
                 <TableHead className="text-right font-semibold text-foreground">Date</TableHead>
-                <TableHead className="w-28 font-semibold text-foreground">Actions</TableHead>
+                <TableHead className="w-36 font-semibold text-foreground">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {quotes.map((quote, index) => (
-                <TableRow 
-                  key={quote.id || index} 
+                <TableRow
+                  key={quote.id || index}
                   className="hover:bg-muted/40 transition-colors group"
                 >
                   <TableCell className="font-medium text-muted-foreground">{index + 1}</TableCell>
                   <TableCell className="font-semibold text-foreground">{quote.projectName}</TableCell>
                   <TableCell>
                     <span className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-                      quote.printType === "FDM" 
-                        ? "bg-primary/10 text-primary" 
+                      quote.printType === "FDM"
+                        ? "bg-primary/10 text-primary"
                         : "bg-accent/10 text-accent"
                     }`}>
                       {quote.printType}
@@ -172,14 +172,27 @@ const SavedQuotesTable = ({ quotes, onDeleteQuote, onUpdateNotes }: SavedQuotesT
                         size="icon"
                         onClick={() => setViewingQuote(quote)}
                         className="text-muted-foreground hover:text-primary hover:bg-primary/10 h-8 w-8"
+                        title="View details"
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
+                      {onDuplicateQuote && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onDuplicateQuote(index)}
+                          className="text-muted-foreground hover:text-success hover:bg-success/10 h-8 w-8"
+                          title="Duplicate quote"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => handleEditClick(index)}
                         className="text-muted-foreground hover:text-accent hover:bg-accent/10 h-8 w-8"
+                        title="Edit notes"
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
@@ -188,6 +201,7 @@ const SavedQuotesTable = ({ quotes, onDeleteQuote, onUpdateNotes }: SavedQuotesT
                         size="icon"
                         onClick={() => setDeleteIndex(index)}
                         className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-8 w-8"
+                        title="Delete quote"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -209,7 +223,7 @@ const SavedQuotesTable = ({ quotes, onDeleteQuote, onUpdateNotes }: SavedQuotesT
               Confirm Delete
             </DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              Are you sure you want to delete the quote "{deleteIndex !== null && quotes[deleteIndex]?.projectName}"? 
+              Are you sure you want to delete the quote "{deleteIndex !== null && quotes[deleteIndex]?.projectName}"?
               This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
@@ -260,8 +274,8 @@ const SavedQuotesTable = ({ quotes, onDeleteQuote, onUpdateNotes }: SavedQuotesT
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <DetailItem label="Print Type" value={viewingQuote.printType} />
                 <DetailItem label="Colour" value={viewingQuote.printColour || "-"} />
-                <DetailItem label="Material" value={viewingQuote.parameters.materialName} />
-                <DetailItem label="Machine" value={viewingQuote.parameters.machineName} />
+                <DetailItem label="Material" value={viewingQuote.parameters.materialName || "-"} />
+                <DetailItem label="Machine" value={viewingQuote.parameters.machineName || "-"} />
               </div>
 
               <div className="border-t border-border pt-4 space-y-3">
@@ -299,22 +313,28 @@ const SavedQuotesTable = ({ quotes, onDeleteQuote, onUpdateNotes }: SavedQuotesT
       </Dialog>
     </>
   );
-};
+});
 
-const DetailItem = ({ label, value }: { label: string; value: string }) => (
+SavedQuotesTable.displayName = "SavedQuotesTable";
+
+const DetailItem = memo(({ label, value }: { label: string; value: string }) => (
   <div>
     <span className="text-muted-foreground text-xs uppercase tracking-wide">{label}</span>
     <p className="font-medium text-foreground mt-0.5">{value}</p>
   </div>
-);
+));
 
-const CostDetailRow = ({ label, value, highlight }: { label: string; value: number; highlight?: boolean }) => (
+DetailItem.displayName = "DetailItem";
+
+const CostDetailRow = memo(({ label, value, highlight }: { label: string; value: number; highlight?: boolean }) => (
   <>
     <span className={`text-muted-foreground ${highlight ? 'font-medium' : ''}`}>{label}:</span>
     <span className={`text-right tabular-nums ${highlight ? 'font-semibold text-foreground' : 'text-foreground'}`}>
       ₹{value.toFixed(2)}
     </span>
   </>
-);
+));
+
+CostDetailRow.displayName = "CostDetailRow";
 
 export default SavedQuotesTable;
