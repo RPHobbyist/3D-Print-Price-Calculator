@@ -1,8 +1,9 @@
+import { memo, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { FileText, Download, Save, Sparkles } from "lucide-react";
-import { QuoteData } from "@/pages/Index";
+import { QuoteData } from "@/types/quote";
 import { toast } from "sonner";
 
 interface QuoteSummaryProps {
@@ -10,8 +11,8 @@ interface QuoteSummaryProps {
   onSaveQuote: (quote: QuoteData) => void;
 }
 
-const QuoteSummary = ({ quoteData, onSaveQuote }: QuoteSummaryProps) => {
-  const handleExport = () => {
+const QuoteSummary = memo(({ quoteData, onSaveQuote }: QuoteSummaryProps) => {
+  const handleExport = useCallback(() => {
     if (!quoteData) return;
 
     const quoteText = `
@@ -48,13 +49,12 @@ Generated: ${new Date().toLocaleString()}
     URL.revokeObjectURL(url);
 
     toast.success("Quote exported successfully!");
-  };
+  }, [quoteData]);
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     if (!quoteData) return;
     onSaveQuote(quoteData);
-    toast.success("Quote saved successfully!");
-  };
+  }, [quoteData, onSaveQuote]);
 
   if (!quoteData) {
     return (
@@ -93,7 +93,7 @@ Generated: ${new Date().toLocaleString()}
         {/* Cost Breakdown */}
         <div className="space-y-3">
           <h3 className="font-semibold text-foreground text-sm uppercase tracking-wide">Cost Breakdown</h3>
-          
+
           <div className="space-y-2.5 text-sm">
             <CostRow label="Material Cost" value={quoteData.materialCost} />
             <CostRow label="Machine Time" value={quoteData.machineTimeCost} />
@@ -135,17 +135,17 @@ Generated: ${new Date().toLocaleString()}
 
         {/* Actions */}
         <div className="space-y-2.5 pt-2">
-          <Button 
-            onClick={handleSave} 
+          <Button
+            onClick={handleSave}
             className="w-full bg-gradient-primary hover:opacity-90 transition-all shadow-card hover:shadow-elevated"
           >
             <Save className="w-4 h-4 mr-2" />
             Save Quote
           </Button>
-          
-          <Button 
-            onClick={handleExport} 
-            variant="outline" 
+
+          <Button
+            onClick={handleExport}
+            variant="outline"
             className="w-full hover:bg-secondary transition-colors"
           >
             <Download className="w-4 h-4 mr-2" />
@@ -155,13 +155,17 @@ Generated: ${new Date().toLocaleString()}
       </div>
     </Card>
   );
-};
+});
 
-const CostRow = ({ label, value }: { label: string; value: number }) => (
+QuoteSummary.displayName = "QuoteSummary";
+
+const CostRow = memo(({ label, value }: { label: string; value: number }) => (
   <div className="flex justify-between text-muted-foreground group">
     <span className="group-hover:text-foreground transition-colors">{label}</span>
     <span className="font-medium text-foreground tabular-nums">₹{value.toFixed(2)}</span>
   </div>
-);
+));
+
+CostRow.displayName = "CostRow";
 
 export default QuoteSummary;
