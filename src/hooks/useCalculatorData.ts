@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Material, Machine, CostConstant } from "@/types/quote";
 import { processVisibilityFromDescription } from "@/lib/utils";
 import { toast } from "sonner";
+import * as sessionStore from "@/lib/sessionStorage";
 
 interface UseCalculatorDataOptions {
   printType: "FDM" | "Resin";
@@ -31,27 +31,15 @@ export const useCalculatorData = ({ printType }: UseCalculatorDataOptions): Calc
     setError(null);
 
     try {
-      const [materialsRes, machinesRes, constantsRes] = await Promise.all([
-        supabase.from("material_presets").select("*").eq("print_type", printType).order("name"),
-        supabase.from("machine_presets").select("*").eq("print_type", printType).order("name"),
-        supabase.from("cost_constants").select("*").order("name"),
-      ]);
+      const materialsData = sessionStore.getMaterials(printType);
+      const machinesData = sessionStore.getMachines(printType);
+      const constantsData = sessionStore.getConstants();
 
-      if (materialsRes.error) throw materialsRes.error;
-      if (machinesRes.error) throw machinesRes.error;
-      if (constantsRes.error) throw constantsRes.error;
+      setMaterials(materialsData);
+      setMachines(machinesData);
 
-      setMaterials(materialsRes.data || []);
-      setMachines(machinesRes.data || []);
-      setMaterials(materialsRes.data || []);
-      setMachines(machinesRes.data || []);
-
-      const fetchedConstants = constantsRes.data || [];
-
-      // Process constants to extract visibility.
-      // We use a prefix "[HIDDEN]" in the description field to store this state
-      // because we cannot currently modify the database schema to add a real column.
-      const processedConstants = fetchedConstants.map((c: any) => {
+      // Process constants to extract visibility
+      const processedConstants = constantsData.map((c: any) => {
         const { description, is_visible } = processVisibilityFromDescription(c.description, c.is_visible);
         return {
           ...c,

@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,11 +6,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Switch } from "@/components/ui/switch";
 import { Plus, Pencil, Trash2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
-import { Constant } from "@/types/quote";
+import { CostConstant } from "@/types/quote";
 import { processVisibilityFromDescription, addVisibilityTag } from "@/lib/utils";
+import * as sessionStore from "@/lib/sessionStorage";
 
 const ConstantsManager = () => {
-  const [constants, setConstants] = useState<Constant[]>([]);
+  const [constants, setConstants] = useState<CostConstant[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -28,14 +28,7 @@ const ConstantsManager = () => {
 
   const fetchConstants = async () => {
     try {
-      const { data, error } = await supabase
-        .from("cost_constants")
-        .select("*")
-        .order("name", { ascending: true });
-
-      if (error) throw error;
-
-      const rawData = data || [];
+      const rawData = sessionStore.getConstants();
 
       const processedData = rawData.map((item: any) => {
         return {
@@ -61,38 +54,21 @@ const ConstantsManager = () => {
     }
 
     try {
-      // Logic: properties like 'is_visible' are virtual.
-      // We persist visibility by modifying the description field (prepending [HIDDEN]).
       const finalDescription = addVisibilityTag(formData.description || "", formData.is_visible);
 
-      const constantData: any = {
+      const constantData: Omit<CostConstant, "id"> & { id?: string } = {
         name: formData.name,
         value: parseFloat(formData.value),
         unit: formData.unit,
-        description: finalDescription || null,
-        // Remove is_visible from payload to avoid schema error
+        description: finalDescription || undefined,
+        is_visible: formData.is_visible,
       };
 
-      let error;
-
       if (editingId) {
-        const result = await supabase
-          .from("cost_constants")
-          .update(constantData)
-          .eq("id", editingId);
-        error = result.error;
-      } else {
-        const result = await supabase
-          .from("cost_constants")
-          .insert(constantData);
-        error = result.error;
+        constantData.id = editingId;
       }
 
-      if (error) {
-        console.error("Supabase Error:", error);
-        toast.error(`Failed to save: ${error.message}`);
-        return;
-      }
+      sessionStore.saveConstant(constantData);
 
       toast.success(editingId ? "Consumable updated successfully" : "Consumable added successfully");
       resetForm();
@@ -104,13 +80,13 @@ const ConstantsManager = () => {
     }
   };
 
-  const handleEdit = (constant: Constant) => {
+  const handleEdit = (constant: CostConstant) => {
     setEditingId(constant.id);
     setFormData({
       name: constant.name,
       value: constant.value.toString(),
       unit: constant.unit,
-      is_visible: constant.is_visible !== false, // Default to true if null
+      is_visible: constant.is_visible !== false,
       description: constant.description || "",
     });
   };
@@ -119,12 +95,7 @@ const ConstantsManager = () => {
     if (!confirm("Are you sure you want to delete this constant?")) return;
 
     try {
-      const { error } = await supabase
-        .from("cost_constants")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
+      sessionStore.deleteConstant(id);
       toast.success("Constant deleted successfully");
       fetchConstants();
     } catch (error: any) {
@@ -196,6 +167,7 @@ const ConstantsManager = () => {
             <Input
               id="description"
               value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Optional description"
             />
           </div>

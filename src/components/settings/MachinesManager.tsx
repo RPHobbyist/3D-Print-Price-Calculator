@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,15 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrency } from "@/components/CurrencyProvider";
-
-interface Machine {
-  id: string;
-  name: string;
-  hourly_cost: number;
-  power_consumption_watts: number | null;
-  print_type: "FDM" | "Resin";
-  description: string | null;
-}
+import { Machine } from "@/types/quote";
+import * as sessionStore from "@/lib/sessionStorage";
 
 const MachinesManager = () => {
   const [machines, setMachines] = useState<Machine[]>([]);
@@ -37,14 +29,15 @@ const MachinesManager = () => {
 
   const fetchMachines = async () => {
     try {
-      const { data, error } = await supabase
-        .from("machine_presets")
-        .select("*")
-        .order("print_type", { ascending: true })
-        .order("name", { ascending: true });
-
-      if (error) throw error;
-      setMachines(data || []);
+      const data = sessionStore.getMachines();
+      // Sort by print_type then by name
+      data.sort((a, b) => {
+        if (a.print_type !== b.print_type) {
+          return a.print_type.localeCompare(b.print_type);
+        }
+        return a.name.localeCompare(b.name);
+      });
+      setMachines(data);
     } catch (error: any) {
       toast.error("Failed to load machines");
     } finally {
@@ -61,28 +54,19 @@ const MachinesManager = () => {
     }
 
     try {
-      const machineData = {
+      const machineData: Omit<Machine, "id"> & { id?: string } = {
         name: formData.name,
         hourly_cost: parseFloat(formData.hourly_cost),
         power_consumption_watts: formData.power_consumption_watts ? parseInt(formData.power_consumption_watts) : null,
         print_type: formData.print_type,
-        description: formData.description || null,
       };
 
       if (editingId) {
-        const { error } = await supabase
-          .from("machine_presets")
-          .update(machineData)
-          .eq("id", editingId);
-
-        if (error) throw error;
+        machineData.id = editingId;
+        sessionStore.saveMachine(machineData);
         toast.success("Machine updated successfully");
       } else {
-        const { error } = await supabase
-          .from("machine_presets")
-          .insert(machineData);
-
-        if (error) throw error;
+        sessionStore.saveMachine(machineData);
         toast.success("Machine added successfully");
       }
 
@@ -100,7 +84,7 @@ const MachinesManager = () => {
       hourly_cost: machine.hourly_cost.toString(),
       power_consumption_watts: machine.power_consumption_watts?.toString() || "",
       print_type: machine.print_type,
-      description: machine.description || "",
+      description: "",
     });
   };
 
@@ -108,12 +92,7 @@ const MachinesManager = () => {
     if (!confirm("Are you sure you want to delete this machine?")) return;
 
     try {
-      const { error } = await supabase
-        .from("machine_presets")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
+      sessionStore.deleteMachine(id);
       toast.success("Machine deleted successfully");
       fetchMachines();
     } catch (error: any) {
@@ -195,16 +174,6 @@ const MachinesManager = () => {
               placeholder="250"
             />
           </div>
-
-          <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="description">Description</Label>
-            <Input
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Optional description"
-            />
-          </div>
         </div>
 
         <div className="flex gap-2">
@@ -229,14 +198,13 @@ const MachinesManager = () => {
               <TableHead>Type</TableHead>
               <TableHead>Hourly Cost</TableHead>
               <TableHead>Power (W)</TableHead>
-              <TableHead>Description</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {machines.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                   No machines added yet. Add your first machine above.
                 </TableCell>
               </TableRow>
@@ -251,9 +219,6 @@ const MachinesManager = () => {
                   </TableCell>
                   <TableCell>{formatPrice(machine.hourly_cost)}</TableCell>
                   <TableCell>{machine.power_consumption_watts ? `${machine.power_consumption_watts}W` : "-"}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {machine.description || "-"}
-                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex gap-2 justify-end">
                       <Button

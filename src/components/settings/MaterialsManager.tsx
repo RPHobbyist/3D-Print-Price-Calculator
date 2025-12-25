@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,15 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrency } from "@/components/CurrencyProvider";
-
-interface Material {
-  id: string;
-  name: string;
-  cost_per_unit: number;
-  unit: string;
-  print_type: "FDM" | "Resin";
-  description: string | null;
-}
+import { Material } from "@/types/quote";
+import * as sessionStore from "@/lib/sessionStorage";
 
 const MaterialsManager = () => {
   const [materials, setMaterials] = useState<Material[]>([]);
@@ -37,14 +29,15 @@ const MaterialsManager = () => {
 
   const fetchMaterials = async () => {
     try {
-      const { data, error } = await supabase
-        .from("material_presets")
-        .select("*")
-        .order("print_type", { ascending: true })
-        .order("name", { ascending: true });
-
-      if (error) throw error;
-      setMaterials(data || []);
+      const data = sessionStore.getMaterials();
+      // Sort by print_type then by name
+      data.sort((a, b) => {
+        if (a.print_type !== b.print_type) {
+          return a.print_type.localeCompare(b.print_type);
+        }
+        return a.name.localeCompare(b.name);
+      });
+      setMaterials(data);
     } catch (error: any) {
       toast.error("Failed to load materials");
     } finally {
@@ -61,32 +54,19 @@ const MaterialsManager = () => {
     }
 
     try {
-      if (editingId) {
-        const { error } = await supabase
-          .from("material_presets")
-          .update({
-            name: formData.name,
-            cost_per_unit: parseFloat(formData.cost_per_unit),
-            unit: formData.unit,
-            print_type: formData.print_type,
-            description: formData.description || null,
-          })
-          .eq("id", editingId);
+      const materialData: Omit<Material, "id"> & { id?: string } = {
+        name: formData.name,
+        cost_per_unit: parseFloat(formData.cost_per_unit),
+        unit: formData.unit,
+        print_type: formData.print_type,
+      };
 
-        if (error) throw error;
+      if (editingId) {
+        materialData.id = editingId;
+        sessionStore.saveMaterial(materialData);
         toast.success("Material updated successfully");
       } else {
-        const { error } = await supabase
-          .from("material_presets")
-          .insert({
-            name: formData.name,
-            cost_per_unit: parseFloat(formData.cost_per_unit),
-            unit: formData.unit,
-            print_type: formData.print_type,
-            description: formData.description || null,
-          });
-
-        if (error) throw error;
+        sessionStore.saveMaterial(materialData);
         toast.success("Material added successfully");
       }
 
@@ -104,7 +84,7 @@ const MaterialsManager = () => {
       cost_per_unit: material.cost_per_unit.toString(),
       unit: material.unit,
       print_type: material.print_type,
-      description: material.description || "",
+      description: "",
     });
   };
 
@@ -112,12 +92,7 @@ const MaterialsManager = () => {
     if (!confirm("Are you sure you want to delete this material?")) return;
 
     try {
-      const { error } = await supabase
-        .from("material_presets")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
+      sessionStore.deleteMaterial(id);
       toast.success("Material deleted successfully");
       fetchMaterials();
     } catch (error: any) {
@@ -206,16 +181,6 @@ const MaterialsManager = () => {
               </SelectContent>
             </Select>
           </div>
-
-          <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="description">Description</Label>
-            <Input
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Optional description"
-            />
-          </div>
         </div>
 
         <div className="flex gap-2">
@@ -240,14 +205,13 @@ const MaterialsManager = () => {
               <TableHead>Type</TableHead>
               <TableHead>Cost per Unit</TableHead>
               <TableHead>Unit</TableHead>
-              <TableHead>Description</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {materials.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                   No materials added yet. Add your first material above.
                 </TableCell>
               </TableRow>
@@ -262,9 +226,6 @@ const MaterialsManager = () => {
                   </TableCell>
                   <TableCell>{formatPrice(material.cost_per_unit)}</TableCell>
                   <TableCell>{material.unit}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {material.description || "-"}
-                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex gap-2 justify-end">
                       <Button
