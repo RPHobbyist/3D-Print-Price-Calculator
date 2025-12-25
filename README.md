@@ -24,12 +24,6 @@ A professional, open-source 3D printing price calculator and quote management to
 
 ## Getting Started
 
-### Prerequisites
-
-- Node.js (v18 or higher recommended)
-- npm or yarn
-- A Supabase account (free tier works perfect)
-
 ### Installation
 
 1.  **Clone the repository**

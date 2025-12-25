@@ -21,7 +21,7 @@ function getIconPath(): string {
 
 function createWindow() {
     const iconPath = getIconPath();
-
+    
     // Create native image for better Windows taskbar support
     const appIcon = nativeImage.createFromPath(iconPath);
 
@@ -36,7 +36,7 @@ function createWindow() {
         title: "3D Print Price Calculator",
         icon: appIcon
     });
-
+    
     // Explicitly set the icon for Windows taskbar
     if (process.platform === 'win32') {
         win.setIcon(appIcon);

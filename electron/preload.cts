@@ -1,8 +1,11 @@
-// See the Electron documentation for details on how to use preload scripts:
-// https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
-
-import { contextBridge } from 'electron';
+import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('electronAPI', {
-    // expose methods here if needed
+    // Add any APIs you want to expose to the renderer process here
+    platform: process.platform,
+    versions: {
+        node: process.versions.node,
+        chrome: process.versions.chrome,
+        electron: process.versions.electron,
+    },
 });

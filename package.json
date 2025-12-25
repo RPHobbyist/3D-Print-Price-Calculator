@@ -6,7 +6,8 @@
   "main": "dist-electron/main.cjs",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && electron-builder",
+    "build": "vite build",
+    "build:electron": "tsc -p electron/tsconfig.json && vite build && electron-builder",
     "electron:dev": "concurrently \"vite\" \"wait-on tcp:8080 && tsc -p electron/tsconfig.json && electron .\"",
     "electron:build": "tsc -p electron/tsconfig.json && vite build && electron-builder",
     "lint": "eslint .",
