@@ -4,16 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Plus, Pencil, Trash2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
-
-interface Constant {
-  id: string;
-  name: string;
-  value: number;
-  unit: string;
-  description: string | null;
-}
+import { Constant } from "@/types/quote";
+import { processVisibilityFromDescription, addVisibilityTag } from "@/lib/utils";
 
 const ConstantsManager = () => {
   const [constants, setConstants] = useState<Constant[]>([]);
@@ -23,6 +18,7 @@ const ConstantsManager = () => {
     name: "",
     value: "",
     unit: "",
+    is_visible: true,
     description: "",
   });
 
@@ -38,7 +34,17 @@ const ConstantsManager = () => {
         .order("name", { ascending: true });
 
       if (error) throw error;
-      setConstants(data || []);
+
+      const rawData = data || [];
+
+      const processedData = rawData.map((item: any) => {
+        return {
+          ...item,
+          ...processVisibilityFromDescription(item.description)
+        };
+      });
+
+      setConstants(processedData);
     } catch (error: any) {
       toast.error("Failed to load constants");
     } finally {
@@ -48,41 +54,53 @@ const ConstantsManager = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name || !formData.value || !formData.unit) {
       toast.error("Please fill in all required fields");
       return;
     }
 
     try {
-      const constantData = {
+      // Logic: properties like 'is_visible' are virtual.
+      // We persist visibility by modifying the description field (prepending [HIDDEN]).
+      const finalDescription = addVisibilityTag(formData.description || "", formData.is_visible);
+
+      const constantData: any = {
         name: formData.name,
         value: parseFloat(formData.value),
         unit: formData.unit,
-        description: formData.description || null,
+        description: finalDescription || null,
+        // Remove is_visible from payload to avoid schema error
       };
 
+      let error;
+
       if (editingId) {
-        const { error } = await supabase
+        const result = await supabase
           .from("cost_constants")
           .update(constantData)
           .eq("id", editingId);
-
-        if (error) throw error;
-        toast.success("Constant updated successfully");
+        error = result.error;
       } else {
-        const { error } = await supabase
+        const result = await supabase
           .from("cost_constants")
           .insert(constantData);
-
-        if (error) throw error;
-        toast.success("Constant added successfully");
+        error = result.error;
       }
 
+      if (error) {
+        console.error("Supabase Error:", error);
+        toast.error(`Failed to save: ${error.message}`);
+        return;
+      }
+
+      toast.success(editingId ? "Consumable updated successfully" : "Consumable added successfully");
       resetForm();
       fetchConstants();
+
     } catch (error: any) {
-      toast.error(error.message || "Failed to save constant");
+      console.error("Save error:", error);
+      toast.error("An unexpected error occurred: " + error.message);
     }
   };
 
@@ -92,6 +110,7 @@ const ConstantsManager = () => {
       name: constant.name,
       value: constant.value.toString(),
       unit: constant.unit,
+      is_visible: constant.is_visible !== false, // Default to true if null
       description: constant.description || "",
     });
   };
@@ -119,6 +138,7 @@ const ConstantsManager = () => {
       name: "",
       value: "",
       unit: "",
+      is_visible: true,
       description: "",
     });
   };
@@ -132,12 +152,12 @@ const ConstantsManager = () => {
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-4 p-4 border border-border rounded-lg bg-secondary/10">
         <h3 className="text-lg font-semibold text-foreground">
-          {editingId ? "Edit Constant" : "Add New Constant"}
+          {editingId ? "Edit Consumable" : "Add New Consumable"}
         </h3>
-        
+
         <div className="grid md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Constant Name *</Label>
+            <Label htmlFor="name">Consumable Name *</Label>
             <Input
               id="name"
               value={formData.name}
@@ -176,16 +196,24 @@ const ConstantsManager = () => {
             <Input
               id="description"
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Optional description"
             />
+          </div>
+
+          <div className="flex items-center space-x-2 md:col-span-2">
+            <Switch
+              id="is_visible"
+              checked={formData.is_visible}
+              onCheckedChange={(checked) => setFormData({ ...formData, is_visible: checked })}
+            />
+            <Label htmlFor="is_visible">Visible in Calculator selection</Label>
           </div>
         </div>
 
         <div className="flex gap-2">
           <Button type="submit" className="bg-gradient-accent">
             <Plus className="w-4 h-4 mr-2" />
-            {editingId ? "Update" : "Add"} Constant
+            {editingId ? "Update" : "Add"} Consumable
           </Button>
           {editingId && (
             <Button type="button" variant="outline" onClick={resetForm}>
@@ -203,6 +231,7 @@ const ConstantsManager = () => {
               <TableHead>Name</TableHead>
               <TableHead>Value</TableHead>
               <TableHead>Unit</TableHead>
+              <TableHead className="w-20 text-center">Visible</TableHead>
               <TableHead>Description</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -210,8 +239,8 @@ const ConstantsManager = () => {
           <TableBody>
             {constants.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                  No constants added yet. Add your first constant above.
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                  No consumables added yet. Add your first consumable above.
                 </TableCell>
               </TableRow>
             ) : (
@@ -220,6 +249,13 @@ const ConstantsManager = () => {
                   <TableCell className="font-medium">{constant.name}</TableCell>
                   <TableCell>{constant.value}</TableCell>
                   <TableCell>{constant.unit}</TableCell>
+                  <TableCell className="text-center">
+                    {constant.is_visible !== false ? (
+                      <Eye className="w-4 h-4 mx-auto text-muted-foreground" />
+                    ) : (
+                      <EyeOff className="w-4 h-4 mx-auto text-muted-foreground/50" />
+                    )}
+                  </TableCell>
                   <TableCell className="text-muted-foreground">
                     {constant.description || "-"}
                   </TableCell>

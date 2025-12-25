@@ -2,12 +2,15 @@ import { memo } from "react";
 import { QuoteStats } from "@/types/quote";
 import { StatsCard } from "./StatsCard";
 import { FileText, TrendingUp, Printer, Clock } from "lucide-react";
+import { useCurrency } from "@/components/CurrencyProvider";
 
 interface QuotesDashboardProps {
   stats: QuoteStats;
 }
 
 export const QuotesDashboard = memo(({ stats }: QuotesDashboardProps) => {
+  const { currency } = useCurrency();
+
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in">
       <StatsCard
@@ -18,13 +21,13 @@ export const QuotesDashboard = memo(({ stats }: QuotesDashboardProps) => {
       />
       <StatsCard
         title="Total Revenue"
-        value={`₹${stats.totalRevenue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
+        value={`${currency.symbol}${stats.totalRevenue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
         icon={TrendingUp}
         variant="primary"
       />
       <StatsCard
         title="Avg Quote Value"
-        value={`₹${stats.avgQuoteValue.toFixed(0)}`}
+        value={`${currency.symbol}${stats.avgQuoteValue.toFixed(0)}`}
         icon={Clock}
       />
       <StatsCard

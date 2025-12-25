@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useCurrency } from "@/components/CurrencyProvider";
 
 interface Material {
   id: string;
@@ -28,6 +29,7 @@ const MaterialsManager = () => {
     print_type: "FDM" as "FDM" | "Resin",
     description: "",
   });
+  const { currency, formatPrice } = useCurrency();
 
   useEffect(() => {
     fetchMaterials();
@@ -52,7 +54,7 @@ const MaterialsManager = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name || !formData.cost_per_unit) {
       toast.error("Please fill in all required fields");
       return;
@@ -145,7 +147,7 @@ const MaterialsManager = () => {
         <h3 className="text-lg font-semibold text-foreground">
           {editingId ? "Edit Material" : "Add New Material"}
         </h3>
-        
+
         <div className="grid md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="name">Material Name *</Label>
@@ -175,7 +177,7 @@ const MaterialsManager = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="cost_per_unit">Cost per Unit (₹) *</Label>
+            <Label htmlFor="cost_per_unit">Cost per Unit ({currency.symbol}) *</Label>
             <Input
               id="cost_per_unit"
               type="number"
@@ -258,7 +260,7 @@ const MaterialsManager = () => {
                       {material.print_type}
                     </span>
                   </TableCell>
-                  <TableCell>₹{material.cost_per_unit.toFixed(2)}</TableCell>
+                  <TableCell>{formatPrice(material.cost_per_unit)}</TableCell>
                   <TableCell>{material.unit}</TableCell>
                   <TableCell className="text-muted-foreground">
                     {material.description || "-"}

@@ -1,6 +1,8 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Loader2 } from "lucide-react";
+import { LargeThumbnailPreview } from "./shared/ThumbnailPreview";
+import { stripFileExtension } from "@/lib/utils";
 import { toast } from "sonner";
 import { parseResinFile, ResinFileData } from "@/lib/resinFileParser";
 
@@ -11,12 +13,14 @@ interface ResinFileUploadProps {
 const ResinFileUpload = ({ onDataExtracted }: ResinFileUploadProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // We only support .cxdlpv4 (Creality/Chitubox format) for now
     const supportedExtensions = ['.cxdlpv4'];
     const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
 
@@ -30,7 +34,7 @@ const ResinFileUpload = ({ onDataExtracted }: ResinFileUploadProps) => {
 
     try {
       const data = await parseResinFile(file);
-      
+
       if (data.printTimeHours === 0 && data.resinVolumeMl === 0) {
         toast.warning("Could not extract data from file. Please enter values manually.");
       } else {
@@ -39,9 +43,18 @@ const ResinFileUpload = ({ onDataExtracted }: ResinFileUploadProps) => {
         if (data.resinVolumeMl > 0) extractedInfo.push(`Volume: ${data.resinVolumeMl}ml`);
         if (data.layerCount) extractedInfo.push(`Layers: ${data.layerCount}`);
         if (data.printerModel) extractedInfo.push(`Printer: ${data.printerModel}`);
-        
+
         toast.success(`Extracted: ${extractedInfo.join(', ')}`);
-        onDataExtracted(data);
+
+        // Clean filename for the Project Name field
+        const cleanName = stripFileExtension(file.name);
+        onDataExtracted({ ...data, fileName: cleanName });
+
+        if (data.thumbnail) {
+          setPreviewImage(data.thumbnail);
+        } else {
+          setPreviewImage(null);
+        }
       }
     } catch (error) {
       console.error('Error parsing resin file:', error);
@@ -65,7 +78,7 @@ const ResinFileUpload = ({ onDataExtracted }: ResinFileUploadProps) => {
         className="hidden"
         id="resin-file-input"
       />
-      
+
       <Button
         variant="outline"
         onClick={() => fileInputRef.current?.click()}
@@ -84,13 +97,15 @@ const ResinFileUpload = ({ onDataExtracted }: ResinFileUploadProps) => {
           </>
         )}
       </Button>
-      
+
       {fileName && !isLoading && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <FileText className="w-4 h-4" />
           <span className="truncate">{fileName}</span>
         </div>
       )}
+
+      <LargeThumbnailPreview src={previewImage || ""} />
     </div>
   );
 };

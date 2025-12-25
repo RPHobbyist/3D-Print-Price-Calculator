@@ -1,6 +1,8 @@
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, FileCode, Loader2 } from "lucide-react";
+import { ThumbnailPreview } from "./shared/ThumbnailPreview";
+import { stripFileExtension } from "@/lib/utils";
 import { parseGcode, parse3mf, GcodeData } from "@/lib/gcodeParser";
 import { toast } from "sonner";
 
@@ -11,7 +13,12 @@ interface GcodeUploadProps {
 const GcodeUpload = ({ onDataExtracted }: GcodeUploadProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
+  /**
+   * Handles file selection from the input.
+   * Validates extension, parses content, and extracts thumbnail.
+   */
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -19,7 +26,7 @@ const GcodeUpload = ({ onDataExtracted }: GcodeUploadProps) => {
     // Check file extension
     const validExtensions = ['.gcode', '.gco', '.g', '.3mf'];
     const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
-    
+
     if (!validExtensions.includes(fileExtension)) {
       toast.error("Please upload a valid file (.gcode, .gco, .g, or .3mf)");
       return;
@@ -44,13 +51,22 @@ const GcodeUpload = ({ onDataExtracted }: GcodeUploadProps) => {
         return;
       }
 
-      onDataExtracted(data);
-      
+      // Strip the extension (e.g. .gcode) so the UI shows a clean Project Name
+      const cleanName = stripFileExtension(file.name);
+      onDataExtracted({ ...data, fileName: cleanName });
+
+      // Update local preview state if a thumbnail was found
+      if (data.thumbnail) {
+        setPreviewImage(data.thumbnail);
+      } else {
+        setPreviewImage(null);
+      }
+
       const extractedInfo = [];
       if (data.printTimeHours > 0) extractedInfo.push(`Print Time: ${data.printTimeHours}h`);
       if (data.filamentWeightGrams > 0) extractedInfo.push(`Filament: ${data.filamentWeightGrams}g`);
       if (data.printerModel) extractedInfo.push(`Printer: ${data.printerModel}`);
-      
+
       toast.success(`Extracted: ${extractedInfo.join(', ')}`);
     } catch (error) {
       console.error('File parsing error:', error);
@@ -92,6 +108,8 @@ const GcodeUpload = ({ onDataExtracted }: GcodeUploadProps) => {
         )}
         {isLoading ? 'Parsing...' : 'Upload G-code / 3MF'}
       </Button>
+
+      <ThumbnailPreview src={previewImage || ""} className="ml-2" />
     </div>
   );
 };

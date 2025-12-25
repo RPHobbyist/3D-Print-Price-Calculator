@@ -8,6 +8,7 @@ import { Trash2, FileSpreadsheet, Edit, Eye, Database, AlertTriangle, Copy } fro
 import { QuoteData } from "@/types/quote";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
+import { useCurrency } from "@/components/CurrencyProvider";
 
 interface SavedQuotesTableProps {
   quotes: QuoteData[];
@@ -21,6 +22,7 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
   const [editNotes, setEditNotes] = useState("");
   const [viewingQuote, setViewingQuote] = useState<QuoteData | null>(null);
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
+  const { currency, formatPrice } = useCurrency();
 
   const exportToExcel = useCallback(() => {
     if (quotes.length === 0) {
@@ -35,14 +37,15 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
       "Colour": quote.printColour,
       "Material": quote.parameters.materialName,
       "Machine": quote.parameters.machineName,
-      "Material Cost (₹)": quote.materialCost.toFixed(2),
-      "Machine Time Cost (₹)": quote.machineTimeCost.toFixed(2),
-      "Electricity Cost (₹)": quote.electricityCost.toFixed(2),
-      "Labor Cost (₹)": quote.laborCost.toFixed(2),
-      "Overhead Cost (₹)": quote.overheadCost.toFixed(2),
-      "Subtotal (₹)": quote.subtotal.toFixed(2),
-      "Markup (₹)": quote.markup.toFixed(2),
-      "Total Price (₹)": quote.totalPrice.toFixed(2),
+      "Material Cost": formatPrice(quote.materialCost),
+      "Machine Time Cost": formatPrice(quote.machineTimeCost),
+      "Electricity Cost": formatPrice(quote.electricityCost),
+      "Labor Cost": formatPrice(quote.laborCost),
+      "Consumables Cost": quote.parameters.consumablesTotal ? formatPrice(quote.parameters.consumablesTotal) : formatPrice(0),
+      "Overhead Cost": formatPrice(quote.overheadCost),
+      "Subtotal": formatPrice(quote.subtotal),
+      "Markup": formatPrice(quote.markup),
+      "Total Price": formatPrice(quote.totalPrice),
       "Notes": quote.notes || "",
       "Created At": quote.createdAt ? new Date(quote.createdAt).toLocaleString() : "",
     }));
@@ -130,7 +133,7 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
                 <TableHead className="font-semibold text-foreground">Colour</TableHead>
                 <TableHead className="font-semibold text-foreground">Material</TableHead>
                 <TableHead className="font-semibold text-foreground">Machine</TableHead>
-                <TableHead className="text-right font-semibold text-foreground">Total (₹)</TableHead>
+                <TableHead className="text-right font-semibold text-foreground">Total ({currency.symbol})</TableHead>
                 <TableHead className="font-semibold text-foreground">Notes</TableHead>
                 <TableHead className="text-right font-semibold text-foreground">Date</TableHead>
                 <TableHead className="w-36 font-semibold text-foreground">Actions</TableHead>
@@ -145,11 +148,10 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
                   <TableCell className="font-medium text-muted-foreground">{index + 1}</TableCell>
                   <TableCell className="font-semibold text-foreground">{quote.projectName}</TableCell>
                   <TableCell>
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-                      quote.printType === "FDM"
-                        ? "bg-primary/10 text-primary"
-                        : "bg-accent/10 text-accent"
-                    }`}>
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${quote.printType === "FDM"
+                      ? "bg-primary/10 text-primary"
+                      : "bg-accent/10 text-accent"
+                      }`}>
                       {quote.printType}
                     </span>
                   </TableCell>
@@ -157,7 +159,7 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
                   <TableCell className="text-sm text-muted-foreground">{quote.parameters.materialName}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{quote.parameters.machineName}</TableCell>
                   <TableCell className="text-right font-bold text-foreground tabular-nums">
-                    ₹{quote.totalPrice.toFixed(2)}
+                    {formatPrice(quote.totalPrice)}
                   </TableCell>
                   <TableCell className="max-w-[150px] truncate text-sm text-muted-foreground">
                     {quote.notes || "-"}
@@ -285,6 +287,9 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
                   <CostDetailRow label="Machine Time" value={viewingQuote.machineTimeCost} />
                   <CostDetailRow label="Electricity" value={viewingQuote.electricityCost} />
                   <CostDetailRow label="Labor" value={viewingQuote.laborCost} />
+                  {viewingQuote.parameters.consumablesTotal && viewingQuote.parameters.consumablesTotal > 0 && (
+                    <CostDetailRow label="Consumables" value={viewingQuote.parameters.consumablesTotal} />
+                  )}
                   <CostDetailRow label="Overhead" value={viewingQuote.overheadCost} />
                   <CostDetailRow label="Subtotal" value={viewingQuote.subtotal} highlight />
                   <CostDetailRow label="Markup" value={viewingQuote.markup} />
@@ -293,7 +298,7 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
                   <div className="flex justify-between items-center">
                     <span className="font-semibold text-accent-foreground">Total Price:</span>
                     <span className="text-2xl font-bold text-accent-foreground tabular-nums">
-                      ₹{viewingQuote.totalPrice.toFixed(2)}
+                      {formatPrice(viewingQuote.totalPrice)}
                     </span>
                   </div>
                 </div>
@@ -326,15 +331,16 @@ const DetailItem = memo(({ label, value }: { label: string; value: string }) => 
 
 DetailItem.displayName = "DetailItem";
 
-const CostDetailRow = memo(({ label, value, highlight }: { label: string; value: number; highlight?: boolean }) => (
-  <>
-    <span className={`text-muted-foreground ${highlight ? 'font-medium' : ''}`}>{label}:</span>
-    <span className={`text-right tabular-nums ${highlight ? 'font-semibold text-foreground' : 'text-foreground'}`}>
-      ₹{value.toFixed(2)}
-    </span>
-  </>
-));
-
-CostDetailRow.displayName = "CostDetailRow";
+const CostDetailRow = memo(({ label, value, highlight }: { label: string; value: number; highlight?: boolean }) => {
+  const { formatPrice } = useCurrency();
+  return (
+    <>
+      <span className={`text-muted-foreground ${highlight ? 'font-medium' : ''}`}>{label}:</span>
+      <span className={`text-right tabular-nums ${highlight ? 'font-semibold text-foreground' : 'text-foreground'}`}>
+        {formatPrice(value)}
+      </span>
+    </>
+  );
+});
 
 export default SavedQuotesTable;

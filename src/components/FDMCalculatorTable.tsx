@@ -6,8 +6,10 @@ import { useCalculatorData } from "@/hooks/useCalculatorData";
 import { calculateFDMQuote, validateFDMForm } from "@/lib/quoteCalculations";
 import { QuoteCalculator } from "./calculator/QuoteCalculator";
 import { FormFieldRow, TextField, SelectField } from "./calculator/FormField";
+import { ConsumablesSelector } from "./calculator/ConsumablesSelector";
 import GcodeUpload from "./GcodeUpload";
 import { GcodeData } from "@/lib/gcodeParser";
+import { useCurrency } from "@/components/CurrencyProvider";
 
 interface FDMCalculatorProps {
   onCalculate: (data: QuoteData) => void;
@@ -23,12 +25,13 @@ const initialFormData: FDMFormData = {
   laborHours: "",
   overheadPercentage: "",
   markupPercentage: "20",
-  selectedConstantId: "",
+  selectedConsumableIds: [],
 };
 
 const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
   const { materials, machines, constants, loading, getConstantValue } = useCalculatorData({ printType: "FDM" });
   const [formData, setFormData] = useState<FDMFormData>(initialFormData);
+  const { currency } = useCurrency();
 
   const updateField = useCallback(<K extends keyof FDMFormData>(field: K, value: FDMFormData[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -51,19 +54,22 @@ const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
 
     setFormData(prev => ({
       ...prev,
+      projectName: data.fileName ? data.fileName.substring(0, data.fileName.lastIndexOf('.')) || data.fileName : prev.projectName,
       printTime: data.printTimeHours > 0 ? data.printTimeHours.toString() : prev.printTime,
       filamentWeight: data.filamentWeightGrams > 0 ? data.filamentWeightGrams.toString() : prev.filamentWeight,
       machineId: matchedMachineId || prev.machineId,
     }));
   }, [machines]);
 
-  const handleConstantSelect = useCallback((constantId: string) => {
-    const constant = constants.find(c => c.id === constantId);
-    if (constant) {
-      updateField("selectedConstantId", constantId);
-      toast.info(`Selected: ${constant.name} = ${constant.value} ${constant.unit}`);
+  const handleConsumablesChange = useCallback((selectedIds: string[]) => {
+    updateField("selectedConsumableIds", selectedIds);
+    if (selectedIds.length > 0) {
+      const totalValue = constants
+        .filter(c => selectedIds.includes(c.id))
+        .reduce((sum, c) => sum + c.value, 0);
+      toast.info(`Selected ${selectedIds.length} consumables (Total: ${currency.symbol}${totalValue.toFixed(2)})`);
     }
-  }, [constants, updateField]);
+  }, [constants, updateField, currency]);
 
   const calculateQuote = useCallback(() => {
     const validationError = validateFDMForm(formData);
@@ -74,7 +80,9 @@ const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
 
     const selectedMaterial = materials.find(m => m.id === formData.materialId);
     const selectedMachine = machines.find(m => m.id === formData.machineId);
-    const selectedConstant = constants.find(c => c.id === formData.selectedConstantId);
+    const selectedConsumables = constants
+      .filter(c => formData.selectedConsumableIds.includes(c.id))
+      .map(c => ({ name: c.name, value: c.value }));
 
     if (!selectedMaterial || !selectedMachine) {
       toast.error("Invalid material or machine selection");
@@ -87,8 +95,7 @@ const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
       machine: selectedMachine,
       electricityRate: getConstantValue("electricity"),
       laborRate: getConstantValue("labor"),
-      constantName: selectedConstant?.name,
-      constantValue: selectedConstant?.value,
+      consumables: selectedConsumables,
     });
 
     onCalculate(quoteData);
@@ -99,20 +106,22 @@ const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
     materials.map(m => ({
       id: m.id,
       label: m.name,
-      sublabel: `₹${m.cost_per_unit}/${m.unit}`,
-    })), [materials]);
+      sublabel: `${currency.symbol}${m.cost_per_unit}/${m.unit}`,
+    })), [materials, currency]);
 
   const machineOptions = useMemo(() =>
     machines.map(m => ({
       id: m.id,
       label: m.name,
-      sublabel: `₹${m.hourly_cost}/hr`,
-    })), [machines]);
+      sublabel: `${currency.symbol}${m.hourly_cost}/hr`,
+    })), [machines, currency]);
 
-  const constantOptions = useMemo(() =>
+  const consumableItems = useMemo(() =>
     constants.map(c => ({
       id: c.id,
-      label: `${c.name}: ${c.value} ${c.unit}`,
+      name: c.name,
+      value: c.value,
+      unit: c.unit,
     })), [constants]);
 
   const uploadSection = (
@@ -166,12 +175,11 @@ const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
         />
       </FormFieldRow>
 
-      <FormFieldRow label="Constant Value">
-        <SelectField
-          value={formData.selectedConstantId}
-          onChange={handleConstantSelect}
-          placeholder="Select a constant (optional)"
-          options={constantOptions}
+      <FormFieldRow label="Consumables">
+        <ConsumablesSelector
+          items={consumableItems}
+          selectedIds={formData.selectedConsumableIds}
+          onChange={handleConsumablesChange}
         />
       </FormFieldRow>
 

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">3D Print Price Calculator</string>
+    <string name="title_activity_main">3D Print Price Calculator</string>
+    <string name="package_name">com.rphobbyist.printquotecalculator</string>
+    <string name="custom_url_scheme">com.rphobbyist.printquotecalculator</string>
+</resources>

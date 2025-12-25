@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Material, Machine, CostConstant } from "@/types/quote";
+import { processVisibilityFromDescription } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface UseCalculatorDataOptions {
@@ -21,13 +22,14 @@ export const useCalculatorData = ({ printType }: UseCalculatorDataOptions): Calc
   const [materials, setMaterials] = useState<Material[]>([]);
   const [machines, setMachines] = useState<Machine[]>([]);
   const [constants, setConstants] = useState<CostConstant[]>([]);
+  const [allConstants, setAllConstants] = useState<CostConstant[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const [materialsRes, machinesRes, constantsRes] = await Promise.all([
         supabase.from("material_presets").select("*").eq("print_type", printType).order("name"),
@@ -41,7 +43,26 @@ export const useCalculatorData = ({ printType }: UseCalculatorDataOptions): Calc
 
       setMaterials(materialsRes.data || []);
       setMachines(machinesRes.data || []);
-      setConstants(constantsRes.data || []);
+      setMaterials(materialsRes.data || []);
+      setMachines(machinesRes.data || []);
+
+      const fetchedConstants = constantsRes.data || [];
+
+      // Process constants to extract visibility.
+      // We use a prefix "[HIDDEN]" in the description field to store this state
+      // because we cannot currently modify the database schema to add a real column.
+      const processedConstants = fetchedConstants.map((c: any) => {
+        const { description, is_visible } = processVisibilityFromDescription(c.description, c.is_visible);
+        return {
+          ...c,
+          description,
+          is_visible
+        };
+      });
+
+      setAllConstants(processedConstants);
+      // Filter for UI: Show if visible
+      setConstants(processedConstants.filter((c: any) => c.is_visible !== false));
     } catch (err: any) {
       const errorMessage = err.message || "Failed to load calculator data";
       setError(errorMessage);
@@ -56,11 +77,12 @@ export const useCalculatorData = ({ printType }: UseCalculatorDataOptions): Calc
   }, [fetchData]);
 
   const getConstantValue = useCallback((name: string): number => {
-    const constant = constants.find(c => 
+    // Search in allConstants to ensure hidden system constants (like Electricity) still work
+    const constant = allConstants.find(c =>
       c.name.toLowerCase().includes(name.toLowerCase())
     );
     return constant?.value || 0;
-  }, [constants]);
+  }, [allConstants]);
 
   return {
     materials,

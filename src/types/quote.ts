@@ -21,8 +21,8 @@ export interface QuoteData {
 export interface QuoteParameters {
   materialName?: string;
   machineName?: string;
-  constantName?: string;
-  constantValue?: number;
+  consumables?: { name: string; value: number }[];
+  consumablesTotal?: number;
   printTime?: string;
   filamentWeight?: string;
   resinVolume?: string;
@@ -53,6 +53,7 @@ export interface CostConstant {
   name: string;
   value: number;
   unit: string;
+  is_visible?: boolean;
   description?: string | null;
 }
 
@@ -66,7 +67,7 @@ export interface FDMFormData {
   laborHours: string;
   overheadPercentage: string;
   markupPercentage: string;
-  selectedConstantId: string;
+  selectedConsumableIds: string[];
 }
 
 export interface ResinFormData {
@@ -82,7 +83,7 @@ export interface ResinFormData {
   laborHours: string;
   overheadPercentage: string;
   markupPercentage: string;
-  selectedConstantId: string;
+  selectedConsumableIds: string[];
 }
 
 export interface QuoteStats {

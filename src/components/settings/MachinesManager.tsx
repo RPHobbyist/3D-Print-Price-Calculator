@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useCurrency } from "@/components/CurrencyProvider";
 
 interface Machine {
   id: string;
@@ -28,6 +29,7 @@ const MachinesManager = () => {
     print_type: "FDM" as "FDM" | "Resin",
     description: "",
   });
+  const { currency, formatPrice } = useCurrency();
 
   useEffect(() => {
     fetchMachines();
@@ -52,7 +54,7 @@ const MachinesManager = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name || !formData.hourly_cost) {
       toast.error("Please fill in all required fields");
       return;
@@ -141,7 +143,7 @@ const MachinesManager = () => {
         <h3 className="text-lg font-semibold text-foreground">
           {editingId ? "Edit Machine" : "Add New Machine"}
         </h3>
-        
+
         <div className="grid md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="name">Machine Name *</Label>
@@ -171,7 +173,7 @@ const MachinesManager = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="hourly_cost">Hourly Cost (₹) *</Label>
+            <Label htmlFor="hourly_cost">Hourly Cost ({currency.symbol}) *</Label>
             <Input
               id="hourly_cost"
               type="number"
@@ -247,7 +249,7 @@ const MachinesManager = () => {
                       {machine.print_type}
                     </span>
                   </TableCell>
-                  <TableCell>₹{machine.hourly_cost.toFixed(2)}</TableCell>
+                  <TableCell>{formatPrice(machine.hourly_cost)}</TableCell>
                   <TableCell>{machine.power_consumption_watts ? `${machine.power_consumption_watts}W` : "-"}</TableCell>
                   <TableCell className="text-muted-foreground">
                     {machine.description || "-"}

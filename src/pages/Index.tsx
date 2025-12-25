@@ -1,14 +1,18 @@
 import { useState, useCallback, memo } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calculator, Printer, Sparkles, RefreshCw } from "lucide-react";
+import { Printer, Sparkles, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import FDMCalculatorTable from "@/components/FDMCalculatorTable";
 import ResinCalculatorTable from "@/components/ResinCalculatorTable";
 import QuoteSummary from "@/components/QuoteSummary";
 import SavedQuotesTable from "@/components/SavedQuotesTable";
 import { QuotesDashboard } from "@/components/dashboard/QuotesDashboard";
+import { useNavigate } from "react-router-dom";
+import logo from "@/assets/logo.png";
 import { NavLink } from "@/components/NavLink";
+import { Footer } from "@/components/Footer";
+import { CurrencySelector } from "@/components/CurrencySelector";
 import { QuoteData } from "@/types/quote";
 import { useSavedQuotes } from "@/hooks/useSavedQuotes";
 
@@ -49,7 +53,7 @@ const Index = memo(() => {
   }, [quotes, duplicateQuote]);
 
   return (
-    <div className="min-h-screen bg-gradient-subtle">
+    <div className="min-h-screen bg-gradient-subtle flex flex-col">
       {/* Glow effect */}
       <div className="fixed inset-0 bg-gradient-glow pointer-events-none" />
 
@@ -58,15 +62,18 @@ const Index = memo(() => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="bg-gradient-accent p-3 rounded-2xl shadow-elevated hover-lift">
-                <Calculator className="w-7 h-7 text-accent-foreground" />
-              </div>
+              <a href="https://linktr.ee/RPHobbyist" target="_blank" rel="noopener noreferrer" className="hover-lift flex-shrink-0">
+                <img src={logo} alt="Rp Hobbyist" className="h-16 max-w-80 w-auto object-contain" />
+              </a>
               <div>
-                <h1 className="text-2xl font-bold text-foreground tracking-tight">3D Print Quote Calculator</h1>
-                <p className="text-sm text-muted-foreground">Professional pricing estimation for FDM & Resin printing</p>
+                <h1 className="text-2xl font-bold text-foreground tracking-tight">3D Print Price Calculator</h1>
+                <p className="text-sm text-muted-foreground">
+                  by <a href="https://linktr.ee/RPHobbyist" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">Rp Hobbyist</a> • Professional pricing for FDM & Resin
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <CurrencySelector />
               <Button
                 variant="outline"
                 size="sm"
@@ -81,6 +88,7 @@ const Index = memo(() => {
           </div>
         </div>
       </header>
+
 
       <main className="container mx-auto px-4 py-8 relative">
         {/* Stats Dashboard */}
@@ -152,6 +160,8 @@ const Index = memo(() => {
           )}
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 });

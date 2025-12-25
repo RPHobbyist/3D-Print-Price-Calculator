@@ -6,6 +6,8 @@ export interface GcodeData {
   filamentWeightGrams: number;
   filamentLengthMm?: number;
   printerModel?: string;
+  thumbnail?: string;
+  fileName?: string;
 }
 
 /**
@@ -16,6 +18,7 @@ export function parseGcode(content: string): GcodeData {
   let timeHours = 0;
   let filamentLengthMm = 0;
   let printerModel = '';
+  let thumbnail = '';
 
   // --- Filament weight patterns (supports various slicer formats) ---
   const weightPatterns = [
@@ -116,11 +119,62 @@ export function parseGcode(content: string): GcodeData {
     }
   }
 
+  // --- Thumbnail extraction (Base64) ---
+  // PrusaSlicer/SuperSlicer/Orca format:
+  // ; thumbnail begin <width>x<height> <size>
+  // ... base64 data ...
+  // ; thumbnail end
+
+  // Try to find the largest thumbnail
+  const thumbBeginRegex = /;\s*thumbnail(?:_JPG)?\s+begin\s+(\d+)[xX](\d+)\s+(\d+)/gi;
+  let match;
+  let maxPixels = 0;
+  let bestThumbStart = -1;
+  let bestThumbType = 'png'; // default to png
+
+  while ((match = thumbBeginRegex.exec(content)) !== null) {
+    const width = parseInt(match[1]);
+    const height = parseInt(match[2]);
+    const pixels = width * height;
+
+    if (pixels > maxPixels) {
+      maxPixels = pixels;
+      bestThumbStart = match.index;
+      if (match[0].toLowerCase().includes('jpg')) {
+        bestThumbType = 'jpg';
+      } else {
+        bestThumbType = 'png';
+      }
+    }
+  }
+
+  if (bestThumbStart !== -1) {
+    // Extract the specific thumbnail block
+    const thumbBlockStart = content.indexOf('\n', bestThumbStart) + 1;
+    const thumbBlockEnd = content.indexOf('thumbnail', thumbBlockStart); // approximate end
+
+    if (thumbBlockStart > 0 && thumbBlockEnd > thumbBlockStart) {
+      // Look for the end marker more precisely
+      const nextEndMarker = content.substring(thumbBlockStart, thumbBlockStart + 50000).match(/;\s*thumbnail(?:_JPG)?\s+end/i);
+
+      if (nextEndMarker && nextEndMarker.index !== undefined) {
+        // Extract lines, remove '; ' prefix and whitespace
+        const rawBlock = content.substring(thumbBlockStart, thumbBlockStart + nextEndMarker.index);
+        const base64Data = rawBlock.replace(/^[ \t]*;[ \t]*/gm, '').replace(/\s/g, '');
+
+        if (base64Data.length > 100) {
+          thumbnail = `data:image/${bestThumbType};base64,${base64Data}`;
+        }
+      }
+    }
+  }
+
   return {
     printTimeHours: Math.round((timeHours || 0) * 100) / 100,
     filamentWeightGrams: Math.round((filamentWeight || 0) * 10) / 10,
     filamentLengthMm: Math.round(filamentLengthMm * 10) / 10,
     printerModel: printerModel || undefined,
+    thumbnail: thumbnail || undefined,
   };
 }
 
@@ -129,52 +183,51 @@ export function parseGcode(content: string): GcodeData {
  * Specifically looks for G-code files inside the Metadata folder
  */
 export async function parse3mf(file: File): Promise<GcodeData> {
+  let printTimeHours = 0;
+  let filamentWeightGrams = 0;
+  let printerModel = '';
+  let thumbnail = '';
+
   try {
     const zip = await JSZip.loadAsync(file);
     const fileNames = Object.keys(zip.files);
-    
+
     console.log('3MF archive contents:', fileNames);
 
-    // Step 1: Look for G-code file inside Metadata folder
+    // Step 1: Look for G-code file inside Metadata folder or anywhere
     const gcodePath = fileNames.find(
-      (path) => path.toLowerCase().startsWith('metadata/') && path.toLowerCase().endsWith('.gcode')
+      (path) => (path.toLowerCase().startsWith('metadata/') && path.toLowerCase().endsWith('.gcode')) ||
+        path.toLowerCase().endsWith('.gcode')
     );
 
     if (gcodePath) {
-      console.log('Found G-code in Metadata folder:', gcodePath);
+      console.log('Found G-code:', gcodePath);
       const gcodeText = await zip.files[gcodePath].async('string');
       const result = parseGcode(gcodeText);
-      console.log('Extracted from G-code:', result);
+
+      // If G-code didn't have thumbnail, try to find one in Metadata
+      if (!result.thumbnail) {
+        const thumbPath = fileNames.find(p => p.toLowerCase().endsWith('.png') && (p.toLowerCase().includes('thumbnail') || p.toLowerCase().includes('metadata')));
+        if (thumbPath) {
+          const thumbData = await zip.files[thumbPath].async('base64');
+          result.thumbnail = `data:image/png;base64,${thumbData}`;
+        }
+      }
       return result;
     }
 
-    // Step 2: Look for any .gcode file anywhere in the archive
-    const anyGcodePath = fileNames.find((path) => path.toLowerCase().endsWith('.gcode'));
-    
-    if (anyGcodePath) {
-      console.log('Found G-code file:', anyGcodePath);
-      const gcodeText = await zip.files[anyGcodePath].async('string');
-      const result = parseGcode(gcodeText);
-      console.log('Extracted from G-code:', result);
-      return result;
-    }
-
-    // Step 3: Fallback - search JSON files for metadata (BambuStudio/OrcaSlicer)
-    let printTimeHours = 0;
-    let filamentWeightGrams = 0;
-    let printerModel = '';
-
+    // Step 2: Fallback - search JSON/XML files for metadata (BambuStudio/OrcaSlicer)
     for (const filename of fileNames) {
       if (zip.files[filename].dir) continue;
-      
+
       const lowerFilename = filename.toLowerCase();
-      
+
       // Check JSON files (plate_X.json, etc.)
       if (lowerFilename.endsWith('.json')) {
         try {
           const content = await zip.files[filename].async('string');
           const jsonData = JSON.parse(content);
-          
+
           // BambuStudio/OrcaSlicer format
           if (jsonData.prediction !== undefined && printTimeHours === 0) {
             printTimeHours = jsonData.prediction / 3600;
@@ -204,7 +257,7 @@ export async function parse3mf(file: File): Promise<GcodeData> {
       if (lowerFilename.endsWith('.xml') || lowerFilename.endsWith('.config')) {
         try {
           const content = await zip.files[filename].async('string');
-          
+
           const timeMatch = content.match(/estimated[_-]?time["\s:=>]+(\d+)/i);
           if (timeMatch && printTimeHours === 0) {
             printTimeHours = parseInt(timeMatch[1]) / 3600;
@@ -226,12 +279,25 @@ export async function parse3mf(file: File): Promise<GcodeData> {
       }
     }
 
-    console.log('Fallback extraction result:', { printTimeHours, filamentWeightGrams, printerModel });
+    // Step 3: Try to find a thumbnail image if not found yet
+    const thumbPath = fileNames.find(p =>
+      (p.toLowerCase().endsWith('.png') || p.toLowerCase().endsWith('.jpg')) &&
+      (p.toLowerCase().includes('thumbnail') || p.toLowerCase().includes('preview') || p.toLowerCase().startsWith('metadata/'))
+    );
+
+    if (thumbPath) {
+      const ext = thumbPath.toLowerCase().endsWith('.png') ? 'png' : 'jpeg';
+      const thumbData = await zip.files[thumbPath].async('base64');
+      thumbnail = `data:image/${ext};base64,${thumbData}`;
+    }
+
+    console.log('Fallback extraction result:', { printTimeHours, filamentWeightGrams, printerModel, hasThumbnail: !!thumbnail });
 
     return {
       printTimeHours: Math.round(printTimeHours * 100) / 100,
       filamentWeightGrams: Math.round(filamentWeightGrams * 10) / 10,
       printerModel: printerModel || undefined,
+      thumbnail: thumbnail || undefined,
     };
 
   } catch (error) {
@@ -239,3 +305,4 @@ export async function parse3mf(file: File): Promise<GcodeData> {
     return { printTimeHours: 0, filamentWeightGrams: 0 };
   }
 }
+

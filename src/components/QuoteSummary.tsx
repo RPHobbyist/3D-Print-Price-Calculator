@@ -5,6 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { FileText, Download, Save, Sparkles } from "lucide-react";
 import { QuoteData } from "@/types/quote";
 import { toast } from "sonner";
+import { useCurrency } from "@/components/CurrencyProvider";
 
 interface QuoteSummaryProps {
   quoteData: QuoteData | null;
@@ -12,6 +13,8 @@ interface QuoteSummaryProps {
 }
 
 const QuoteSummary = memo(({ quoteData, onSaveQuote }: QuoteSummaryProps) => {
+  const { currency, formatPrice } = useCurrency();
+
   const handleExport = useCallback(() => {
     if (!quoteData) return;
 
@@ -22,17 +25,17 @@ Project: ${quoteData.projectName}
 Colour: ${quoteData.printColour || "N/A"}
 
 COST BREAKDOWN:
-- Material Cost:        ₹${quoteData.materialCost.toFixed(2)}
-- Machine Time:         ₹${quoteData.machineTimeCost.toFixed(2)}
-- Electricity:          ₹${quoteData.electricityCost.toFixed(2)}
-- Labor:                ₹${quoteData.laborCost.toFixed(2)}
-- Overhead:             ₹${quoteData.overheadCost.toFixed(2)}
+- Material Cost:        ${formatPrice(quoteData.materialCost)}
+- Machine Time:         ${formatPrice(quoteData.machineTimeCost)}
+- Electricity:          ${formatPrice(quoteData.electricityCost)}
+- Labor:                ${formatPrice(quoteData.laborCost)}
+- Overhead:             ${formatPrice(quoteData.overheadCost)}
 
-SUBTOTAL:               ₹${quoteData.subtotal.toFixed(2)}
-Profit Markup:          ₹${quoteData.markup.toFixed(2)}
+SUBTOTAL:               ${formatPrice(quoteData.subtotal)}
+Profit Markup:          ${formatPrice(quoteData.markup)}
 
 ==========================================
-TOTAL PRICE:            ₹${quoteData.totalPrice.toFixed(2)}
+TOTAL PRICE:            ${formatPrice(quoteData.totalPrice)}
 ==========================================
 
 Generated: ${new Date().toLocaleString()}
@@ -49,7 +52,7 @@ Generated: ${new Date().toLocaleString()}
     URL.revokeObjectURL(url);
 
     toast.success("Quote exported successfully!");
-  }, [quoteData]);
+  }, [quoteData, formatPrice]);
 
   const handleSave = useCallback(() => {
     if (!quoteData) return;
@@ -112,12 +115,12 @@ Generated: ${new Date().toLocaleString()}
 
           <div className="flex justify-between text-sm">
             <span className="font-medium text-foreground">Subtotal</span>
-            <span className="font-semibold text-foreground">₹{quoteData.subtotal.toFixed(2)}</span>
+            <span className="font-semibold text-foreground">{formatPrice(quoteData.subtotal)}</span>
           </div>
 
           <div className="flex justify-between text-sm text-muted-foreground">
             <span>Profit Markup</span>
-            <span className="font-medium text-foreground">+₹{quoteData.markup.toFixed(2)}</span>
+            <span className="font-medium text-foreground">+{formatPrice(quoteData.markup)}</span>
           </div>
 
           <Separator className="my-4" />
@@ -127,7 +130,7 @@ Generated: ${new Date().toLocaleString()}
             <div className="flex justify-between items-center">
               <span className="text-accent-foreground font-semibold">Total Price</span>
               <span className="text-2xl font-bold text-accent-foreground">
-                ₹{quoteData.totalPrice.toFixed(2)}
+                {formatPrice(quoteData.totalPrice)}
               </span>
             </div>
           </div>
@@ -159,12 +162,15 @@ Generated: ${new Date().toLocaleString()}
 
 QuoteSummary.displayName = "QuoteSummary";
 
-const CostRow = memo(({ label, value }: { label: string; value: number }) => (
-  <div className="flex justify-between text-muted-foreground group">
-    <span className="group-hover:text-foreground transition-colors">{label}</span>
-    <span className="font-medium text-foreground tabular-nums">₹{value.toFixed(2)}</span>
-  </div>
-));
+const CostRow = memo(({ label, value }: { label: string; value: number }) => {
+  const { formatPrice } = useCurrency();
+  return (
+    <div className="flex justify-between text-muted-foreground group">
+      <span className="group-hover:text-foreground transition-colors">{label}</span>
+      <span className="font-medium text-foreground tabular-nums">{formatPrice(value)}</span>
+    </div>
+  );
+});
 
 CostRow.displayName = "CostRow";
 

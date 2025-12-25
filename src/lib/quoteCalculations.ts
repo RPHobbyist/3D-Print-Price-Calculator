@@ -7,16 +7,19 @@ interface CalculationParams {
   laborRate: number;
 }
 
+interface ConsumableInfo {
+  name: string;
+  value: number;
+}
+
 interface FDMCalculationInput extends CalculationParams {
   formData: FDMFormData;
-  constantName?: string;
-  constantValue?: number;
+  consumables?: ConsumableInfo[];
 }
 
 interface ResinCalculationInput extends CalculationParams {
   formData: ResinFormData;
-  constantName?: string;
-  constantValue?: number;
+  consumables?: ConsumableInfo[];
 }
 
 export const calculateFDMQuote = ({
@@ -25,8 +28,7 @@ export const calculateFDMQuote = ({
   machine,
   electricityRate,
   laborRate,
-  constantName,
-  constantValue,
+  consumables = [],
 }: FDMCalculationInput): QuoteData => {
   const printTimeHours = parseFloat(formData.printTime);
   const filamentWeightKg = parseFloat(formData.filamentWeight) / 1000;
@@ -39,8 +41,9 @@ export const calculateFDMQuote = ({
   const powerConsumptionKw = machine.power_consumption_watts ? machine.power_consumption_watts / 1000 : 0;
   const electricityCost = printTimeHours * powerConsumptionKw * electricityRate;
   const laborCost = laborHours * laborRate;
+  const consumablesTotal = consumables.reduce((sum, c) => sum + c.value, 0);
 
-  const subtotalBeforeOverhead = materialCost + machineTimeCost + electricityCost + laborCost;
+  const subtotalBeforeOverhead = materialCost + machineTimeCost + electricityCost + laborCost + consumablesTotal;
   const overheadCost = (subtotalBeforeOverhead * overheadPercentage) / 100;
   const subtotal = subtotalBeforeOverhead + overheadCost;
 
@@ -63,8 +66,8 @@ export const calculateFDMQuote = ({
       ...formData,
       materialName: material.name,
       machineName: machine.name,
-      constantName,
-      constantValue,
+      consumables,
+      consumablesTotal,
     },
   };
 };
@@ -75,8 +78,7 @@ export const calculateResinQuote = ({
   machine,
   electricityRate,
   laborRate,
-  constantName,
-  constantValue,
+  consumables = [],
 }: ResinCalculationInput): QuoteData => {
   const printTimeHours = parseFloat(formData.printTime);
   const resinVolumeLiters = parseFloat(formData.resinVolume) / 1000;
@@ -93,8 +95,9 @@ export const calculateResinQuote = ({
   const powerConsumptionKw = machine.power_consumption_watts ? machine.power_consumption_watts / 1000 : 0;
   const electricityCost = totalProcessTime * powerConsumptionKw * electricityRate;
   const laborCost = laborHours * laborRate;
+  const consumablesTotal = consumables.reduce((sum, c) => sum + c.value, 0);
 
-  const subtotalBeforeOverhead = materialCost + machineTimeCost + electricityCost + laborCost;
+  const subtotalBeforeOverhead = materialCost + machineTimeCost + electricityCost + laborCost + consumablesTotal;
   const overheadCost = (subtotalBeforeOverhead * overheadPercentage) / 100;
   const subtotal = subtotalBeforeOverhead + overheadCost;
 
@@ -117,8 +120,8 @@ export const calculateResinQuote = ({
       ...formData,
       materialName: material.name,
       machineName: machine.name,
-      constantName,
-      constantValue,
+      consumables,
+      consumablesTotal,
     },
   };
 };

@@ -1,73 +1,96 @@
-# Welcome to your Lovable project
+# 3D Print Price Calculator
 
-## Project info
+A professional, open-source 3D printing price calculator and quote management tool by **Rp Hobbyist**. This application allows users to calculate costs for both FDM and Resin printing, manage materials and machines, and track quotes.
 
-**URL**: https://lovable.dev/projects/73731a77-d9e7-4ede-a622-62a7c8aef858
+🔗 **[Visit Rp Hobbyist](https://linktr.ee/RPHobbyist)**
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- **Dual Technology Support**: Separate calculators for FDM (Filament) and Resin (SLA/DLP) printing.
+- **Smart Auto-Fill**: Upload G-code (`.gcode`, `.3mf`) or Resin files (`.cxdlpv4`) to automatically extract print time, weight, and volume.
+- **Thumbnail Previews**: Visual preview of uploaded 3D files.
+- **Inventory Management**: Track costs for Filaments, Resins, and Consumables (gloves, IPA, etc.).
+- **Machine Presets**: Store hourly rates and specifications for multiple printers.
+- **Quote Dashboard**: Save, view, and export past quotes.
+- **Responsive Design**: Built with a mobile-first approach using Shadcn UI.
 
-**Use Lovable**
+## Technologies Stack
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/73731a77-d9e7-4ede-a622-62a7c8aef858) and start prompting.
+- **Frontend**: [React](https://reactjs.org/) + [TypeScript](https://www.typescriptlang.org/) + [Vite](https://vitejs.dev/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **UI Components**: [shadcn/ui](https://ui.shadcn.com/)
+- **Icons**: [Lucide React](https://lucide.dev/)
+- **Backend / Database**: [Supabase](https://supabase.com/) (PostgreSQL + Auth + Realtime)
 
-Changes made via Lovable will be committed automatically to this repo.
+## Getting Started
 
-**Use your preferred IDE**
+### Prerequisites
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- Node.js (v18 or higher recommended)
+- npm or yarn
+- A Supabase account (free tier works perfect)
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Installation
 
-Follow these steps:
+1.  **Clone the repository**
+    ```sh
+    git clone https://github.com/RPHobbyist/3D-Print-Price-Calculator.git
+    cd 3D-Print-Price-Calculator
+    ```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+2.  **Install dependencies**
+    ```sh
+    npm install
+    ```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+3.  **Environment Setup**
+    Create a `.env` file in the root directory and add your Supabase credentials:
+    ```env
+    VITE_SUPABASE_URL=your_supabase_url
+    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+    ```
 
-# Step 3: Install the necessary dependencies.
-npm i
+4.  **Database Setup**
+    Run the migration scripts found in the `supabase` folder against your Supabase instance to set up the tables (`materials`, `machines`, `quotes`, `cost_constants`).
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+5.  **Run Locally**
+    ```sh
+    npm run dev
+    ```
+    The app should be running at `http://localhost:8080`.
 
-**Edit a file directly in GitHub**
+## Project Structure
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- `src/components/`: Reusable UI components.
+    - `calculator/`: Specific components for the quote calculator forms.
+    - `settings/`: Components for managing inventory (Materials, Machines).
+    - `shared/`: Common utility components like `ThumbnailPreview`.
+- `src/lib/`: Utility functions and logic.
+    - `gcodeParser.ts`: Logic for parsing G-code and 3MF files.
+    - `resinFileParser.ts`: Logic for parsing binary resin files.
+    - `quoteCalculations.ts`: Core math for pricing formulas.
+    - `utils.ts`: General helpers (formatting, visibility toggles).
+- `src/hooks/`: Custom React hooks (e.g., `useCalculatorData` for fetching DB data).
+- `src/pages/`: Main route pages (Index, Settings, Saved Quotes).
 
-**Use GitHub Codespaces**
+## Contributing
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+We welcome contributions! If you'd like to improve the code:
 
-## What technologies are used for this project?
+1.  Fork the Project
+2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4.  Push to the Branch (`git push origin feature/AmazingFeature`)
+5.  Open a Pull Request
 
-This project is built with:
+### Key Logic Areas
+- **Parsers**: If you want to add support for new file formats, look at `src/lib/gcodeParser.ts`.
+- **Pricing Formula**: To adjust how price is calculated, check `src/lib/quoteCalculations.ts`.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## License
 
-## How can I deploy this project?
+Distributed under the MIT License. See `LICENSE` for more information.
 
-Simply open [Lovable](https://lovable.dev/projects/73731a77-d9e7-4ede-a622-62a7c8aef858) and click on Share -> Publish.
+---
 
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Made with ❤️ by Rp Hobbyist
