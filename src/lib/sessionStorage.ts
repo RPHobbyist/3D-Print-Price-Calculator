@@ -1,0 +1,279 @@
+// Local Storage - Data persists until explicitly cleared
+// Data remains even after app closes/restarts
+
+import { QuoteData, Material, Machine, CostConstant } from "@/types/quote";
+
+// Generate unique IDs
+const generateId = (): string => {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+};
+
+// Default Materials
+const defaultMaterials: Material[] = [
+    // FDM Materials
+    { id: "fdm-pla", name: "PLA", cost_per_unit: 25, unit: "kg", print_type: "FDM" },
+    { id: "fdm-pla-plus", name: "PLA+", cost_per_unit: 28, unit: "kg", print_type: "FDM" },
+    { id: "fdm-pla-silk", name: "PLA Silk", cost_per_unit: 32, unit: "kg", print_type: "FDM" },
+    { id: "fdm-abs", name: "ABS", cost_per_unit: 28, unit: "kg", print_type: "FDM" },
+    { id: "fdm-asa", name: "ASA", cost_per_unit: 35, unit: "kg", print_type: "FDM" },
+    { id: "fdm-petg", name: "PETG", cost_per_unit: 30, unit: "kg", print_type: "FDM" },
+    { id: "fdm-petg-cf", name: "PETG-CF", cost_per_unit: 55, unit: "kg", print_type: "FDM" },
+    { id: "fdm-tpu", name: "TPU", cost_per_unit: 45, unit: "kg", print_type: "FDM" },
+    { id: "fdm-nylon", name: "Nylon", cost_per_unit: 50, unit: "kg", print_type: "FDM" },
+    { id: "fdm-pc", name: "Polycarbonate (PC)", cost_per_unit: 55, unit: "kg", print_type: "FDM" },
+    { id: "fdm-pla-cf", name: "PLA-CF", cost_per_unit: 50, unit: "kg", print_type: "FDM" },
+    // Resin Materials
+    { id: "resin-standard", name: "Standard Resin", cost_per_unit: 35, unit: "liter", print_type: "Resin" },
+    { id: "resin-water-washable", name: "Water Washable Resin", cost_per_unit: 45, unit: "liter", print_type: "Resin" },
+    { id: "resin-abs-like", name: "ABS-Like Resin", cost_per_unit: 50, unit: "liter", print_type: "Resin" },
+    { id: "resin-tough", name: "Tough Resin", cost_per_unit: 55, unit: "liter", print_type: "Resin" },
+    { id: "resin-flexible", name: "Flexible Resin", cost_per_unit: 60, unit: "liter", print_type: "Resin" },
+    { id: "resin-8k", name: "8K High-Detail Resin", cost_per_unit: 50, unit: "liter", print_type: "Resin" },
+    { id: "resin-castable", name: "Castable Resin", cost_per_unit: 80, unit: "liter", print_type: "Resin" },
+    { id: "resin-clear", name: "Clear/Transparent Resin", cost_per_unit: 55, unit: "liter", print_type: "Resin" },
+];
+
+// Default Machines
+const defaultMachines: Machine[] = [
+    // FDM Printers
+    { id: "fdm-ender3", name: "Ender 3", hourly_cost: 2, power_consumption_watts: 350, print_type: "FDM" },
+    { id: "fdm-ender3-v2", name: "Ender 3 V2", hourly_cost: 2.5, power_consumption_watts: 350, print_type: "FDM" },
+    { id: "fdm-ender3-v3", name: "Ender 3 V3", hourly_cost: 3, power_consumption_watts: 300, print_type: "FDM" },
+    { id: "fdm-creality-k1", name: "Creality K1", hourly_cost: 6, power_consumption_watts: 350, print_type: "FDM" },
+    { id: "fdm-creality-k1-max", name: "Creality K1 Max", hourly_cost: 8, power_consumption_watts: 500, print_type: "FDM" },
+    { id: "fdm-prusa-mk3", name: "Prusa i3 MK3S+", hourly_cost: 5, power_consumption_watts: 120, print_type: "FDM" },
+    { id: "fdm-prusa-mk4", name: "Prusa MK4", hourly_cost: 6, power_consumption_watts: 150, print_type: "FDM" },
+    { id: "fdm-bambu-a1-mini", name: "Bambu Lab A1 Mini", hourly_cost: 5, power_consumption_watts: 150, print_type: "FDM" },
+    { id: "fdm-bambu-a1", name: "Bambu Lab A1", hourly_cost: 6, power_consumption_watts: 200, print_type: "FDM" },
+    { id: "fdm-bambu-p1s", name: "Bambu Lab P1S", hourly_cost: 8, power_consumption_watts: 350, print_type: "FDM" },
+    { id: "fdm-bambu-x1c", name: "Bambu Lab X1 Carbon", hourly_cost: 10, power_consumption_watts: 400, print_type: "FDM" },
+    { id: "fdm-voron-24", name: "Voron 2.4", hourly_cost: 7, power_consumption_watts: 400, print_type: "FDM" },
+    { id: "fdm-artillery-x3", name: "Artillery Sidewinder X3", hourly_cost: 4, power_consumption_watts: 450, print_type: "FDM" },
+    { id: "fdm-qidi-x-max3", name: "QIDI X-Max 3", hourly_cost: 7, power_consumption_watts: 500, print_type: "FDM" },
+    // Resin Printers
+    { id: "resin-elegoo-mars3", name: "Elegoo Mars 3", hourly_cost: 3, power_consumption_watts: 45, print_type: "Resin" },
+    { id: "resin-elegoo-mars4", name: "Elegoo Mars 4 Ultra", hourly_cost: 4, power_consumption_watts: 48, print_type: "Resin" },
+    { id: "resin-elegoo-saturn3", name: "Elegoo Saturn 3", hourly_cost: 5, power_consumption_watts: 60, print_type: "Resin" },
+    { id: "resin-elegoo-saturn4", name: "Elegoo Saturn 4 Ultra", hourly_cost: 6, power_consumption_watts: 65, print_type: "Resin" },
+    { id: "resin-anycubic", name: "Anycubic Photon Mono", hourly_cost: 4, power_consumption_watts: 50, print_type: "Resin" },
+    { id: "resin-anycubic-m5s", name: "Anycubic Photon Mono M5s", hourly_cost: 5, power_consumption_watts: 55, print_type: "Resin" },
+    { id: "resin-halot-mage", name: "Creality Halot Mage", hourly_cost: 4, power_consumption_watts: 50, print_type: "Resin" },
+    { id: "resin-halot-ray", name: "Creality Halot Ray", hourly_cost: 3, power_consumption_watts: 45, print_type: "Resin" },
+    { id: "resin-phrozen-mini8k", name: "Phrozen Sonic Mini 8K", hourly_cost: 5, power_consumption_watts: 50, print_type: "Resin" },
+    { id: "resin-phrozen-mega8k", name: "Phrozen Mega 8K", hourly_cost: 7, power_consumption_watts: 80, print_type: "Resin" },
+];
+
+// Default Constants/Consumables
+const defaultConstants: CostConstant[] = [
+    { id: "electricity", name: "Electricity Rate", value: 0.12, unit: "$/kWh", is_visible: true, description: "Cost per kilowatt-hour" },
+    { id: "labor", name: "Labor Rate", value: 15, unit: "$/hr", is_visible: true, description: "Hourly labor cost" },
+    { id: "overhead", name: "Overhead Rate", value: 10, unit: "%", is_visible: true, description: "Overhead percentage" },
+    { id: "markup", name: "Default Markup", value: 30, unit: "%", is_visible: true, description: "Default profit margin" },
+];
+
+// Session Storage Keys
+const STORAGE_KEYS = {
+    QUOTES: "session_quotes",
+    MATERIALS: "session_materials",
+    MACHINES: "session_machines",
+    CONSTANTS: "session_constants",
+    INITIALIZED: "session_initialized",
+};
+
+// Initialize session storage with defaults if not already done
+const initializeDefaults = () => {
+    if (!localStorage.getItem(STORAGE_KEYS.INITIALIZED)) {
+        localStorage.setItem(STORAGE_KEYS.QUOTES, JSON.stringify([]));
+        localStorage.setItem(STORAGE_KEYS.MATERIALS, JSON.stringify(defaultMaterials));
+        localStorage.setItem(STORAGE_KEYS.MACHINES, JSON.stringify(defaultMachines));
+        localStorage.setItem(STORAGE_KEYS.CONSTANTS, JSON.stringify(defaultConstants));
+        localStorage.setItem(STORAGE_KEYS.INITIALIZED, "true");
+    }
+};
+
+// Quotes
+export const getQuotes = (): QuoteData[] => {
+    initializeDefaults();
+    return JSON.parse(localStorage.getItem(STORAGE_KEYS.QUOTES) || "[]");
+};
+
+export const saveQuote = (quote: QuoteData): QuoteData => {
+    const quotes = getQuotes();
+    const newQuote: QuoteData = {
+        ...quote,
+        id: generateId(),
+        createdAt: new Date().toISOString(),
+    };
+    quotes.unshift(newQuote);
+    localStorage.setItem(STORAGE_KEYS.QUOTES, JSON.stringify(quotes));
+    return newQuote;
+};
+
+export const deleteQuote = (id: string): void => {
+    const quotes = getQuotes().filter(q => q.id !== id);
+    localStorage.setItem(STORAGE_KEYS.QUOTES, JSON.stringify(quotes));
+};
+
+export const updateQuoteNotes = (id: string, notes: string): void => {
+    const quotes = getQuotes().map(q =>
+        q.id === id ? { ...q, notes } : q
+    );
+    localStorage.setItem(STORAGE_KEYS.QUOTES, JSON.stringify(quotes));
+};
+
+// Materials
+export const getMaterials = (printType?: "FDM" | "Resin"): Material[] => {
+    initializeDefaults();
+    const materials: Material[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.MATERIALS) || "[]");
+    return printType ? materials.filter(m => m.print_type === printType) : materials;
+};
+
+export const saveMaterial = (material: Omit<Material, "id"> & { id?: string }): Material => {
+    const materials = getMaterials();
+    if (material.id) {
+        // Update existing
+        const index = materials.findIndex(m => m.id === material.id);
+        if (index !== -1) {
+            materials[index] = material as Material;
+        }
+    } else {
+        // Add new
+        const newMaterial: Material = {
+            ...material,
+            id: generateId(),
+        } as Material;
+        materials.push(newMaterial);
+    }
+    localStorage.setItem(STORAGE_KEYS.MATERIALS, JSON.stringify(materials));
+    return material as Material;
+};
+
+export const deleteMaterial = (id: string): void => {
+    const materials = getMaterials().filter(m => m.id !== id);
+    localStorage.setItem(STORAGE_KEYS.MATERIALS, JSON.stringify(materials));
+};
+
+// Machines
+export const getMachines = (printType?: "FDM" | "Resin"): Machine[] => {
+    initializeDefaults();
+    const machines: Machine[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.MACHINES) || "[]");
+    return printType ? machines.filter(m => m.print_type === printType) : machines;
+};
+
+export const saveMachine = (machine: Omit<Machine, "id"> & { id?: string }): Machine => {
+    const machines = getMachines();
+    if (machine.id) {
+        // Update existing
+        const index = machines.findIndex(m => m.id === machine.id);
+        if (index !== -1) {
+            machines[index] = machine as Machine;
+        }
+    } else {
+        // Add new
+        const newMachine: Machine = {
+            ...machine,
+            id: generateId(),
+        } as Machine;
+        machines.push(newMachine);
+    }
+    localStorage.setItem(STORAGE_KEYS.MACHINES, JSON.stringify(machines));
+    return machine as Machine;
+};
+
+export const deleteMachine = (id: string): void => {
+    const machines = getMachines().filter(m => m.id !== id);
+    localStorage.setItem(STORAGE_KEYS.MACHINES, JSON.stringify(machines));
+};
+
+// Constants
+export const getConstants = (): CostConstant[] => {
+    initializeDefaults();
+    return JSON.parse(localStorage.getItem(STORAGE_KEYS.CONSTANTS) || "[]");
+};
+
+export const saveConstant = (constant: Omit<CostConstant, "id"> & { id?: string }): CostConstant => {
+    const constants = getConstants();
+    if (constant.id) {
+        // Update existing
+        const index = constants.findIndex(c => c.id === constant.id);
+        if (index !== -1) {
+            constants[index] = constant as CostConstant;
+        }
+    } else {
+        // Add new
+        const newConstant: CostConstant = {
+            ...constant,
+            id: generateId(),
+        } as CostConstant;
+        constants.push(newConstant);
+    }
+    localStorage.setItem(STORAGE_KEYS.CONSTANTS, JSON.stringify(constants));
+    return constant as CostConstant;
+};
+
+export const deleteConstant = (id: string): void => {
+    const constants = getConstants().filter(c => c.id !== id);
+    localStorage.setItem(STORAGE_KEYS.CONSTANTS, JSON.stringify(constants));
+};
+
+// Reset all session data
+export const resetSessionData = (): void => {
+    localStorage.removeItem(STORAGE_KEYS.INITIALIZED);
+    localStorage.removeItem(STORAGE_KEYS.QUOTES);
+    localStorage.removeItem(STORAGE_KEYS.MATERIALS);
+    localStorage.removeItem(STORAGE_KEYS.MACHINES);
+    localStorage.removeItem(STORAGE_KEYS.CONSTANTS);
+    initializeDefaults();
+};
+
+// Settings data structure for export/import
+export interface SettingsExport {
+    version: string;
+    exportDate: string;
+    materials: Material[];
+    machines: Machine[];
+    constants: CostConstant[];
+}
+
+// Export all settings to JSON
+export const exportAllSettings = (): SettingsExport => {
+    return {
+        version: "1.0",
+        exportDate: new Date().toISOString(),
+        materials: getMaterials(),
+        machines: getMachines(),
+        constants: getConstants(),
+    };
+};
+
+// Import settings from JSON
+export const importAllSettings = (data: SettingsExport): { success: boolean; message: string } => {
+    try {
+        // Validate structure
+        if (!data.version || !data.materials || !data.machines || !data.constants) {
+            return { success: false, message: "Invalid settings file format" };
+        }
+
+        // Validate arrays
+        if (!Array.isArray(data.materials) || !Array.isArray(data.machines) || !Array.isArray(data.constants)) {
+            return { success: false, message: "Settings data is corrupted" };
+        }
+
+        // Import materials
+        localStorage.setItem(STORAGE_KEYS.MATERIALS, JSON.stringify(data.materials));
+
+        // Import machines
+        localStorage.setItem(STORAGE_KEYS.MACHINES, JSON.stringify(data.machines));
+
+        // Import constants
+        localStorage.setItem(STORAGE_KEYS.CONSTANTS, JSON.stringify(data.constants));
+
+        return {
+            success: true,
+            message: `Imported ${data.materials.length} materials, ${data.machines.length} machines, ${data.constants.length} consumables`
+        };
+    } catch (error) {
+        console.error("Import error:", error);
+        return { success: false, message: "Failed to import settings" };
+    }
+};
