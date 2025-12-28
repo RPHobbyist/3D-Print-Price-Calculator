@@ -1,7 +1,10 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "3d-print-price-calculator",
+  "productName": "3D Print Price Calculator",
+  "description": "A 3D printing cost calculation tool.",
+  "author": "Rp Hobbyist <rphobbyist@gmail.com>",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "main": "dist-electron/main.cjs",
   "scripts": {
@@ -16,12 +19,14 @@
   "build": {
     "appId": "com.rphobbyist.printpricepro",
     "productName": "3D Print Price Calculator",
+    "copyright": "Copyright © 2025 Rp Hobbyist",
     "directories": {
       "output": "dist"
     },
     "win": {
       "target": "portable",
-      "icon": "public/logo.ico"
+      "icon": "public/logo.ico",
+      "legalTrademarks": "Rp Hobbyist"
     },
     "files": [
       "dist/**/*",
