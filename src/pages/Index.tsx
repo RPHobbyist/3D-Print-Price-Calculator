@@ -65,28 +65,28 @@ const Index = memo(() => {
 
       {/* Header */}
       <header className="border-b border-border glass sticky top-0 z-50 shadow-card">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+        <div className="container mx-auto px-4 py-3 md:py-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-3 w-full sm:w-auto justify-center sm:justify-start">
               <a href="https://linktr.ee/RPHobbyist" target="_blank" rel="noopener noreferrer" className="hover-lift flex-shrink-0">
-                <img src={logo} alt="Rp Hobbyist" className="h-16 max-w-80 w-auto object-contain" />
+                <img src={logo} alt="Rp Hobbyist" className="h-10 sm:h-14 md:h-16 w-auto object-contain" />
               </a>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground tracking-tight">3D Print Price Calculator</h1>
-                <p className="text-sm text-muted-foreground">
+              <div className="text-center sm:text-left">
+                <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground tracking-tight">3D Print Price Calculator</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
                   by <a href="https://linktr.ee/RPHobbyist" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">Rp Hobbyist</a> • Professional pricing for FDM & Resin
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-center">
               <CurrencySelector />
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleReset}
-                className="hover:bg-secondary"
+                className="hover:bg-secondary text-xs sm:text-sm"
               >
-                <RotateCcw className="w-4 h-4 mr-2" />
+                <RotateCcw className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                 Reset
               </Button>
               <NavLink to="/settings">Settings</NavLink>
@@ -96,7 +96,7 @@ const Index = memo(() => {
       </header>
 
 
-      <main className="container mx-auto px-4 py-8 relative">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 relative">
         {/* Stats Dashboard */}
         {stats.totalQuotes > 0 && (
           <div className="mb-8">
@@ -104,35 +104,35 @@ const Index = memo(() => {
           </div>
         )}
 
-        <div className="grid lg:grid-cols-[1fr_380px] gap-8">
+        <div className="grid lg:grid-cols-[1fr_380px] gap-4 sm:gap-8">
           {/* Calculator Section */}
           <div className="space-y-6 animate-fade-in">
             <Card className="shadow-elevated border-border bg-card overflow-hidden hover-glow">
               <Tabs defaultValue="fdm" className="w-full">
-                <div className="border-b border-border px-6 pt-6">
-                  <TabsList className="bg-secondary/50 p-1.5 rounded-xl">
+                <div className="border-b border-border px-3 sm:px-6 pt-4 sm:pt-6">
+                  <TabsList className="bg-secondary/50 p-1 sm:p-1.5 rounded-xl w-full sm:w-auto">
                     <TabsTrigger
                       value="fdm"
-                      className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-card rounded-lg px-6 py-2.5 transition-all duration-200"
+                      className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-card rounded-lg px-3 sm:px-6 py-2 sm:py-2.5 transition-all duration-200 text-xs sm:text-sm flex-1 sm:flex-none"
                     >
-                      <Printer className="w-4 h-4 mr-2" />
+                      <Printer className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                       FDM Printing
                     </TabsTrigger>
                     <TabsTrigger
                       value="resin"
-                      className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-card rounded-lg px-6 py-2.5 transition-all duration-200"
+                      className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-card rounded-lg px-3 sm:px-6 py-2 sm:py-2.5 transition-all duration-200 text-xs sm:text-sm flex-1 sm:flex-none"
                     >
-                      <Printer className="w-4 h-4 mr-2" />
+                      <Printer className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                       Resin Printing
                     </TabsTrigger>
                   </TabsList>
                 </div>
 
-                <TabsContent value="fdm" className="p-6 mt-0 animate-fade-in">
+                <TabsContent value="fdm" className="p-3 sm:p-6 mt-0 animate-fade-in">
                   <FDMCalculatorTable key={`fdm-${resetKey}`} onCalculate={setQuoteData} />
                 </TabsContent>
 
-                <TabsContent value="resin" className="p-6 mt-0 animate-fade-in">
+                <TabsContent value="resin" className="p-3 sm:p-6 mt-0 animate-fade-in">
                   <ResinCalculatorTable key={`resin-${resetKey}`} onCalculate={setQuoteData} />
                 </TabsContent>
               </Tabs>

@@ -54,16 +54,15 @@ export const Footer = () => {
     return (
         <footer className="border-t border-border bg-card/50 backdrop-blur-sm mt-auto">
             <div className="container mx-auto px-4 py-6">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2 order-2 md:order-1">
-                        <span>Made with</span>
-                        <Heart className="w-4 h-4 text-purple-600 fill-purple-600 animate-pulse" />
-                        <span>by <a href="https://linktr.ee/RPHobbyist" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors underline-offset-2 hover:underline">Rp Hobbyist</a></span>
-                        <span className="text-muted-foreground/50">•</span>
-                        <span className="text-xs">🔒 Your privacy matters — No user data is collected or stored on external servers</span>
-                    </div>
+                <div className="flex items-center justify-between gap-4 text-sm text-muted-foreground">
+                    {/* Left side items */}
+                    <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-2">
+                            <span>Made with</span>
+                            <Heart className="w-4 h-4 text-purple-600 fill-purple-600 animate-pulse" />
+                            <span>by <a href="https://linktr.ee/RPHobbyist" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors underline-offset-2 hover:underline">Rp Hobbyist</a></span>
+                        </div>
 
-                    <div className="flex items-center gap-6 order-1 md:order-2">
                         <Dialog>
                             <DialogTrigger asChild>
                                 <button className="flex items-center gap-1.5 hover:text-primary transition-colors group cursor-pointer bg-transparent border-0 p-0 text-sm font-normal">
@@ -96,6 +95,11 @@ export const Footer = () => {
                         </a>
 
                         <FeatureSuggestion />
+                    </div>
+
+                    {/* Center: Privacy notice */}
+                    <div className="text-xs text-muted-foreground/80">
+                        🔒 Your privacy matters — No user data is collected or stored on external servers
                     </div>
                 </div>
             </div>
