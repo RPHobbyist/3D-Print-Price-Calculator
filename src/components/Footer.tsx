@@ -54,9 +54,9 @@ export const Footer = () => {
     return (
         <footer className="border-t border-border bg-card/50 backdrop-blur-sm mt-auto">
             <div className="container mx-auto px-4 py-6">
-                <div className="flex items-center justify-between gap-4 text-sm text-muted-foreground">
-                    {/* Left side items */}
-                    <div className="flex items-center gap-6">
+                <div className="flex flex-col gap-4 text-sm text-muted-foreground">
+                    {/* Top row: Links and credits */}
+                    <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:gap-6">
                         <div className="flex items-center gap-2">
                             <span>Made with</span>
                             <Heart className="w-4 h-4 text-purple-600 fill-purple-600 animate-pulse" />
@@ -66,7 +66,7 @@ export const Footer = () => {
                         <Dialog>
                             <DialogTrigger asChild>
                                 <button className="flex items-center gap-1.5 hover:text-primary transition-colors group cursor-pointer bg-transparent border-0 p-0 text-sm font-normal">
-                                    <span className="border-b border-transparent group-hover:border-primary/50 transition-colors">MIT Open Source License</span>
+                                    <span className="border-b border-transparent group-hover:border-primary/50 transition-colors">MIT License</span>
                                 </button>
                             </DialogTrigger>
                             <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -97,9 +97,9 @@ export const Footer = () => {
                         <FeatureSuggestion />
                     </div>
 
-                    {/* Center: Privacy notice */}
-                    <div className="text-xs text-muted-foreground/80">
-                        🔒 Your privacy matters — No user data is collected or stored on external servers
+                    {/* Privacy notice - centered below */}
+                    <div className="text-xs text-muted-foreground/80 text-center">
+                        🔒 Your privacy matters — No data collected or stored externally
                     </div>
                 </div>
             </div>

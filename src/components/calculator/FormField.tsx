@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { TableCell, TableRow } from "@/components/ui/table";
+
 
 interface FormFieldProps {
   label: string;
@@ -11,12 +11,12 @@ interface FormFieldProps {
 }
 
 export const FormFieldRow = memo(({ label, required, highlight, children }: FormFieldProps) => (
-  <TableRow className={`hover:bg-muted/30 transition-colors ${highlight ? 'bg-accent/5' : ''}`}>
-    <TableCell className="font-medium">
+  <div className={`grid grid-cols-1 sm:grid-cols-[180px_1fr] gap-1 sm:gap-4 py-3 px-2 sm:px-4 items-start sm:items-center border-b border-border/50 hover:bg-muted/30 transition-colors ${highlight ? 'bg-accent/5' : ''}`}>
+    <div className="font-medium text-sm sm:text-base">
       {label} {required && <span className="text-destructive">*</span>}
-    </TableCell>
-    <TableCell>{children}</TableCell>
-  </TableRow>
+    </div>
+    <div>{children}</div>
+  </div>
 ));
 
 FormFieldRow.displayName = "FormFieldRow";

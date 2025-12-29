@@ -1,6 +1,5 @@
 import { memo } from "react";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Calculator, Sparkles } from "lucide-react";
 
 interface QuoteCalculatorProps {
@@ -27,15 +26,9 @@ export const QuoteCalculator = memo(({ loading, onCalculate, children, uploadSec
       {uploadSection}
 
       <div className="border border-border rounded-xl overflow-hidden shadow-card">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead className="w-1/3 font-semibold">Parameter</TableHead>
-              <TableHead className="font-semibold">Value</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>{children}</TableBody>
-        </Table>
+        <div className="divide-y divide-border/50">
+          {children}
+        </div>
       </div>
 
       <Button
