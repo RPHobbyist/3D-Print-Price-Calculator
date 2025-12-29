@@ -2,8 +2,6 @@
 
 A professional, open-source 3D printing price calculator and quote management tool by **Rp Hobbyist**. This application allows users to calculate costs for both FDM and Resin printing, manage materials and machines, and track quotes.
 
-3d-printing #costcalculator #pricingtool #filament #3dprinter #quotegenerator #maker #additivemanufacturing #priceestimation #printfarm #pricecalcualtorfor3dprint
-
 🔗 **[Visit Rp Hobbyist](https://linktr.ee/RPHobbyist)**
 
 ## Features
