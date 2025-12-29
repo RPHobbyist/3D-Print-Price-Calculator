@@ -52,56 +52,56 @@ import { Button } from "@/components/ui/button";
 
 export const Footer = () => {
     return (
-        <footer className="border-t border-border bg-card/50 backdrop-blur-sm mt-auto">
-            <div className="container mx-auto px-4 py-6">
-                <div className="flex flex-col gap-4 text-sm text-muted-foreground">
-                    {/* Top row: Links and credits */}
-                    <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:gap-6">
-                        <div className="flex items-center gap-2">
-                            <span>Made with</span>
-                            <Heart className="w-4 h-4 text-purple-600 fill-purple-600 animate-pulse" />
-                            <span>by <a href="https://linktr.ee/RPHobbyist" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors underline-offset-2 hover:underline">Rp Hobbyist</a></span>
-                        </div>
-
-                        <Dialog>
-                            <DialogTrigger asChild>
-                                <button className="flex items-center gap-1.5 hover:text-primary transition-colors group cursor-pointer bg-transparent border-0 p-0 text-sm font-normal">
-                                    <span className="border-b border-transparent group-hover:border-primary/50 transition-colors">MIT License</span>
-                                </button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                                <DialogHeader>
-                                    <DialogTitle>MIT License</DialogTitle>
-                                </DialogHeader>
-                                <div className="mt-4 whitespace-pre-wrap font-mono text-sm bg-muted/50 p-4 rounded-md overflow-x-auto">
-                                    {MIT_LICENSE_TEXT}
-                                </div>
-                                <div className="flex justify-end mt-4">
-                                    <DialogTrigger asChild>
-                                        <Button variant="outline">Close</Button>
-                                    </DialogTrigger>
-                                </div>
-                            </DialogContent>
-                        </Dialog>
-
-                        <a
-                            href={GITHUB_URL}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 hover:text-primary transition-colors group"
-                        >
-                            <GithubIcon />
-                            <span className="border-b border-transparent group-hover:border-primary/50 transition-colors">GitHub</span>
-                        </a>
-
-                        <FeatureSuggestion />
-                    </div>
-
-                    {/* Privacy notice - centered below */}
-                    <div className="text-xs text-muted-foreground/80 text-center">
-                        🔒 Your privacy matters — No data collected or stored externally
-                    </div>
+        <footer className="border-t border-border bg-card/50 backdrop-blur-sm mt-auto px-6 py-1 flex items-center justify-between text-xs text-muted-foreground">
+            {/* Left: Links and credits */}
+            <div className="flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-1">
+                    <span>Made with</span>
+                    <Heart className="w-3.5 h-3.5 text-purple-600 fill-purple-600 animate-pulse" />
+                    <span>by <a href="https://linktr.ee/RPHobbyist" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors underline-offset-2 hover:underline">Rp Hobbyist</a></span>
                 </div>
+
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <button className="hover:text-primary transition-colors cursor-pointer bg-transparent border-0 p-0 font-normal whitespace-nowrap">
+                            MIT Open Source License
+                        </button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle>MIT License</DialogTitle>
+                        </DialogHeader>
+                        <div className="mt-4 whitespace-pre-wrap font-mono text-sm bg-muted/50 p-4 rounded-md overflow-x-auto">
+                            {MIT_LICENSE_TEXT}
+                        </div>
+                        <div className="flex justify-end mt-4">
+                            <DialogTrigger asChild>
+                                <Button variant="outline">Close</Button>
+                            </DialogTrigger>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+
+                <a
+                    href={GITHUB_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 hover:text-primary transition-colors whitespace-nowrap"
+                >
+                    <GithubIcon />
+                    GitHub
+                </a>
+
+                <FeatureSuggestion />
+            </div>
+
+            {/* Right: Privacy notice */}
+            <div className="flex items-center gap-2 text-muted-foreground/80 whitespace-nowrap hidden sm:flex">
+                <span>🔒</span>
+                <span>Your privacy matters — No user data is collected or stored on external servers</span>
+            </div>
+            <div className="sm:hidden text-center w-full mt-2 text-[10px] text-muted-foreground/60">
+                🔒 Privacy: Local storage only
             </div>
         </footer>
     );

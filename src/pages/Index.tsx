@@ -65,11 +65,11 @@ const Index = memo(() => {
 
       {/* Header */}
       <header className="border-b border-border glass sticky top-0 z-50 shadow-card">
-        <div className="container mx-auto px-4 py-3 md:py-4">
+        <div className="container mx-auto px-4 py-2 md:py-3">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-3 w-full sm:w-auto justify-center sm:justify-start">
               <a href="https://linktr.ee/RPHobbyist" target="_blank" rel="noopener noreferrer" className="hover-lift flex-shrink-0">
-                <img src={logo} alt="Rp Hobbyist" className="h-10 sm:h-14 md:h-16 w-auto object-contain" />
+                <img src={logo} alt="Rp Hobbyist" className="h-8 sm:h-10 md:h-12 w-auto object-contain" />
               </a>
               <div className="text-center sm:text-left">
                 <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground tracking-tight">3D Print Price Calculator</h1>
