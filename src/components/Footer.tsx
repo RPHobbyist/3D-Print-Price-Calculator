@@ -1,5 +1,7 @@
 import { Heart } from "lucide-react";
 import { FeatureSuggestion } from "./FeatureSuggestion";
+import { MIT_LICENSE_TEXT, GITHUB_URL } from "@/lib/constants";
+import { Link } from "react-router-dom";
 
 // GitHub icon component (lucide-react doesn't have GitHub icon)
 const GithubIcon = () => (
@@ -93,6 +95,9 @@ export const Footer = () => {
                 </a>
 
                 <FeatureSuggestion />
+                <Link to="/print-management" className="hover:text-primary transition-colors hover:underline">
+                    Print Management
+                </Link>
             </div>
 
             {/* Right: Privacy notice */}

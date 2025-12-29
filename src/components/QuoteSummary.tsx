@@ -2,12 +2,14 @@ import { memo, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { FileText, Download, Save, Sparkles, FileDown, Package } from "lucide-react";
+import { FileText, Download, Save, Sparkles, FileDown, Package, Factory } from "lucide-react";
 import { QuoteData } from "@/types/quote";
 import { toast } from "sonner";
 import { useCurrency } from "@/components/CurrencyProvider";
 import { printQuotePDF } from "@/lib/pdfGenerator";
 import { useBatchQuote } from "@/contexts/BatchQuoteContext";
+import { useProduction } from "@/contexts/ProductionContext";
+import { useCalculatorData } from "@/hooks/useCalculatorData";
 
 interface QuoteSummaryProps {
   quoteData: QuoteData | null;
@@ -17,6 +19,11 @@ interface QuoteSummaryProps {
 const QuoteSummary = memo(({ quoteData, onSaveQuote }: QuoteSummaryProps) => {
   const { currency, formatPrice } = useCurrency();
   const { addItem, batchItems } = useBatchQuote();
+  const { addJob } = useProduction();
+
+  // Fetch machines to resolve ID for auto-assignment
+  const { machines: fdmMachines } = useCalculatorData({ printType: 'FDM' });
+  const { machines: resinMachines } = useCalculatorData({ printType: 'Resin' });
 
   const handleExport = useCallback(() => {
     if (!quoteData) return;
@@ -78,6 +85,24 @@ Generated: ${new Date().toLocaleString()}
     addItem(quoteData);
     toast.success(`"${quoteData.projectName || 'Quote'}" added to batch!`);
   }, [quoteData, addItem]);
+
+  const handleSendToProduction = useCallback(() => {
+    if (!quoteData) return;
+
+    // Find matching machine ID
+    const allMachines = [...fdmMachines, ...resinMachines];
+    const machineName = quoteData.parameters.machineName || quoteData.parameters.machine; // Handle inconsistent naming if any
+    const matchedMachine = allMachines.find(m => m.name === machineName);
+
+    // Pass machineId if found, otherwise null (unassigned)
+    addJob(quoteData, matchedMachine?.id || null);
+
+    if (matchedMachine) {
+      toast.success(`Job sent to ${matchedMachine.name} queue`);
+    } else {
+      toast.success("Job added to Unassigned Queue");
+    }
+  }, [quoteData, addJob, fdmMachines, resinMachines]);
 
   if (!quoteData) {
     return (
@@ -189,6 +214,15 @@ Generated: ${new Date().toLocaleString()}
           >
             <Package className="w-4 h-4 mr-2" />
             Add to Batch {batchItems.length > 0 && `(${batchItems.length})`}
+          </Button>
+
+          <Button
+            onClick={handleSendToProduction}
+            variant="outline"
+            className="w-full border-blue-500/50 text-blue-600 hover:bg-blue-50 hover:border-blue-500 transition-colors"
+          >
+            <Factory className="w-4 h-4 mr-2" />
+            Send to Production
           </Button>
 
           <Button

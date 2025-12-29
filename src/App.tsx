@@ -6,11 +6,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter, Routes, Route } from "react-router-dom";
 import { CurrencyProvider } from "@/components/CurrencyProvider";
 import { BatchQuoteProvider } from "@/contexts/BatchQuoteContext";
+import { ProductionProvider } from "@/contexts/ProductionContext";
 
 // Lazy load pages for code splitting
 const Index = lazy(() => import("./pages/Index"));
 const Settings = lazy(() => import("./pages/Settings"));
 const SavedQuotes = lazy(() => import("./pages/SavedQuotes"));
+const PrintManagement = lazy(() => import("./pages/PrintManagement"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Loading fallback component
@@ -42,16 +44,19 @@ const App = () => (
       <Sonner />
       <CurrencyProvider>
         <BatchQuoteProvider>
-          <HashRouter>
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="/saved-quotes" element={<SavedQuotes />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
-          </HashRouter>
+          <ProductionProvider>
+            <HashRouter>
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/saved-quotes" element={<SavedQuotes />} />
+                  <Route path="/print-management" element={<PrintManagement />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+            </HashRouter>
+          </ProductionProvider>
         </BatchQuoteProvider>
       </CurrencyProvider>
     </TooltipProvider>
