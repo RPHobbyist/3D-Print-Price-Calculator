@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import FDMCalculatorTable from "@/components/FDMCalculatorTable";
 import ResinCalculatorTable from "@/components/ResinCalculatorTable";
 import QuoteSummary from "@/components/QuoteSummary";
+import BatchSummary from "@/components/BatchSummary";
 import SavedQuotesTable from "@/components/SavedQuotesTable";
 import { QuotesDashboard } from "@/components/dashboard/QuotesDashboard";
 import { useNavigate } from "react-router-dom";
@@ -140,8 +141,11 @@ const Index = memo(() => {
           </div>
 
           {/* Quote Summary Section */}
-          <div className="lg:sticky lg:top-24 h-fit animate-fade-in stagger-2">
+          <div className="lg:sticky lg:top-24 h-fit animate-fade-in stagger-2 space-y-6">
             <QuoteSummary quoteData={quoteData} onSaveQuote={handleSaveQuote} />
+
+            {/* Batch Queue */}
+            <BatchSummary />
           </div>
         </div>
 

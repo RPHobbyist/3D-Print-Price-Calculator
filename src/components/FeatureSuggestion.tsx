@@ -57,10 +57,10 @@ export const FeatureSuggestion = () => {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary">
-                    <Lightbulb className="w-4 h-4 mr-2" />
+                <button className="flex items-center gap-1 hover:text-primary transition-colors cursor-pointer bg-transparent border-0 p-0 font-normal whitespace-nowrap text-inherit h-auto">
+                    <Lightbulb className="w-3.5 h-3.5" />
                     Submit Suggestion
-                </Button>
+                </button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md border border-black/20">
                 <DialogHeader>

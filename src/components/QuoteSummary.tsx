@@ -2,11 +2,12 @@ import { memo, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { FileText, Download, Save, Sparkles, FileDown } from "lucide-react";
+import { FileText, Download, Save, Sparkles, FileDown, Package } from "lucide-react";
 import { QuoteData } from "@/types/quote";
 import { toast } from "sonner";
 import { useCurrency } from "@/components/CurrencyProvider";
 import { printQuotePDF } from "@/lib/pdfGenerator";
+import { useBatchQuote } from "@/contexts/BatchQuoteContext";
 
 interface QuoteSummaryProps {
   quoteData: QuoteData | null;
@@ -15,6 +16,7 @@ interface QuoteSummaryProps {
 
 const QuoteSummary = memo(({ quoteData, onSaveQuote }: QuoteSummaryProps) => {
   const { currency, formatPrice } = useCurrency();
+  const { addItem, batchItems } = useBatchQuote();
 
   const handleExport = useCallback(() => {
     if (!quoteData) return;
@@ -70,6 +72,12 @@ Generated: ${new Date().toLocaleString()}
       toast.error("Failed to generate PDF. Please allow popups.");
     }
   }, [quoteData, currency.symbol]);
+
+  const handleAddToBatch = useCallback(() => {
+    if (!quoteData) return;
+    addItem(quoteData);
+    toast.success(`"${quoteData.projectName || 'Quote'}" added to batch!`);
+  }, [quoteData, addItem]);
 
   if (!quoteData) {
     return (
@@ -172,6 +180,15 @@ Generated: ${new Date().toLocaleString()}
           >
             <Save className="w-4 h-4 mr-2" />
             Save Quote
+          </Button>
+
+          <Button
+            onClick={handleAddToBatch}
+            variant="outline"
+            className="w-full border-purple-500/50 text-purple-600 hover:bg-purple-50 hover:border-purple-500 transition-colors"
+          >
+            <Package className="w-4 h-4 mr-2" />
+            Add to Batch {batchItems.length > 0 && `(${batchItems.length})`}
           </Button>
 
           <Button

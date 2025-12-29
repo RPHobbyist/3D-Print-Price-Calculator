@@ -52,7 +52,7 @@ import { Button } from "@/components/ui/button";
 
 export const Footer = () => {
     return (
-        <footer className="border-t border-border bg-card/50 backdrop-blur-sm mt-auto px-6 py-1 flex items-center justify-between text-xs text-muted-foreground">
+        <footer className="border-t border-border bg-card/50 backdrop-blur-sm mt-auto px-6 py-2 flex items-center justify-between text-xs text-muted-foreground">
             {/* Left: Links and credits */}
             <div className="flex flex-wrap items-center gap-4">
                 <div className="flex items-center gap-1">
