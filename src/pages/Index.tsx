@@ -1,4 +1,4 @@
-import { useState, useCallback, memo } from "react";
+import { useState, useCallback, memo, lazy, Suspense } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Printer, Sparkles, RotateCcw } from "lucide-react";
@@ -7,10 +7,10 @@ import FDMCalculatorTable from "@/components/FDMCalculatorTable";
 import ResinCalculatorTable from "@/components/ResinCalculatorTable";
 import QuoteSummary from "@/components/QuoteSummary";
 import BatchSummary from "@/components/BatchSummary";
-import SavedQuotesTable from "@/components/SavedQuotesTable";
-import { QuotesDashboard } from "@/components/dashboard/QuotesDashboard";
+const SavedQuotesTable = lazy(() => import("@/components/SavedQuotesTable"));
+const QuotesDashboard = lazy(() => import("@/components/dashboard/QuotesDashboard").then(module => ({ default: module.QuotesDashboard })));
 import { useNavigate } from "react-router-dom";
-import logo from "@/assets/logo.png";
+import { SYSTEM_CONFIG } from "@/lib/core-system";
 import { NavLink } from "@/components/NavLink";
 import { Footer } from "@/components/Footer";
 import { CurrencySelector } from "@/components/CurrencySelector";
@@ -69,13 +69,13 @@ const Index = memo(() => {
         <div className="container mx-auto px-4 py-2 md:py-3">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-3 w-full sm:w-auto justify-center sm:justify-start">
-              <a href="https://linktr.ee/RPHobbyist" target="_blank" rel="noopener noreferrer" className="hover-lift flex-shrink-0">
-                <img src={logo} alt="Rp Hobbyist" className="h-8 sm:h-10 md:h-12 w-auto object-contain" />
+              <a href={SYSTEM_CONFIG.vendorLink} target="_blank" rel="noopener noreferrer" className="hover-lift flex-shrink-0">
+                <img src={SYSTEM_CONFIG.logo} alt={SYSTEM_CONFIG.vendor} className="h-8 sm:h-10 md:h-12 w-auto object-contain" />
               </a>
               <div className="text-center sm:text-left">
-                <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground tracking-tight">3D Print Price Calculator</h1>
+                <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground tracking-tight">{SYSTEM_CONFIG.appName}</h1>
                 <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
-                  by <a href="https://linktr.ee/RPHobbyist" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">Rp Hobbyist</a> • Professional pricing for FDM & Resin
+                  by <a href={SYSTEM_CONFIG.vendorLink} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">{SYSTEM_CONFIG.vendor}</a> • Professional pricing for FDM & Resin
                 </p>
               </div>
             </div>
@@ -101,7 +101,9 @@ const Index = memo(() => {
         {/* Stats Dashboard */}
         {stats.totalQuotes > 0 && (
           <div className="mb-8">
-            <QuotesDashboard stats={stats} />
+            <Suspense fallback={<div className="h-32 bg-card/50 rounded-xl animate-pulse" />}>
+              <QuotesDashboard stats={stats} />
+            </Suspense>
           </div>
         )}
 
@@ -161,12 +163,23 @@ const Index = memo(() => {
               </div>
             </Card>
           ) : (
-            <SavedQuotesTable
-              quotes={quotes}
-              onDeleteQuote={handleDeleteQuote}
-              onUpdateNotes={handleUpdateNotes}
-              onDuplicateQuote={handleDuplicateQuote}
-            />
+            <Suspense fallback={
+              <Card className="p-10 shadow-card">
+                <div className="flex flex-col items-center justify-center gap-4">
+                  <div className="relative">
+                    <Sparkles className="w-8 h-8 text-primary animate-pulse-soft" />
+                  </div>
+                  <span className="text-muted-foreground font-medium">Loading component...</span>
+                </div>
+              </Card>
+            }>
+              <SavedQuotesTable
+                quotes={quotes}
+                onDeleteQuote={handleDeleteQuote}
+                onUpdateNotes={handleUpdateNotes}
+                onDuplicateQuote={handleDuplicateQuote}
+              />
+            </Suspense>
           )}
         </div>
       </main>

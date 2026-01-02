@@ -54,3 +54,45 @@ export function addVisibilityTag(description: string, isVisible: boolean): strin
 
   return finalDescription;
 }
+
+/**
+ * Calculates total print time from a string format (e.g., "1h 30m") and quantity.
+ */
+export function calculateTotalTime(timeStr: string | undefined, quantity: number): string {
+  if (!timeStr) return '0h';
+  if (quantity <= 1) return timeStr;
+
+  // Parse time string
+  let totalMinutes = 0;
+
+  // Handle "1h 30m" format
+  if (timeStr.includes('h') && timeStr.includes('m')) {
+      const hMatch = timeStr.match(/(\d+(\.\d+)?)h/);
+      const mMatch = timeStr.match(/(\d+(\.\d+)?)m/);
+      if (hMatch) totalMinutes += parseFloat(hMatch[1]) * 60;
+      if (mMatch) totalMinutes += parseFloat(mMatch[1]);
+  }
+  // Handle "1.5h" or "45m" formats
+  else if (timeStr.includes('h')) {
+      const h = parseFloat(timeStr.replace('h', ''));
+      if (!isNaN(h)) totalMinutes = h * 60;
+  } else if (timeStr.includes('m')) {
+      const m = parseFloat(timeStr.replace('m', ''));
+      if (!isNaN(m)) totalMinutes = m;
+  } else {
+      // Fallback if just a number (assume hours?) or unknown
+      const val = parseFloat(timeStr);
+      if (!isNaN(val)) totalMinutes = val * 60;
+  }
+
+  // Multiply by quantity
+  totalMinutes *= quantity;
+
+  // Format back to string
+  const hours = Math.floor(totalMinutes / 60);
+  const mins = Math.round(totalMinutes % 60);
+
+  if (hours > 0 && mins > 0) return `${hours}h ${mins}m`;
+  if (hours > 0) return `${hours}h`;
+  return `${mins}m`;
+}

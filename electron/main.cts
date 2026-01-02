@@ -32,6 +32,7 @@ function createWindow() {
             preload: path.join(__dirname, 'preload.cjs'),
             nodeIntegration: false,
             contextIsolation: true,
+            sandbox: true,
         },
         title: "3D Print Price Calculator",
         icon: appIcon

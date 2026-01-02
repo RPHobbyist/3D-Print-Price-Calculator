@@ -1,7 +1,11 @@
 import { Heart } from "lucide-react";
 import { FeatureSuggestion } from "./FeatureSuggestion";
-import { MIT_LICENSE_TEXT, GITHUB_URL } from "@/lib/constants";
 import { Link } from "react-router-dom";
+import { lazy, Suspense } from "react";
+import { SYSTEM_CONFIG } from "@/lib/core-system";
+
+// Lazy load the license dialog to reduce initial bundle size
+const LicenseDialog = lazy(() => import("./LicenseDialog").then(m => ({ default: m.LicenseDialog })));
 
 // GitHub icon component (lucide-react doesn't have GitHub icon)
 const GithubIcon = () => (
@@ -17,41 +21,6 @@ const GithubIcon = () => (
     </svg>
 );
 
-// GitHub repository URL
-const GITHUB_URL = "https://github.com/RPHobbyist/3D-Print-Price-Calculator";
-
-const MIT_LICENSE_TEXT = `MIT License
-
-Copyright (c) 2025 Rp Hobbyist
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.`;
-
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-    DialogDescription,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-
 export const Footer = () => {
     return (
         <footer className="border-t border-border bg-card/50 backdrop-blur-sm mt-auto px-6 py-2 flex items-center justify-between text-xs text-muted-foreground">
@@ -60,32 +29,15 @@ export const Footer = () => {
                 <div className="flex items-center gap-1">
                     <span>Made with</span>
                     <Heart className="w-3.5 h-3.5 text-purple-600 fill-purple-600 animate-pulse" />
-                    <span>by <a href="https://linktr.ee/RPHobbyist" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors underline-offset-2 hover:underline">Rp Hobbyist</a></span>
+                    <span>by <a href={SYSTEM_CONFIG.vendorLink} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors underline-offset-2 hover:underline">{SYSTEM_CONFIG.vendor}</a></span>
                 </div>
 
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <button className="hover:text-primary transition-colors cursor-pointer bg-transparent border-0 p-0 font-normal whitespace-nowrap">
-                            MIT Open Source License
-                        </button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                        <DialogHeader>
-                            <DialogTitle>MIT License</DialogTitle>
-                        </DialogHeader>
-                        <div className="mt-4 whitespace-pre-wrap font-mono text-sm bg-muted/50 p-4 rounded-md overflow-x-auto">
-                            {MIT_LICENSE_TEXT}
-                        </div>
-                        <div className="flex justify-end mt-4">
-                            <DialogTrigger asChild>
-                                <Button variant="outline">Close</Button>
-                            </DialogTrigger>
-                        </div>
-                    </DialogContent>
-                </Dialog>
+                <Suspense fallback={<span className="text-muted-foreground/60">MIT Open Source License</span>}>
+                    <LicenseDialog />
+                </Suspense>
 
                 <a
-                    href={GITHUB_URL}
+                    href={SYSTEM_CONFIG.githubUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1 hover:text-primary transition-colors whitespace-nowrap"
@@ -113,3 +65,4 @@ export const Footer = () => {
 };
 
 export default Footer;
+

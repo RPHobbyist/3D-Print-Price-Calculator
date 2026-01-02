@@ -6,7 +6,7 @@ import MachinesManager from "@/components/settings/MachinesManager";
 import ConstantsManager from "@/components/settings/ConstantsManager";
 import SettingsExportImport from "@/components/settings/SettingsExportImport";
 import { useNavigate, useLocation } from "react-router-dom";
-import logo from "@/assets/logo.png";
+import { SYSTEM_CONFIG } from "@/lib/core-system";
 import { NavLink } from "@/components/NavLink";
 import { Footer } from "@/components/Footer";
 import { CurrencySelector } from "@/components/CurrencySelector";
@@ -21,14 +21,15 @@ const Settings = () => {
       <header className="border-b border-border glass sticky top-0 z-50 shadow-card">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
+
             <div className="flex items-center gap-4">
-              <a href="https://linktr.ee/RPHobbyist" target="_blank" rel="noopener noreferrer" className="hover-lift flex-shrink-0">
-                <img src={logo} alt="Rp Hobbyist" className="h-16 max-w-80 w-auto object-contain" />
+              <a href={SYSTEM_CONFIG.vendorLink} target="_blank" rel="noopener noreferrer" className="hover-lift flex-shrink-0">
+                <img src={SYSTEM_CONFIG.logo} alt={SYSTEM_CONFIG.vendor} className="h-16 max-w-80 w-auto object-contain" />
               </a>
               <div>
                 <h1 className="text-2xl font-bold text-foreground tracking-tight">Settings & Database</h1>
                 <p className="text-sm text-muted-foreground">
-                  by <a href="https://linktr.ee/RPHobbyist" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">Rp Hobbyist</a> • Manage materials, machines, and constants
+                  by <a href={SYSTEM_CONFIG.vendorLink} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">{SYSTEM_CONFIG.vendor}</a> • Manage materials, machines, and constants
                 </p>
               </div>
             </div>

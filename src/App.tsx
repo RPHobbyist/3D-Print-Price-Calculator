@@ -4,9 +4,10 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter, Routes, Route } from "react-router-dom";
-import { CurrencyProvider } from "@/components/CurrencyProvider";
 import { BatchQuoteProvider } from "@/contexts/BatchQuoteContext";
 import { ProductionProvider } from "@/contexts/ProductionContext";
+import { CurrencyProvider } from "@/components/CurrencyProvider";
+import { useAppProtection } from "@/hooks/useAppProtection";
 
 // Lazy load pages for code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -37,30 +38,36 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <CurrencyProvider>
-        <BatchQuoteProvider>
-          <ProductionProvider>
-            <HashRouter>
-              <Suspense fallback={<PageLoader />}>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/saved-quotes" element={<SavedQuotes />} />
-                  <Route path="/print-management" element={<PrintManagement />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Suspense>
-            </HashRouter>
-          </ProductionProvider>
-        </BatchQuoteProvider>
-      </CurrencyProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  // Enable UI protection (disable context menu, F12, etc.)
+  useAppProtection();
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <CurrencyProvider>
+          <BatchQuoteProvider>
+            <ProductionProvider>
+              <HashRouter>
+                <Suspense fallback={<PageLoader />}>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/settings" element={<Settings />} />
+                    <Route path="/saved-quotes" element={<SavedQuotes />} />
+                    <Route path="/print-management" element={<PrintManagement />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </Suspense>
+              </HashRouter>
+            </ProductionProvider>
+          </BatchQuoteProvider>
+        </CurrencyProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+
+};
 
 export default App;
