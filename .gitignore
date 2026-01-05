@@ -29,3 +29,5 @@ test-assets
 *.njsproj
 *.sln
 *.sw?
+
+electron/
