@@ -68,6 +68,7 @@ export const calculateFDMQuote = ({
     printType: "FDM",
     projectName: formData.projectName,
     printColour: formData.printColour,
+    filePath: formData.filePath, // Include file path for printing
     parameters: {
       ...formData,
       materialName: material.name,

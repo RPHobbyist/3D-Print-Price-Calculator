@@ -40,7 +40,7 @@ const queryClient = new QueryClient({
 
 const App = () => {
   // Enable UI protection (disable context menu, F12, etc.)
-  useAppProtection();
+  // useAppProtection();
 
   return (
     <QueryClientProvider client={queryClient}>

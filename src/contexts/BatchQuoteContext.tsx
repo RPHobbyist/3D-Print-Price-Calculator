@@ -27,16 +27,16 @@ const STORAGE_KEY = 'batch_quote_items';
 export const BatchQuoteProvider = ({ children }: { children: ReactNode }) => {
     const [batchItems, setBatchItems] = useState<QuoteData[]>(() => {
         try {
-            const stored = sessionStorage.getItem(STORAGE_KEY);
+            const stored = localStorage.getItem(STORAGE_KEY);
             return stored ? JSON.parse(stored) : [];
         } catch {
             return [];
         }
     });
 
-    // Persist to sessionStorage whenever batchItems changes
+    // Persist to localStorage whenever batchItems changes
     useEffect(() => {
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(batchItems));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(batchItems));
     }, [batchItems]);
 
     const addItem = useCallback((item: QuoteData) => {

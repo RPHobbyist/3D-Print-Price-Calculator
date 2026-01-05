@@ -10,8 +10,21 @@ import { SYSTEM_CONFIG } from "@/lib/core-system";
 import { NavLink } from "@/components/NavLink";
 import { Footer } from "@/components/Footer";
 import { CurrencySelector } from "@/components/CurrencySelector";
+import { PrinterConnectionDialog } from "@/components/printer/PrinterConnectionDialog";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Wifi } from "lucide-react";
 
 const Settings = () => {
+  const [showPrinterDialog, setShowPrinterDialog] = useState(false);
+  const [connectedPrinter, setConnectedPrinter] = useState<any>(null);
+
+  useEffect(() => {
+    // Optional: Check if already connected on mount
+    if ('electronAPI' in window) {
+      // We could add an API to get current connection status if needed
+    }
+  }, []);
   return (
     <div className="min-h-screen bg-gradient-subtle flex flex-col">
       {/* Glow effect */}
@@ -34,6 +47,15 @@ const Settings = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 hidden md:flex"
+                onClick={() => setShowPrinterDialog(true)}
+              >
+                <Wifi className="w-4 h-4" />
+                {connectedPrinter ? `Connected: ${connectedPrinter.name || connectedPrinter.dev_name}` : "Connect Printer"}
+              </Button>
               <CurrencySelector />
               <NavLink to="/">Back to Calculator</NavLink>
             </div>
@@ -88,8 +110,14 @@ const Settings = () => {
         <SettingsExportImport />
       </main>
 
+      <PrinterConnectionDialog
+        open={showPrinterDialog}
+        onOpenChange={setShowPrinterDialog}
+        onConnected={setConnectedPrinter}
+      />
+
       <Footer />
-    </div>
+    </div >
   );
 };
 

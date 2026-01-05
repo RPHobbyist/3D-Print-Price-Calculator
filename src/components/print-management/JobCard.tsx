@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useRef } from "react";
 import { Draggable } from "@hello-pangea/dnd";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,8 @@ import { useCurrency } from "@/components/CurrencyProvider";
 import {
     Clock,
     MoreVertical,
+    Send,
+    Printer
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -20,11 +22,21 @@ import { calculateTotalTime } from "@/lib/utils";
 interface JobCardProps {
     job: ProductionJob;
     index: number;
+    isConnected?: boolean;
+    onSendFile?: (file: File | string, job: ProductionJob) => void;
+    printStatus?: {
+        state: string;
+        progress?: number;
+        remainingTime: number; // minutes
+    };
 }
 
-export const JobCard = memo(({ job, index }: JobCardProps) => {
+export const JobCard = memo(({ job, index, isConnected, onSendFile, printStatus }: JobCardProps) => {
     const { formatPrice } = useCurrency();
     const { removeJob } = useProduction();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // handleFileChange is no longer needed as the logic is inlined
 
     return (
         <Draggable draggableId={job.id} index={index}>
@@ -38,9 +50,15 @@ export const JobCard = memo(({ job, index }: JobCardProps) => {
                     style={provided.draggableProps.style}
                 >
                     {/* Status Stripe */}
-                    <div className={`absolute left-0 top-0 bottom-0 w-1 ${job.priority === 'high' ? 'bg-red-500' :
-                        job.priority === 'low' ? 'bg-blue-400' : 'bg-transparent group-hover:bg-primary/50'
+                    <div className={`absolute left-0 top-0 bottom-0 w-1 ${printStatus?.state === 'RUNNING' ? 'bg-amber-500 animate-pulse' :
+                        job.priority === 'high' ? 'bg-red-500' :
+                            job.priority === 'low' ? 'bg-blue-400' : 'bg-transparent group-hover:bg-primary/50'
                         }`} />
+
+                    {/* Warning Light Effect (border glow) if Printing */}
+                    {printStatus?.state === 'RUNNING' && (
+                        <div className="absolute inset-0 rounded-sm border-2 border-amber-500/50 animate-pulse pointer-events-none z-10" />
+                    )}
 
                     <div className="p-2 pl-3">
                         <div className="flex justify-between items-start gap-2 mb-1">
@@ -55,8 +73,63 @@ export const JobCard = memo(({ job, index }: JobCardProps) => {
                                     <DropdownMenuItem onClick={() => removeJob(job.id)} className="text-destructive text-xs">
                                         Remove Job
                                     </DropdownMenuItem>
+
+                                    {/* Print Plate Button - Always visible */}
+                                    {onSendFile && (
+                                        <DropdownMenuItem
+                                            onClick={() => {
+                                                if (printStatus?.state === 'RUNNING') return;
+                                                if (job.quote.filePath) {
+                                                    onSendFile(job.quote.filePath, job);
+                                                } else {
+                                                    fileInputRef.current?.click();
+                                                }
+                                            }}
+                                            disabled={printStatus?.state === 'RUNNING'}
+                                            className="text-xs"
+                                        >
+                                            <Printer className="w-3.5 h-3.5 mr-2" />
+                                            Print Plate
+                                        </DropdownMenuItem>
+                                    )}
+
+                                    {/* Send & Print - Only when connected */}
+                                    {isConnected && onSendFile && (
+                                        <DropdownMenuItem
+                                            onClick={() => {
+                                                if (printStatus?.state === 'RUNNING') return;
+                                                console.log('📁 JobCard - Job quote filePath:', job.quote.filePath);
+                                                if (job.quote.filePath) {
+                                                    console.log('✅ Using stored file path:', job.quote.filePath);
+                                                    onSendFile(job.quote.filePath, job);
+                                                } else {
+                                                    console.log('❌ No file path stored, opening file picker');
+                                                    fileInputRef.current?.click();
+                                                }
+                                            }}
+                                            disabled={printStatus?.state === 'RUNNING'}
+                                            className="text-xs"
+                                        >
+                                            <Send className="w-3.5 h-3.5 mr-2" />
+                                            {printStatus?.state === 'RUNNING' ? 'Printing...' : 'Send & Print'}
+                                        </DropdownMenuItem>
+                                    )}
                                 </DropdownMenuContent>
                             </DropdownMenu>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                className="hidden"
+                                accept=".gcode,.3mf"
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file && onSendFile) {
+                                        onSendFile(file, job);
+                                    }
+                                    // Reset input
+                                    e.target.value = '';
+                                }}
+                            />
                         </div>
 
                         <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-medium mb-2">
@@ -82,6 +155,31 @@ export const JobCard = memo(({ job, index }: JobCardProps) => {
                             </div>
                         </div>
                     </div>
+
+                    {/* Print Status / Timer */}
+                    {printStatus?.state === 'RUNNING' && (
+                        <div className="mt-2 pt-2 border-t border-border/40 space-y-1.5">
+                            <div className="flex justify-between items-center text-[10px]">
+                                <span className="text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1">
+                                    <span className="relative flex h-2 w-2">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                                    </span>
+                                    Printing
+                                </span>
+                                <span className="font-mono">{printStatus.progress}%</span>
+                            </div>
+                            <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                                <div
+                                    className="h-full bg-amber-500 transition-all duration-500 ease-out"
+                                    style={{ width: `${printStatus.progress}%` }}
+                                />
+                            </div>
+                            <div className="flex justify-end text-[10px] text-muted-foreground font-mono">
+                                -{printStatus.remainingTime}m remaining
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
         </Draggable>

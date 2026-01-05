@@ -27,6 +27,7 @@ const initialFormData: FDMFormData = {
   markupPercentage: "20",
   quantity: "1",
   selectedConsumableIds: [],
+  filePath: "", // Store uploaded file path
 };
 
 const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
@@ -85,6 +86,7 @@ const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
       }
     }
 
+    console.log('📁 FDMCalculatorTable - Received file path:', data.filePath);
     setFormData(prev => ({
       ...prev,
       projectName: data.fileName ? data.fileName.substring(0, data.fileName.lastIndexOf('.')) || data.fileName : prev.projectName,
@@ -93,6 +95,7 @@ const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
       machineId: matchedMachineId || prev.machineId,
       materialId: matchedMaterialId || prev.materialId,
       printColour: data.filamentColour || prev.printColour,
+      filePath: data.filePath || prev.filePath, // Store the file path
     }));
   }, [machines, materials]);
 
@@ -133,6 +136,7 @@ const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
       consumables: selectedConsumables,
     });
 
+    console.log('📁 FDMCalculatorTable - Quote created with filePath:', quoteData.filePath);
     onCalculate(quoteData);
     toast.success("Quote calculated successfully!");
   }, [formData, materials, machines, constants, getConstantValue, onCalculate]);

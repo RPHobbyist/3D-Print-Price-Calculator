@@ -38,9 +38,9 @@ const STORAGE_KEY = "preferred-currency";
 
 export const CurrencyProvider = ({ children }: CurrencyProviderProps) => {
     const [currency, setCurrencyState] = useState<Currency>(() => {
-        // Load from sessionStorage on initial render
+        // Load from localStorage on initial render
         if (typeof window !== "undefined") {
-            const saved = sessionStorage.getItem(STORAGE_KEY);
+            const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) {
                 const found = CURRENCIES.find(c => c.code === saved);
                 if (found) return found;
@@ -51,7 +51,7 @@ export const CurrencyProvider = ({ children }: CurrencyProviderProps) => {
 
     const setCurrency = (newCurrency: Currency) => {
         setCurrencyState(newCurrency);
-        sessionStorage.setItem(STORAGE_KEY, newCurrency.code);
+        localStorage.setItem(STORAGE_KEY, newCurrency.code);
     };
 
     const formatPrice = (amount: number): string => {

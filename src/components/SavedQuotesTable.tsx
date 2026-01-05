@@ -1,10 +1,11 @@
-import { useState, memo, useCallback } from "react";
+import { useState, memo, useCallback, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2, FileSpreadsheet, Edit, Eye, Database, AlertTriangle, Copy } from "lucide-react";
+import { Trash2, FileSpreadsheet, Edit, Eye, Database, AlertTriangle, Copy, Printer } from "lucide-react";
+import { PrintJobDialog } from "@/components/print-management/PrintJobDialog";
 import { QuoteData } from "@/types/quote";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
@@ -22,6 +23,58 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
   const [editNotes, setEditNotes] = useState("");
   const [viewingQuote, setViewingQuote] = useState<QuoteData | null>(null);
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
+  const [sendingQuote, setSendingQuote] = useState<QuoteData | null>(null);
+  const [printers, setPrinters] = useState<any[]>([]);
+  const [connections, setConnections] = useState<any>({});
+
+  const fetchPrinters = useCallback(async () => {
+    if ('electronAPI' in window) {
+      try {
+        const devices = await (window as any).electronAPI.bambu.getDevices();
+        setPrinters(devices);
+        const conns = await (window as any).electronAPI.printer.getConnectedPrinters();
+        // Map connections by SERIAL for reliable lookup
+        const connMap = conns.reduce((acc: any, c: any) => ({ ...acc, [c.serial]: c }), {});
+        setConnections(connMap);
+      } catch (e) {
+        console.error("Failed to fetch printers", e);
+      }
+    }
+  }, []);
+
+  // Fetch printers when opening send dialog
+  useEffect(() => {
+    if (sendingQuote) {
+      fetchPrinters();
+    }
+  }, [sendingQuote, fetchPrinters]);
+
+  const handleSendFileConfirm = async (machineId: string, fileOrPath: File | string, options: any) => {
+    // connections is now keyed by SERIAL, and machineId passed from Dialog is likely dev_id (serial)
+    const conn = connections[machineId];
+    if (!conn) {
+      toast.error("Printer not connected");
+      return;
+    }
+
+    try {
+      const filePath = typeof fileOrPath === 'string' ? fileOrPath : fileOrPath.path;
+
+      toast.info("Uploading file...");
+      // Pass the IP/Key stored in the connection object (conn.ip holds the key)
+      await (window as any).electronAPI.printer.sendFile({ ip: conn.ip, filePath });
+
+      toast.info(`Starting print...`);
+      await (window as any).electronAPI.printer.startPrint({ ip: conn.ip, fileName: filePath, options });
+
+      toast.success("Print started successfully!");
+      setSendingQuote(null);
+    } catch (error: any) {
+      console.error(error);
+      toast.error(`Error: ${error.message}`);
+    }
+  };
+
   const { currency, formatPrice } = useCurrency();
 
   const exportToExcel = useCallback(() => {
@@ -189,6 +242,21 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
                           <Copy className="w-4 h-4" />
                         </Button>
                       )}
+
+                      {/* Print Plate Button (Bambu Style) */}
+                      {quote.filePath && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSendingQuote(quote)}
+                          className="text-muted-foreground hover:text-green-600 hover:bg-green-600/10 h-8 gap-1 px-2"
+                          title="Print Plate"
+                        >
+                          <Printer className="w-4 h-4" />
+                          <span className="text-xs font-medium">Print</span>
+                        </Button>
+                      )}
+
                       <Button
                         variant="ghost"
                         size="icon"
@@ -207,17 +275,19 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
+
                     </div>
                   </TableCell>
+
                 </TableRow>
               ))}
             </TableBody>
-          </Table>
-        </div>
-      </Card>
+          </Table >
+        </div >
+      </Card >
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteIndex !== null} onOpenChange={(open) => !open && setDeleteIndex(null)}>
+      < Dialog open={deleteIndex !== null} onOpenChange={(open) => !open && setDeleteIndex(null)}>
         <DialogContent className="bg-card border-border">
           <DialogHeader>
             <DialogTitle className="text-foreground flex items-center gap-2">
@@ -238,10 +308,10 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+      </Dialog >
 
       {/* Edit Notes Dialog */}
-      <Dialog open={editingIndex !== null} onOpenChange={(open) => !open && setEditingIndex(null)}>
+      < Dialog open={editingIndex !== null} onOpenChange={(open) => !open && setEditingIndex(null)}>
         <DialogContent className="bg-card border-border">
           <DialogHeader>
             <DialogTitle className="text-foreground">
@@ -263,10 +333,10 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+      </Dialog >
 
       {/* View Quote Details Dialog */}
-      <Dialog open={viewingQuote !== null} onOpenChange={(open) => !open && setViewingQuote(null)}>
+      < Dialog open={viewingQuote !== null} onOpenChange={(open) => !open && setViewingQuote(null)}>
         <DialogContent className="bg-card border-border max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-foreground">Quote Details - {viewingQuote?.projectName}</DialogTitle>
@@ -315,7 +385,17 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
             </div>
           )}
         </DialogContent>
-      </Dialog>
+      </Dialog >
+
+      {/* Print Job Dialog (Bambu Style) */}
+      <PrintJobDialog
+        open={!!sendingQuote}
+        onOpenChange={(open) => !open && setSendingQuote(null)}
+        job={{ quote: sendingQuote }}
+        machines={printers}
+        connections={connections}
+        onSend={handleSendFileConfirm}
+      />
     </>
   );
 });

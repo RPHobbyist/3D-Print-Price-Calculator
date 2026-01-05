@@ -16,6 +16,7 @@ import { Footer } from "@/components/Footer";
 import { CurrencySelector } from "@/components/CurrencySelector";
 import { QuoteData } from "@/types/quote";
 import { useSavedQuotes } from "@/hooks/useSavedQuotes";
+import { useBatchQuote } from "@/contexts/BatchQuoteContext";
 
 const Index = memo(() => {
   const [quoteData, setQuoteData] = useState<QuoteData | null>(null);
@@ -31,10 +32,13 @@ const Index = memo(() => {
     refetch,
   } = useSavedQuotes();
 
+  const { clearBatch } = useBatchQuote();
+
   const handleReset = useCallback(() => {
     setQuoteData(null);
+    clearBatch();
     setResetKey(prev => prev + 1);
-  }, []);
+  }, [clearBatch]);
 
   const handleSaveQuote = useCallback(async (quote: QuoteData) => {
     await saveQuote(quote);

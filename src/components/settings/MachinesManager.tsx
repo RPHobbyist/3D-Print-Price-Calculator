@@ -4,11 +4,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrency } from "@/components/CurrencyProvider";
 import { Machine } from "@/types/quote";
 import * as sessionStore from "@/lib/sessionStorage";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // --- Machines Form Component ---
 interface MachinesFormProps {
@@ -109,7 +115,29 @@ const MachinesForm = ({ initialData, onSubmit, onCancel, isEditing, currencySymb
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="hourly_cost">Hourly Cost ({currencySymbol}) *</Label>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="hourly_cost">Hourly Cost ({currencySymbol}) *</Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger type="button">
+                  <HelpCircle className="w-4 h-4 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[300px] p-4 text-sm bg-popover border-border" side="right">
+                  <div className="space-y-2">
+                    <p className="font-semibold">How to calculate?</p>
+                    <p>Formula: Total Machine Cost / Total Lifespan Hours</p>
+                    <div className="bg-muted p-2 rounded text-xs">
+                      <p className="font-semibold mb-1">Example:</p>
+                      <p>• Printer Cost: {currencySymbol}45,000</p>
+                      <p>• Life: 2 Years @ 6hr/day (4,380 hrs)</p>
+                      <p className="mt-1 font-mono">Rate = 45000 / 4380 = {currencySymbol}10.27/hr</p>
+                      <p className="mt-1 text-muted-foreground text-[10px]">(Add +20% for maintenance)</p>
+                    </div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <Input
             id="hourly_cost"
             type="number"

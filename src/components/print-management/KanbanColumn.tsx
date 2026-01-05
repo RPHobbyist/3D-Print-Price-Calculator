@@ -5,18 +5,34 @@ import { ProductionJob } from "@/contexts/ProductionContext";
 import { Printer, Package } from "lucide-react";
 import { JobCard } from "./JobCard";
 
+import { Button } from "@/components/ui/button";
+import { Link2, Link2Off, Send } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+
 interface KanbanColumnProps {
     title: string;
     id: string;
     jobs: ProductionJob[];
     isMachine?: boolean;
+    onConnect?: () => void;
+    connectionStatus?: string;
+    onSendFile?: (file: File | string, job: ProductionJob) => void;
+    printerState?: {
+        printState?: string;
+        progress?: number;
+        remainingTime?: number;
+    };
 }
 
 export const KanbanColumn = memo(({
     title,
     id,
     jobs,
-    isMachine = false
+    isMachine = false,
+    onConnect,
+    connectionStatus = 'disconnected',
+    onSendFile,
+    printerState
 }: KanbanColumnProps) => {
     return (
         <div className="flex flex-col h-full bg-muted/40 rounded-md border border-border/60 min-w-[260px] w-[260px] overflow-hidden">
@@ -30,9 +46,29 @@ export const KanbanColumn = memo(({
                         {title}
                     </h3>
                 </div>
-                <Badge variant="secondary" className="text-[10px] h-4 px-1.5 font-mono min-w-[20px] justify-center bg-muted text-muted-foreground border border-border/50">
-                    {jobs.length}
-                </Badge>
+
+                <div className="flex items-center gap-1.5">
+                    {isMachine && (
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className={`h-5 w-5 ${connectionStatus === 'connected' ? 'text-green-600 hover:text-green-700' : 'text-muted-foreground hover:text-foreground'}`}
+                                    onClick={onConnect}
+                                >
+                                    {connectionStatus === 'connected' ? <Link2 className="w-3.5 h-3.5" /> : <Link2Off className="w-3.5 h-3.5" />}
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                {connectionStatus === 'connected' ? 'Printer Connected' : 'Connect Printer'}
+                            </TooltipContent>
+                        </Tooltip>
+                    )}
+                    <Badge variant="secondary" className="text-[10px] h-4 px-1.5 font-mono min-w-[20px] justify-center bg-muted text-muted-foreground border border-border/50">
+                        {jobs.length}
+                    </Badge>
+                </div>
             </div>
 
             <Droppable droppableId={id}>
@@ -44,7 +80,19 @@ export const KanbanColumn = memo(({
                             }`}
                     >
                         {jobs.map((job, index) => (
-                            <JobCard key={job.id} job={job} index={index} />
+                            <JobCard
+                                key={job.id}
+                                job={job}
+                                index={index}
+                                isConnected={connectionStatus === 'connected'}
+                                onSendFile={onSendFile}
+                                // Pass printing status only if this is the active job (index 0) and printer is running
+                                printStatus={index === 0 && printerState?.printState === 'RUNNING' ? {
+                                    state: 'RUNNING',
+                                    progress: printerState.progress,
+                                    remainingTime: printerState.remainingTime
+                                } : undefined}
+                            />
                         ))}
                         {provided.placeholder}
 

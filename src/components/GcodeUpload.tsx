@@ -53,7 +53,11 @@ const GcodeUpload = ({ onDataExtracted }: GcodeUploadProps) => {
 
       // Strip the extension (e.g. .gcode) so the UI shows a clean Project Name
       const cleanName = stripFileExtension(file.name);
-      onDataExtracted({ ...data, fileName: cleanName });
+      // Get file path from Electron (File object has .path property in Electron)
+      const filePath = (file as any).path || '';
+      console.log('📁 GcodeUpload - File path extracted:', filePath);
+      console.log('📁 GcodeUpload - File name:', file.name);
+      onDataExtracted({ ...data, fileName: cleanName, filePath });
 
       // Update local preview state if a thumbnail was found
       if (data.thumbnail) {

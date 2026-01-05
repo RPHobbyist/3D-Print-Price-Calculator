@@ -10,6 +10,7 @@ export interface GcodeData {
   filamentSettingsId?: string;
   thumbnail?: string;
   fileName?: string;
+  filePath?: string; // Full path to the uploaded file
 }
 
 /**

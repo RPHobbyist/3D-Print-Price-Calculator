@@ -31,3 +31,5 @@ test-assets
 *.sw?
 
 electron/
+
+.eb-cache/

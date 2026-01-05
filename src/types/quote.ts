@@ -18,6 +18,7 @@ export interface QuoteData {
   parameters: QuoteParameters;
   createdAt?: string;
   notes?: string;
+  filePath?: string;  // Original uploaded file path for printing
 }
 
 export interface QuoteParameters {
@@ -71,6 +72,7 @@ export interface FDMFormData {
   markupPercentage: string;
   quantity: string;
   selectedConsumableIds: string[];
+  filePath?: string; // Optional file path for uploaded G-code
 }
 
 export interface ResinFormData {

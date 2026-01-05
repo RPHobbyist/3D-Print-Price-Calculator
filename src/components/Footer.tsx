@@ -1,4 +1,4 @@
-import { Heart } from "lucide-react";
+import { Heart, Youtube } from "lucide-react";
 import { FeatureSuggestion } from "./FeatureSuggestion";
 import { Link } from "react-router-dom";
 import { lazy, Suspense } from "react";
@@ -44,6 +44,16 @@ export const Footer = () => {
                 >
                     <GithubIcon />
                     GitHub
+                </a>
+
+                <a
+                    href={SYSTEM_CONFIG.youtubeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 hover:text-red-500 transition-colors whitespace-nowrap"
+                >
+                    <Youtube className="w-4 h-4" />
+                    Tutorial
                 </a>
 
                 <FeatureSuggestion />

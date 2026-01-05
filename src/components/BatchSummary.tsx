@@ -158,7 +158,7 @@ GRAND TOTAL: ${formatPrice(batchTotals.grandTotal)}
                         onClick={handleExportBatch}
                     >
                         <FileDown className="w-4 h-4 mr-2" />
-                        Export
+                        Export as Text
                     </Button>
                     <Button
                         variant="destructive"
