@@ -58,7 +58,7 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
     }
 
     try {
-      const filePath = typeof fileOrPath === 'string' ? fileOrPath : fileOrPath.path;
+      const filePath = typeof fileOrPath === 'string' ? fileOrPath : (fileOrPath as any).path;
 
       toast.info("Uploading file...");
       // Pass the IP/Key stored in the connection object (conn.ip holds the key)
@@ -86,6 +86,7 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
     const exportData = quotes.map((quote, index) => ({
       "S.No": index + 1,
       "Project Name": quote.projectName,
+      "Client": quote.clientName || "",
       "Print Type": quote.printType,
       "Colour": quote.printColour,
       "Material": quote.parameters.materialName,
@@ -182,6 +183,7 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
               <TableRow className="bg-muted/50 hover:bg-muted/50">
                 <TableHead className="w-12 font-semibold text-foreground">S.No</TableHead>
                 <TableHead className="font-semibold text-foreground">Project Name</TableHead>
+                <TableHead className="font-semibold text-foreground">Client</TableHead>
                 <TableHead className="font-semibold text-foreground">Type</TableHead>
                 <TableHead className="font-semibold text-foreground">Colour</TableHead>
                 <TableHead className="font-semibold text-foreground">Material</TableHead>
@@ -200,6 +202,7 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
                 >
                   <TableCell className="font-medium text-muted-foreground">{index + 1}</TableCell>
                   <TableCell className="font-semibold text-foreground">{quote.projectName}</TableCell>
+                  <TableCell className="text-muted-foreground">{quote.clientName || "-"}</TableCell>
                   <TableCell>
                     <span className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${quote.printType === "FDM"
                       ? "bg-primary/10 text-primary"
@@ -345,6 +348,7 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
             <div className="space-y-5">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <DetailItem label="Print Type" value={viewingQuote.printType} />
+                <DetailItem label="Client" value={viewingQuote.clientName || "-"} />
                 <DetailItem label="Colour" value={viewingQuote.printColour || "-"} />
                 <DetailItem label="Material" value={viewingQuote.parameters.materialName || "-"} />
                 <DetailItem label="Machine" value={viewingQuote.parameters.machineName || "-"} />

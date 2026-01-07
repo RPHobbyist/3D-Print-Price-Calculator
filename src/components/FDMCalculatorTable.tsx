@@ -10,6 +10,8 @@ import { ConsumablesSelector } from "./calculator/ConsumablesSelector";
 import GcodeUpload from "./GcodeUpload";
 import { GcodeData } from "@/lib/gcodeParser";
 import { useCurrency } from "@/components/CurrencyProvider";
+import { ClientSelector } from "@/components/ClientSelector";
+import { Customer } from "@/types/quote";
 
 interface FDMCalculatorProps {
   onCalculate: (data: QuoteData) => void;
@@ -28,6 +30,8 @@ const initialFormData: FDMFormData = {
   quantity: "1",
   selectedConsumableIds: [],
   filePath: "", // Store uploaded file path
+  customerId: "",
+  clientName: "",
 };
 
 const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
@@ -37,6 +41,14 @@ const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
 
   const updateField = useCallback(<K extends keyof FDMFormData>(field: K, value: FDMFormData[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  }, []);
+
+  const handleClientSelect = useCallback((customer: Customer | null) => {
+    setFormData(prev => ({
+      ...prev,
+      customerId: customer?.id || "",
+      clientName: customer?.name || ""
+    }));
   }, []);
 
   const handleGcodeData = useCallback((data: GcodeData) => {
@@ -134,6 +146,8 @@ const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
       electricityRate: getConstantValue("electricity"),
       laborRate: getConstantValue("labor"),
       consumables: selectedConsumables,
+      customerId: formData.customerId,
+      clientName: formData.clientName,
     });
 
     console.log('📁 FDMCalculatorTable - Quote created with filePath:', quoteData.filePath);
@@ -185,6 +199,13 @@ const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
           value={formData.projectName}
           onChange={(v) => updateField("projectName", v)}
           placeholder="Enter project name"
+        />
+      </FormFieldRow>
+
+      <FormFieldRow label="Client">
+        <ClientSelector
+          value={formData.customerId}
+          onSelect={handleClientSelect}
         />
       </FormFieldRow>
 

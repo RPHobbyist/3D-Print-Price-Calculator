@@ -1,11 +1,12 @@
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Database, Printer, Package } from "lucide-react";
+import { Database, Printer, Package, Users } from "lucide-react";
 import MaterialsManager from "@/components/settings/MaterialsManager";
 import MachinesManager from "@/components/settings/MachinesManager";
 import ConstantsManager from "@/components/settings/ConstantsManager";
 import SettingsExportImport from "@/components/settings/SettingsExportImport";
-import { useNavigate, useLocation } from "react-router-dom";
+import SettingsCRM from "@/components/settings/SettingsCRM";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { SYSTEM_CONFIG } from "@/lib/core-system";
 import { NavLink } from "@/components/NavLink";
 import { Footer } from "@/components/Footer";
@@ -17,7 +18,16 @@ import { Wifi } from "lucide-react";
 
 const Settings = () => {
   const [showPrinterDialog, setShowPrinterDialog] = useState(false);
+
   const [connectedPrinter, setConnectedPrinter] = useState<any>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const currentTab = searchParams.get("tab") || "materials";
+
+  // Updates URL when tab changes, so on refresh we stay on same tab
+  const handleTabChange = (value: string) => {
+    setSearchParams({ tab: value });
+  };
 
   useEffect(() => {
     // Optional: Check if already connected on mount
@@ -65,7 +75,7 @@ const Settings = () => {
 
       <main className="container mx-auto px-4 py-8 relative space-y-6">
         <Card className="shadow-elevated border-border bg-card overflow-hidden animate-fade-in hover-glow">
-          <Tabs defaultValue="materials" className="w-full">
+          <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
             <div className="border-b border-border px-6 pt-6">
               <TabsList className="bg-secondary/50 p-1.5 rounded-xl">
                 <TabsTrigger
@@ -89,6 +99,13 @@ const Settings = () => {
                   <Database className="w-4 h-4 mr-2" />
                   Consumables
                 </TabsTrigger>
+                <TabsTrigger
+                  value="customers"
+                  className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-card rounded-lg px-5 py-2.5 transition-all duration-200"
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  Customers
+                </TabsTrigger>
               </TabsList>
             </div>
 
@@ -102,6 +119,10 @@ const Settings = () => {
 
             <TabsContent value="constants" className="p-6 mt-0 animate-fade-in">
               <ConstantsManager />
+            </TabsContent>
+
+            <TabsContent value="customers" className="p-6 mt-0 animate-fade-in">
+              <SettingsCRM />
             </TabsContent>
           </Tabs>
         </Card>

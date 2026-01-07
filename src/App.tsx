@@ -13,6 +13,7 @@ import { useAppProtection } from "@/hooks/useAppProtection";
 const Index = lazy(() => import("./pages/Index"));
 const Settings = lazy(() => import("./pages/Settings"));
 const SavedQuotes = lazy(() => import("./pages/SavedQuotes"));
+
 const PrintManagement = lazy(() => import("./pages/PrintManagement"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -56,6 +57,7 @@ const App = () => {
                     <Route path="/" element={<Index />} />
                     <Route path="/settings" element={<Settings />} />
                     <Route path="/saved-quotes" element={<SavedQuotes />} />
+
                     <Route path="/print-management" element={<PrintManagement />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>

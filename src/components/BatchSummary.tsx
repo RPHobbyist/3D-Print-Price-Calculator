@@ -32,6 +32,7 @@ Generated: ${new Date().toLocaleString()}
 ITEMS:
 ${batchItems.map((item, index) => `
 ${index + 1}. ${item.projectName || 'Unnamed Project'}
+   Client: ${item.clientName || '-'}
    Type: ${item.printType}
    Quantity: ${item.quantity}
    Unit Price: ${formatPrice(item.unitPrice)}

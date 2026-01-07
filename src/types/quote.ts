@@ -19,6 +19,20 @@ export interface QuoteData {
   createdAt?: string;
   notes?: string;
   filePath?: string;  // Original uploaded file path for printing
+  customerId?: string; // Reference to a customer
+  clientName?: string; // Snapshot of name for display/legacy
+}
+
+export interface Customer {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  company?: string;
+  address?: string;
+  tags?: string[];
+  notes?: string;
+  createdAt: string;
 }
 
 export interface QuoteParameters {
@@ -73,6 +87,8 @@ export interface FDMFormData {
   quantity: string;
   selectedConsumableIds: string[];
   filePath?: string; // Optional file path for uploaded G-code
+  customerId?: string;
+  clientName?: string;
 }
 
 export interface ResinFormData {
@@ -90,6 +106,8 @@ export interface ResinFormData {
   markupPercentage: string;
   quantity: string;
   selectedConsumableIds: string[];
+  customerId?: string;
+  clientName?: string;
 }
 
 export interface QuoteStats {

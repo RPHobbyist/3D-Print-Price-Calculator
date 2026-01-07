@@ -1,4 +1,4 @@
-import { useState, useCallback, memo, lazy, Suspense } from "react";
+import { useState, useCallback, memo, lazy, Suspense, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Printer, Sparkles, RotateCcw } from "lucide-react";
@@ -13,12 +13,15 @@ import { useNavigate } from "react-router-dom";
 import { SYSTEM_CONFIG } from "@/lib/core-system";
 import { NavLink } from "@/components/NavLink";
 import { Footer } from "@/components/Footer";
+
 import { CurrencySelector } from "@/components/CurrencySelector";
 import { QuoteData } from "@/types/quote";
 import { useSavedQuotes } from "@/hooks/useSavedQuotes";
 import { useBatchQuote } from "@/contexts/BatchQuoteContext";
+import { toast } from "sonner";
 
 const Index = memo(() => {
+  const navigate = useNavigate();
   const [quoteData, setQuoteData] = useState<QuoteData | null>(null);
   const [resetKey, setResetKey] = useState(0);
   const {
@@ -61,7 +64,30 @@ const Index = memo(() => {
   const handleDuplicateQuote = useCallback(async (index: number) => {
     const quote = quotes[index];
     await duplicateQuote(quote);
+
   }, [quotes, duplicateQuote]);
+
+  useEffect(() => {
+    // Check if user has seen the new CRM announcement
+    const hasSeenNewCRM = localStorage.getItem("crm-feature-seen-v1");
+    if (!hasSeenNewCRM) {
+      setTimeout(() => {
+        toast.info("New Feature: CRM! 🚀", {
+          description: "Manage detailed customer profiles, track order history, and view analytics.",
+          action: {
+            label: "Check it out",
+            onClick: () => navigate("/settings?tab=customers"),
+          },
+          cancel: {
+            label: "Close",
+            onClick: () => { },
+          },
+          duration: 8000,
+        });
+        localStorage.setItem("crm-feature-seen-v1", "true");
+      }, 1500);
+    }
+  }, [navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-subtle flex flex-col">

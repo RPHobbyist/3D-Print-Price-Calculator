@@ -1,4 +1,4 @@
-import { Heart, Youtube } from "lucide-react";
+import { Youtube } from "lucide-react";
 import { FeatureSuggestion } from "./FeatureSuggestion";
 import { Link } from "react-router-dom";
 import { lazy, Suspense } from "react";
@@ -26,11 +26,7 @@ export const Footer = () => {
         <footer className="border-t border-border bg-card/50 backdrop-blur-sm mt-auto px-6 py-2 flex items-center justify-between text-xs text-muted-foreground">
             {/* Left: Links and credits */}
             <div className="flex flex-wrap items-center gap-4">
-                <div className="flex items-center gap-1">
-                    <span>Made with</span>
-                    <Heart className="w-3.5 h-3.5 text-purple-600 fill-purple-600 animate-pulse" />
-                    <span>by <a href={SYSTEM_CONFIG.vendorLink} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors underline-offset-2 hover:underline">{SYSTEM_CONFIG.vendor}</a></span>
-                </div>
+                <span>Made by <a href={SYSTEM_CONFIG.vendorLink} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors underline-offset-2 hover:underline">RP Hobbyist</a></span>
 
                 <Suspense fallback={<span className="text-muted-foreground/60">MIT Open Source License</span>}>
                     <LicenseDialog />

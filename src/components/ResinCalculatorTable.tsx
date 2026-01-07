@@ -10,6 +10,7 @@ import { ConsumablesSelector } from "./calculator/ConsumablesSelector";
 import ResinFileUpload from "./ResinFileUpload";
 import { ResinFileData } from "@/lib/resinFileParser";
 import { useCurrency } from "@/components/CurrencyProvider";
+import { ClientSelector } from "@/components/ClientSelector";
 
 interface ResinCalculatorProps {
   onCalculate: (data: QuoteData) => void;
@@ -100,6 +101,8 @@ const ResinCalculatorTable = memo(({ onCalculate }: ResinCalculatorProps) => {
       electricityRate: getConstantValue("electricity"),
       laborRate: getConstantValue("labor"),
       consumables: selectedConsumables,
+      customerId: formData.customerId,
+      clientName: formData.clientName,
     });
 
     onCalculate(quoteData);
@@ -150,6 +153,19 @@ const ResinCalculatorTable = memo(({ onCalculate }: ResinCalculatorProps) => {
           value={formData.projectName}
           onChange={(v) => updateField("projectName", v)}
           placeholder="Enter project name"
+        />
+      </FormFieldRow>
+
+      <FormFieldRow label="Client">
+        <ClientSelector
+          value={formData.customerId}
+          onSelect={(customer) => {
+            setFormData(prev => ({
+              ...prev,
+              customerId: customer?.id || "",
+              clientName: customer?.name || ""
+            }));
+          }}
         />
       </FormFieldRow>
 

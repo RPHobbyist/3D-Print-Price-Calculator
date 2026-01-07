@@ -15,11 +15,15 @@ interface ConsumableInfo {
 interface FDMCalculationInput extends CalculationParams {
   formData: FDMFormData;
   consumables?: ConsumableInfo[];
+  customerId?: string;
+  clientName?: string;
 }
 
 interface ResinCalculationInput extends CalculationParams {
   formData: ResinFormData;
   consumables?: ConsumableInfo[];
+  customerId?: string;
+  clientName?: string;
 }
 
 export const calculateFDMQuote = ({
@@ -29,6 +33,8 @@ export const calculateFDMQuote = ({
   electricityRate,
   laborRate,
   consumables = [],
+  customerId,
+  clientName,
 }: FDMCalculationInput): QuoteData => {
   const printTimeHours = parseFloat(formData.printTime);
   const filamentWeightKg = parseFloat(formData.filamentWeight) / 1000;
@@ -69,6 +75,8 @@ export const calculateFDMQuote = ({
     projectName: formData.projectName,
     printColour: formData.printColour,
     filePath: formData.filePath, // Include file path for printing
+    customerId,
+    clientName,
     parameters: {
       ...formData,
       materialName: material.name,
@@ -86,6 +94,8 @@ export const calculateResinQuote = ({
   electricityRate,
   laborRate,
   consumables = [],
+  customerId,
+  clientName,
 }: ResinCalculationInput): QuoteData => {
   const printTimeHours = parseFloat(formData.printTime);
   const resinVolumeLiters = parseFloat(formData.resinVolume) / 1000;
@@ -129,6 +139,8 @@ export const calculateResinQuote = ({
     printType: "Resin",
     projectName: formData.projectName,
     printColour: formData.printColour,
+    customerId,
+    clientName,
     parameters: {
       ...formData,
       materialName: material.name,

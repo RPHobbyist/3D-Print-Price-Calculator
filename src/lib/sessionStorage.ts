@@ -1,7 +1,7 @@
 // Local Storage - Data persists until explicitly cleared
 // Data remains even after app closes/restarts
 
-import { QuoteData, Material, Machine, CostConstant } from "@/types/quote";
+import { QuoteData, Material, Machine, CostConstant, Customer } from "@/types/quote";
 
 // Generate unique IDs
 const generateId = (): string => {
@@ -77,6 +77,7 @@ const STORAGE_KEYS = {
     MATERIALS: "session_materials",
     MACHINES: "session_machines",
     CONSTANTS: "session_constants",
+    CUSTOMERS: "session_customers",
     INITIALIZED: "session_initialized",
 };
 
@@ -87,6 +88,7 @@ const initializeDefaults = () => {
         localStorage.setItem(STORAGE_KEYS.MATERIALS, JSON.stringify(defaultMaterials));
         localStorage.setItem(STORAGE_KEYS.MACHINES, JSON.stringify(defaultMachines));
         localStorage.setItem(STORAGE_KEYS.CONSTANTS, JSON.stringify(defaultConstants));
+        localStorage.setItem(STORAGE_KEYS.CUSTOMERS, JSON.stringify([]));
         localStorage.setItem(STORAGE_KEYS.INITIALIZED, "true");
     }
 };
@@ -223,7 +225,67 @@ export const resetSessionData = (): void => {
     localStorage.removeItem(STORAGE_KEYS.MATERIALS);
     localStorage.removeItem(STORAGE_KEYS.MACHINES);
     localStorage.removeItem(STORAGE_KEYS.CONSTANTS);
+    localStorage.removeItem(STORAGE_KEYS.CUSTOMERS);
     initializeDefaults();
+};
+
+// Customers
+export const getCustomers = (): Customer[] => {
+    initializeDefaults();
+    return JSON.parse(localStorage.getItem(STORAGE_KEYS.CUSTOMERS) || "[]");
+};
+
+export const saveCustomer = (customer: Omit<Customer, "id" | "createdAt"> & { id?: string, createdAt?: string }): Customer => {
+    const customers = getCustomers();
+    if (customer.id) {
+        // Update existing
+        const index = customers.findIndex(c => c.id === customer.id);
+        if (index !== -1) {
+            customers[index] = { ...customers[index], ...customer };
+        }
+    } else {
+        // Add new
+        const newCustomer: Customer = {
+            ...customer,
+            id: generateId(),
+            createdAt: new Date().toISOString(),
+        };
+        customers.unshift(newCustomer);
+    }
+    localStorage.setItem(STORAGE_KEYS.CUSTOMERS, JSON.stringify(customers));
+    // Return either the updated or new customer. Since we modified the array in place or pushed, we need to find it or return the constructed one.
+    // Simplifying return for new/update:
+    return customer.id
+        ? customers.find(c => c.id === customer.id)!
+        : customers[0]; // unshift puts new at 0
+};
+
+export const deleteCustomer = (id: string): void => {
+    const customers = getCustomers().filter(c => c.id !== id);
+    localStorage.setItem(STORAGE_KEYS.CUSTOMERS, JSON.stringify(customers));
+};
+
+export const getCustomer = (id: string): Customer | undefined => {
+    return getCustomers().find(c => c.id === id);
+};
+
+export const getCustomerStats = (customerId: string) => {
+    initializeDefaults();
+    const quotes = getQuotes();
+    const customerQuotes = quotes.filter(q => q.customerId === customerId);
+
+    const totalSpent = customerQuotes.reduce((sum, q) => sum + (q.totalPrice || 0), 0);
+    const orderCount = customerQuotes.length;
+    const lastOrderDate = customerQuotes.length > 0
+        ? customerQuotes.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())[0].createdAt
+        : null;
+
+    return {
+        totalSpent,
+        orderCount,
+        lastOrderDate,
+        quotes: customerQuotes
+    };
 };
 
 // Settings data structure for export/import
@@ -233,6 +295,7 @@ export interface SettingsExport {
     materials: Material[];
     machines: Machine[];
     constants: CostConstant[];
+    customers: Customer[];
 }
 
 // Export all settings to JSON
@@ -243,6 +306,7 @@ export const exportAllSettings = (): SettingsExport => {
         materials: getMaterials(),
         machines: getMachines(),
         constants: getConstants(),
+        customers: getCustomers(),
     };
 };
 
@@ -259,6 +323,11 @@ export const importAllSettings = (data: SettingsExport): { success: boolean; mes
             return { success: false, message: "Settings data is corrupted" };
         }
 
+        // Validate customers (optional for backward compatibility, but good to check if present)
+        if (data.customers && !Array.isArray(data.customers)) {
+            return { success: false, message: "Customer data is corrupted" };
+        }
+
         // Import materials
         localStorage.setItem(STORAGE_KEYS.MATERIALS, JSON.stringify(data.materials));
 
@@ -268,9 +337,14 @@ export const importAllSettings = (data: SettingsExport): { success: boolean; mes
         // Import constants
         localStorage.setItem(STORAGE_KEYS.CONSTANTS, JSON.stringify(data.constants));
 
+        // Import customers (if present)
+        if (data.customers) {
+            localStorage.setItem(STORAGE_KEYS.CUSTOMERS, JSON.stringify(data.customers));
+        }
+
         return {
             success: true,
-            message: `Imported ${data.materials.length} materials, ${data.machines.length} machines, ${data.constants.length} consumables`
+            message: `Imported ${data.materials.length} materials, ${data.machines.length} machines, ${data.constants.length} consumables${data.customers ? `, ${data.customers.length} customers` : ''}`
         };
     } catch (error) {
         console.error("Import error:", error);
