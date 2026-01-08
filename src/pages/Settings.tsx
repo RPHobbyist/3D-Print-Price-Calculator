@@ -1,11 +1,12 @@
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Database, Printer, Package, Users } from "lucide-react";
+import { Database, Printer, Package, Users, Building2 } from "lucide-react";
 import MaterialsManager from "@/components/settings/MaterialsManager";
 import MachinesManager from "@/components/settings/MachinesManager";
 import ConstantsManager from "@/components/settings/ConstantsManager";
 import SettingsExportImport from "@/components/settings/SettingsExportImport";
 import SettingsCRM from "@/components/settings/SettingsCRM";
+import CompanySettings from "@/components/settings/CompanySettings";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { SYSTEM_CONFIG } from "@/lib/core-system";
 import { NavLink } from "@/components/NavLink";
@@ -19,7 +20,7 @@ import { Wifi } from "lucide-react";
 const Settings = () => {
   const [showPrinterDialog, setShowPrinterDialog] = useState(false);
 
-  const [connectedPrinter, setConnectedPrinter] = useState<any>(null);
+  const [connectedPrinter, setConnectedPrinter] = useState<{ name?: string; dev_name?: string } | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const currentTab = searchParams.get("tab") || "materials";
@@ -106,6 +107,13 @@ const Settings = () => {
                   <Users className="w-4 h-4 mr-2" />
                   Customers
                 </TabsTrigger>
+                <TabsTrigger
+                  value="company"
+                  className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-card rounded-lg px-5 py-2.5 transition-all duration-200"
+                >
+                  <Building2 className="w-4 h-4 mr-2" />
+                  Company
+                </TabsTrigger>
               </TabsList>
             </div>
 
@@ -123,6 +131,10 @@ const Settings = () => {
 
             <TabsContent value="customers" className="p-6 mt-0 animate-fade-in">
               <SettingsCRM />
+            </TabsContent>
+
+            <TabsContent value="company" className="p-6 mt-0 animate-fade-in">
+              <CompanySettings />
             </TabsContent>
           </Tabs>
         </Card>
@@ -143,4 +155,3 @@ const Settings = () => {
 };
 
 export default Settings;
-

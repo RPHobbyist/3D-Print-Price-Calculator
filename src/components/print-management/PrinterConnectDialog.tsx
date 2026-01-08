@@ -10,9 +10,10 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Wifi, Cloud, AlertCircle, Check } from "lucide-react";
+import { Wifi, Cloud } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { BambuDevice } from "@/types/printer";
 
 interface PrinterConnectDialogProps {
     open: boolean;
@@ -40,7 +41,7 @@ export function PrinterConnectDialog({
     const [password, setPassword] = useState("");
     const [verificationCode, setVerificationCode] = useState("");
     const [authStep, setAuthStep] = useState<'login' | 'verify'>('login');
-    const [devices, setDevices] = useState<any[]>([]);
+    const [devices, setDevices] = useState<BambuDevice[]>([]);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
 
     const handleLocalSubmit = async (e: React.FormEvent) => {
@@ -63,19 +64,20 @@ export function PrinterConnectDialog({
         try {
             await window.electronAPI.bambu.login({ email, password }); // Try standard login
             handleLoginSuccess();
-        } catch (error: any) {
-            console.error(error);
-            if (error.message.includes('EMAIL_CODE_REQUIRED')) {
+        } catch (error) {
+            const err = error as Error;
+            console.error(err);
+            if (err.message.includes('EMAIL_CODE_REQUIRED')) {
                 setAuthStep('verify');
                 toast.info("Verification code sent to your email.");
-            } else if (error.message.includes('MFA_CODE_REQUIRED')) {
+            } else if (err.message.includes('MFA_CODE_REQUIRED')) {
                 setAuthStep('verify');
                 toast.info("Enter your authenticator app code.");
-            } else if (error.message.includes('2FA_REQUIRED')) {
+            } else if (err.message.includes('2FA_REQUIRED')) {
                 setAuthStep('verify');
                 toast.info("2FA Code Required. Please check your email/app.");
             } else {
-                toast.error(error.message || "Login failed");
+                toast.error(err.message || "Login failed");
             }
         } finally {
             setIsLoading(false);
@@ -88,9 +90,10 @@ export function PrinterConnectDialog({
         try {
             await window.electronAPI.bambu.login({ email, password, code: verificationCode });
             handleLoginSuccess();
-        } catch (error: any) {
-            console.error(error);
-            toast.error(error.message || "Verification failed");
+        } catch (error) {
+            const err = error as Error;
+            console.error(err);
+            toast.error(err.message || "Verification failed");
         } finally {
             setIsLoading(false);
         }
@@ -108,7 +111,7 @@ export function PrinterConnectDialog({
         setDevices(deviceList);
     };
 
-    const handleSelectDevice = (device: any) => {
+    const handleSelectDevice = (device: BambuDevice) => {
         // Connect via cloud mode - no IP needed
         toast.info(`Connecting to ${device.name} via cloud...`);
         onConnect({
@@ -208,12 +211,12 @@ export function PrinterConnectDialog({
                             <div className="py-4 space-y-4">
                                 <p className="text-sm text-muted-foreground">Select a device to import credentials:</p>
                                 <div className="grid gap-2 max-h-[200px] overflow-y-auto">
-                                    {devices.map((dev: any) => (
+                                    {devices.map((dev) => (
                                         <div key={dev.dev_id} className="flex items-center justify-between p-3 border rounded-md cursor-pointer hover:bg-accent/50" onClick={() => handleSelectDevice(dev)}>
                                             <div className="flex flex-col overflow-hidden">
                                                 <span className="font-medium truncate">{dev.name}</span>
                                                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                    <Badge variant="secondary" className="text-[10px] h-4 px-1">{dev.printerModel}</Badge>
+                                                    <Badge variant="secondary" className="text-[10px] h-4 px-1">{dev.model}</Badge>
                                                     <span className="font-mono">{dev.dev_id}</span>
                                                 </div>
                                             </div>

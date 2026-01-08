@@ -3,6 +3,77 @@ import { QuoteData, QuoteStats } from "@/types/quote";
 import { toast } from "sonner";
 import * as sessionStore from "@/lib/sessionStorage";
 
+// Helper function to deduct inventory when a quote is saved
+const deductInventoryFromQuote = (quote: QuoteData) => {
+  // Only process if we have material and filament weight
+  if (!quote.parameters?.materialName || !quote.parameters?.filamentWeight) {
+    return;
+  }
+
+  const filamentWeight = parseFloat(quote.parameters.filamentWeight as string) || 0;
+  if (filamentWeight <= 0) return;
+
+  // Calculate total deduction (weight × quantity)
+  const totalDeduction = filamentWeight * (quote.quantity || 1);
+
+  // Priority 1: Use the explicitly selected spool ID if available
+  const selectedSpoolId = quote.parameters?.selectedSpoolId as string | undefined;
+  if (selectedSpoolId) {
+    const success = sessionStore.deductFromSpool(selectedSpoolId, totalDeduction);
+    if (success) {
+      console.log(`[Inventory] Deducted ${totalDeduction}g from selected spool (${selectedSpoolId})`);
+      return;
+    }
+  }
+
+  // Priority 2: Fallback to color matching
+  const materials = sessionStore.getMaterials();
+  const material = materials.find(m => m.name === quote.parameters?.materialName);
+  if (!material) return;
+
+  const spools = sessionStore.getSpools(material.id);
+  if (spools.length === 0) return;
+
+  // Try to find a spool with matching color (case-insensitive)
+  const quoteColor = quote.printColour?.toLowerCase().trim() || '';
+  let targetSpool = spools.find(s =>
+    s.color?.toLowerCase().includes(quoteColor) ||
+    s.name?.toLowerCase().includes(quoteColor)
+  );
+
+  // If no color match, use the spool with most remaining weight
+  if (!targetSpool) {
+    targetSpool = spools.reduce((max, s) => s.currentWeight > max.currentWeight ? s : max, spools[0]);
+  }
+
+  const success = sessionStore.deductFromSpool(targetSpool.id, totalDeduction);
+  if (success) {
+    console.log(`[Inventory] Deducted ${totalDeduction}g from spool "${targetSpool.name}" (${targetSpool.id})`);
+  }
+};
+
+// Helper function to restore inventory when a quote is deleted
+const restoreInventoryFromQuote = (quote: QuoteData) => {
+  // Only process if we have material and filament weight
+  if (!quote.parameters?.materialName || (!quote.parameters?.filamentWeight && !quote.parameters?.resinVolume)) {
+    return;
+  }
+
+  const weightVal = parseFloat(quote.parameters.filamentWeight as string || quote.parameters.resinVolume as string) || 0;
+  if (weightVal <= 0) return;
+
+  const totalRestoration = weightVal * (quote.quantity || 1);
+  const selectedSpoolId = quote.parameters?.selectedSpoolId as string | undefined;
+
+  if (selectedSpoolId) {
+    const success = sessionStore.restoreToSpool(selectedSpoolId, totalRestoration);
+    if (success) {
+      console.log(`[Inventory] Restored ${totalRestoration}g/ml to selected spool (${selectedSpoolId})`);
+    }
+  }
+  // Note: We don't auto-restore for fallback matches as it might restore to the wrong spool
+};
+
 interface UseSavedQuotesReturn {
   quotes: QuoteData[];
   loading: boolean;
@@ -27,8 +98,9 @@ export const useSavedQuotes = (): UseSavedQuotesReturn => {
     try {
       const data = sessionStore.getQuotes();
       setQuotes(data);
-    } catch (err: any) {
-      const errorMessage = err.message || "Failed to load saved quotes";
+    } catch (err) {
+      const error = err as Error;
+      const errorMessage = error.message || "Failed to load saved quotes";
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -63,23 +135,35 @@ export const useSavedQuotes = (): UseSavedQuotesReturn => {
     try {
       const newQuote = sessionStore.saveQuote(quote);
       setQuotes(prev => [newQuote, ...prev]);
-      toast.success("Quote saved successfully!");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to save quote");
+
+      // Auto-deduct from inventory
+      deductInventoryFromQuote(quote);
+
+      toast.success("Quote saved successfully");
+    } catch (err) {
+      const error = err as Error;
+      toast.error(error.message || "Failed to save quote");
       throw err;
     }
   }, []);
 
   const deleteQuote = useCallback(async (id: string) => {
     try {
+      // Find quote to restore inventory
+      const quoteToDelete = quotes.find(q => q.id === id);
+      if (quoteToDelete) {
+        restoreInventoryFromQuote(quoteToDelete);
+      }
+
       sessionStore.deleteQuote(id);
       setQuotes(prev => prev.filter(q => q.id !== id));
       toast.success("Quote deleted successfully");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to delete quote");
+    } catch (err) {
+      const error = err as Error;
+      toast.error(error.message || "Failed to delete quote");
       throw err;
     }
-  }, []);
+  }, [quotes]);
 
   const updateNotes = useCallback(async (id: string, notes: string) => {
     try {
@@ -88,8 +172,9 @@ export const useSavedQuotes = (): UseSavedQuotesReturn => {
         prev.map(q => q.id === id ? { ...q, notes } : q)
       );
       toast.success("Notes updated successfully!");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to update notes");
+    } catch (err) {
+      const error = err as Error;
+      toast.error(error.message || "Failed to update notes");
       throw err;
     }
   }, []);

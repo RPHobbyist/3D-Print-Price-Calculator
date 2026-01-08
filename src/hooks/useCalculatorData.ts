@@ -39,7 +39,7 @@ export const useCalculatorData = ({ printType }: UseCalculatorDataOptions): Calc
       setMachines(machinesData);
 
       // Process constants to extract visibility
-      const processedConstants = constantsData.map((c: any) => {
+      const processedConstants = constantsData.map((c) => {
         const { description, is_visible } = processVisibilityFromDescription(c.description, c.is_visible);
         return {
           ...c,
@@ -50,9 +50,10 @@ export const useCalculatorData = ({ printType }: UseCalculatorDataOptions): Calc
 
       setAllConstants(processedConstants);
       // Filter for UI: Show if visible
-      setConstants(processedConstants.filter((c: any) => c.is_visible !== false));
-    } catch (err: any) {
-      const errorMessage = err.message || "Failed to load calculator data";
+      setConstants(processedConstants.filter((c) => c.is_visible !== false));
+    } catch (err) {
+      const error = err as Error;
+      const errorMessage = error.message || "Failed to load calculator data";
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {

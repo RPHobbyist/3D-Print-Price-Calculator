@@ -4,12 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2, FileSpreadsheet, Edit, Eye, Database, AlertTriangle, Copy, Printer } from "lucide-react";
+import { Trash2, FileSpreadsheet, Edit, Eye, Database, AlertTriangle, Copy, Printer, Search } from "lucide-react";
 import { PrintJobDialog } from "@/components/print-management/PrintJobDialog";
 import { QuoteData } from "@/types/quote";
+import { BambuDevice, PrinterConnection, PrintOptions } from "@/types/printer";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { useCurrency } from "@/components/CurrencyProvider";
+
+// New Hooks & Components
+import { useQuotesFilter } from "@/hooks/useQuotesFilter";
+import { QuotesToolbar } from "@/components/saved-quotes/QuotesToolbar";
+import { QuoteDetailsDialog } from "@/components/saved-quotes/QuoteDetailsDialog";
 
 interface SavedQuotesTableProps {
   quotes: QuoteData[];
@@ -24,17 +30,27 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
   const [viewingQuote, setViewingQuote] = useState<QuoteData | null>(null);
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
   const [sendingQuote, setSendingQuote] = useState<QuoteData | null>(null);
-  const [printers, setPrinters] = useState<any[]>([]);
-  const [connections, setConnections] = useState<any>({});
+  const [printers, setPrinters] = useState<BambuDevice[]>([]);
+  const [connections, setConnections] = useState<Record<string, PrinterConnection>>({});
+
+  // Use Custom Hook for Filtering & Sorting
+  const {
+    searchQuery,
+    setSearchQuery,
+    filterType,
+    setFilterType,
+    sortOrder,
+    setSortOrder,
+    filteredAndSortedQuotes
+  } = useQuotesFilter(quotes);
 
   const fetchPrinters = useCallback(async () => {
     if ('electronAPI' in window) {
       try {
-        const devices = await (window as any).electronAPI.bambu.getDevices();
+        const devices = await window.electronAPI.bambu.getDevices();
         setPrinters(devices);
-        const conns = await (window as any).electronAPI.printer.getConnectedPrinters();
-        // Map connections by SERIAL for reliable lookup
-        const connMap = conns.reduce((acc: any, c: any) => ({ ...acc, [c.serial]: c }), {});
+        const conns = await window.electronAPI.printer.getConnectedPrinters();
+        const connMap = conns.reduce((acc: Record<string, PrinterConnection>, c: PrinterConnection) => ({ ...acc, [c.serial]: c }), {});
         setConnections(connMap);
       } catch (e) {
         console.error("Failed to fetch printers", e);
@@ -42,15 +58,13 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
     }
   }, []);
 
-  // Fetch printers when opening send dialog
   useEffect(() => {
     if (sendingQuote) {
       fetchPrinters();
     }
   }, [sendingQuote, fetchPrinters]);
 
-  const handleSendFileConfirm = async (machineId: string, fileOrPath: File | string, options: any) => {
-    // connections is now keyed by SERIAL, and machineId passed from Dialog is likely dev_id (serial)
+  const handleSendFileConfirm = async (machineId: string, fileOrPath: File | string, options: PrintOptions) => {
     const conn = connections[machineId];
     if (!conn) {
       toast.error("Printer not connected");
@@ -58,20 +72,20 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
     }
 
     try {
-      const filePath = typeof fileOrPath === 'string' ? fileOrPath : (fileOrPath as any).path;
+      const filePath = typeof fileOrPath === 'string' ? fileOrPath : (fileOrPath as File & { path: string }).path;
 
       toast.info("Uploading file...");
-      // Pass the IP/Key stored in the connection object (conn.ip holds the key)
-      await (window as any).electronAPI.printer.sendFile({ ip: conn.ip, filePath });
+      await window.electronAPI.printer.sendFile({ ip: conn.ip, filePath });
 
       toast.info(`Starting print...`);
-      await (window as any).electronAPI.printer.startPrint({ ip: conn.ip, fileName: filePath, options });
+      await window.electronAPI.printer.startPrint({ ip: conn.ip, fileName: filePath, options });
 
       toast.success("Print started successfully!");
       setSendingQuote(null);
-    } catch (error: any) {
-      console.error(error);
-      toast.error(`Error: ${error.message}`);
+    } catch (error) {
+      const err = error as Error;
+      console.error(err);
+      toast.error(`Error: ${err.message}`);
     }
   };
 
@@ -115,7 +129,7 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
 
     XLSX.writeFile(workbook, `3d-print-quotes-${Date.now()}.xlsx`);
     toast.success("Quotes exported to Excel!");
-  }, [quotes]);
+  }, [quotes, formatPrice]);
 
   const handleEditClick = useCallback((index: number) => {
     setEditingIndex(index);
@@ -158,24 +172,36 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
   return (
     <>
       <Card className="shadow-elevated bg-card overflow-hidden border-border animate-fade-in">
-        <div className="bg-gradient-primary p-5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="bg-gradient-primary p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
             <Database className="w-5 h-5 text-primary-foreground" />
             <h2 className="text-xl font-bold text-primary-foreground">
               Saved Quotes
-              <span className="ml-2 text-sm font-normal opacity-75">({quotes.length})</span>
+              <span className="ml-2 text-sm font-normal opacity-75">
+                ({filteredAndSortedQuotes.length} / {quotes.length})
+              </span>
             </h2>
           </div>
           <Button
             onClick={exportToExcel}
             variant="secondary"
             size="sm"
-            className="bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground border-0 shadow-card"
+            className="bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground border-0 shadow-card whitespace-nowrap"
           >
             <FileSpreadsheet className="w-4 h-4 mr-2" />
             Export to Excel
           </Button>
         </div>
+
+        {/* New Quotes Toolbar */}
+        <QuotesToolbar
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          filterType={filterType}
+          setFilterType={setFilterType}
+          sortOrder={sortOrder}
+          setSortOrder={setSortOrder}
+        />
 
         <div className="overflow-x-auto">
           <Table>
@@ -195,95 +221,117 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
               </TableRow>
             </TableHeader>
             <TableBody>
-              {quotes.map((quote, index) => (
-                <TableRow
-                  key={quote.id || index}
-                  className="hover:bg-muted/40 transition-colors group"
-                >
-                  <TableCell className="font-medium text-muted-foreground">{index + 1}</TableCell>
-                  <TableCell className="font-semibold text-foreground">{quote.projectName}</TableCell>
-                  <TableCell className="text-muted-foreground">{quote.clientName || "-"}</TableCell>
-                  <TableCell>
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${quote.printType === "FDM"
-                      ? "bg-primary/10 text-primary"
-                      : "bg-accent/10 text-accent"
-                      }`}>
-                      {quote.printType}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{quote.printColour || "-"}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{quote.parameters.materialName}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{quote.parameters.machineName}</TableCell>
-                  <TableCell className="text-right font-bold text-foreground tabular-nums">
-                    {formatPrice(quote.totalPrice)}
-                  </TableCell>
-                  <TableCell className="max-w-[150px] truncate text-sm text-muted-foreground">
-                    {quote.notes || "-"}
-                  </TableCell>
-                  <TableCell className="text-right text-sm text-muted-foreground tabular-nums">
-                    {quote.createdAt ? new Date(quote.createdAt).toLocaleDateString() : "-"}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setViewingQuote(quote)}
-                        className="text-muted-foreground hover:text-primary hover:bg-primary/10 h-8 w-8"
-                        title="View details"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      {onDuplicateQuote && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => onDuplicateQuote(index)}
-                          className="text-muted-foreground hover:text-success hover:bg-success/10 h-8 w-8"
-                          title="Duplicate quote"
-                        >
-                          <Copy className="w-4 h-4" />
-                        </Button>
-                      )}
+              {filteredAndSortedQuotes.length > 0 ? (
+                filteredAndSortedQuotes.map((quote, index) => {
+                  const originalIndex = quotes.findIndex(q => q.id === quote.id);
 
-                      {/* Print Plate Button (Bambu Style) */}
-                      {quote.filePath && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setSendingQuote(quote)}
-                          className="text-muted-foreground hover:text-green-600 hover:bg-green-600/10 h-8 gap-1 px-2"
-                          title="Print Plate"
-                        >
-                          <Printer className="w-4 h-4" />
-                          <span className="text-xs font-medium">Print</span>
-                        </Button>
-                      )}
+                  return (
+                    <TableRow
+                      key={quote.id || index}
+                      className="hover:bg-muted/40 transition-colors group"
+                    >
+                      <TableCell className="font-medium text-muted-foreground">{index + 1}</TableCell>
+                      <TableCell className="font-semibold text-foreground">{quote.projectName}</TableCell>
+                      <TableCell className="text-muted-foreground">{quote.clientName || "-"}</TableCell>
+                      <TableCell>
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${quote.printType === "FDM"
+                          ? "bg-primary/10 text-primary"
+                          : "bg-accent/10 text-accent"
+                          }`}>
+                          {quote.printType}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{quote.printColour || "-"}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{quote.parameters.materialName}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{quote.parameters.machineName}</TableCell>
+                      <TableCell className="text-right font-bold text-foreground tabular-nums">
+                        {formatPrice(quote.totalPrice)}
+                      </TableCell>
+                      <TableCell className="max-w-[150px] truncate text-sm text-muted-foreground">
+                        {quote.notes || "-"}
+                      </TableCell>
+                      <TableCell className="text-right text-sm text-muted-foreground tabular-nums">
+                        {quote.createdAt ? new Date(quote.createdAt).toLocaleDateString() : "-"}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setViewingQuote(quote)}
+                            className="text-muted-foreground hover:text-primary hover:bg-primary/10 h-8 w-8"
+                            title="View details"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          {onDuplicateQuote && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                if (originalIndex !== -1) onDuplicateQuote(originalIndex);
+                              }}
+                              className="text-muted-foreground hover:text-success hover:bg-success/10 h-8 w-8"
+                              title="Duplicate quote"
+                            >
+                              <Copy className="w-4 h-4" />
+                            </Button>
+                          )}
 
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEditClick(index)}
-                        className="text-muted-foreground hover:text-accent hover:bg-accent/10 h-8 w-8"
-                        title="Edit notes"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setDeleteIndex(index)}
-                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-8 w-8"
-                        title="Delete quote"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                          {quote.filePath && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setSendingQuote(quote)}
+                              className="text-muted-foreground hover:text-green-600 hover:bg-green-600/10 h-8 gap-1 px-2"
+                              title="Print Plate"
+                            >
+                              <Printer className="w-4 h-4" />
+                              <span className="text-xs font-medium">Print</span>
+                            </Button>
+                          )}
 
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              if (originalIndex !== -1) handleEditClick(originalIndex);
+                            }}
+                            className="text-muted-foreground hover:text-accent hover:bg-accent/10 h-8 w-8"
+                            title="Edit notes"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              if (originalIndex !== -1) setDeleteIndex(originalIndex);
+                            }}
+                            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-8 w-8"
+                            title="Delete quote"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={11} className="h-24 text-center">
+                    <div className="flex flex-col items-center justify-center text-muted-foreground">
+                      <Search className="w-8 h-8 mb-2 opacity-20" />
+                      <p>No quotes match your search filters.</p>
+                      <Button variant="link" onClick={() => { setSearchQuery(""); setFilterType("all"); }}>
+                        Clear Filters
+                      </Button>
                     </div>
                   </TableCell>
-
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table >
         </div >
@@ -338,58 +386,12 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
         </DialogContent>
       </Dialog >
 
-      {/* View Quote Details Dialog */}
-      < Dialog open={viewingQuote !== null} onOpenChange={(open) => !open && setViewingQuote(null)}>
-        <DialogContent className="bg-card border-border max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="text-foreground">Quote Details - {viewingQuote?.projectName}</DialogTitle>
-          </DialogHeader>
-          {viewingQuote && (
-            <div className="space-y-5">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <DetailItem label="Print Type" value={viewingQuote.printType} />
-                <DetailItem label="Client" value={viewingQuote.clientName || "-"} />
-                <DetailItem label="Colour" value={viewingQuote.printColour || "-"} />
-                <DetailItem label="Material" value={viewingQuote.parameters.materialName || "-"} />
-                <DetailItem label="Machine" value={viewingQuote.parameters.machineName || "-"} />
-              </div>
-
-              <div className="border-t border-border pt-4 space-y-3">
-                <h4 className="font-semibold text-foreground text-sm uppercase tracking-wide">Cost Breakdown</h4>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <CostDetailRow label="Material Cost" value={viewingQuote.materialCost} />
-                  <CostDetailRow label="Machine Time" value={viewingQuote.machineTimeCost} />
-                  <CostDetailRow label="Electricity" value={viewingQuote.electricityCost} />
-                  <CostDetailRow label="Labor" value={viewingQuote.laborCost} />
-                  {viewingQuote.parameters.consumablesTotal && viewingQuote.parameters.consumablesTotal > 0 && (
-                    <CostDetailRow label="Consumables" value={viewingQuote.parameters.consumablesTotal} />
-                  )}
-                  <CostDetailRow label="Overhead" value={viewingQuote.overheadCost} />
-                  <CostDetailRow label="Subtotal" value={viewingQuote.subtotal} highlight />
-                  <CostDetailRow label="Markup" value={viewingQuote.markup} />
-                </div>
-                <div className="bg-gradient-accent rounded-xl p-4 mt-4 shadow-card">
-                  <div className="flex justify-between items-center">
-                    <span className="font-semibold text-accent-foreground">Total Price:</span>
-                    <span className="text-2xl font-bold text-accent-foreground tabular-nums">
-                      {formatPrice(viewingQuote.totalPrice)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {viewingQuote.notes && (
-                <div className="border-t border-border pt-4">
-                  <h4 className="font-semibold mb-2 text-foreground text-sm uppercase tracking-wide">Notes</h4>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap bg-muted/50 p-3 rounded-lg">
-                    {viewingQuote.notes}
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog >
+      {/* Use QuoteDetailsDialog Component */}
+      <QuoteDetailsDialog
+        quote={viewingQuote}
+        open={viewingQuote !== null}
+        onOpenChange={(open) => !open && setViewingQuote(null)}
+      />
 
       {/* Print Job Dialog (Bambu Style) */}
       <PrintJobDialog
@@ -405,26 +407,5 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
 });
 
 SavedQuotesTable.displayName = "SavedQuotesTable";
-
-const DetailItem = memo(({ label, value }: { label: string; value: string }) => (
-  <div>
-    <span className="text-muted-foreground text-xs uppercase tracking-wide">{label}</span>
-    <p className="font-medium text-foreground mt-0.5">{value}</p>
-  </div>
-));
-
-DetailItem.displayName = "DetailItem";
-
-const CostDetailRow = memo(({ label, value, highlight }: { label: string; value: number; highlight?: boolean }) => {
-  const { formatPrice } = useCurrency();
-  return (
-    <>
-      <span className={`text-muted-foreground ${highlight ? 'font-medium' : ''}`}>{label}:</span>
-      <span className={`text-right tabular-nums ${highlight ? 'font-semibold text-foreground' : 'text-foreground'}`}>
-        {formatPrice(value)}
-      </span>
-    </>
-  );
-});
 
 export default SavedQuotesTable;

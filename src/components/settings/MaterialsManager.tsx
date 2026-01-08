@@ -4,11 +4,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, ChevronDown, ChevronRight, Package } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrency } from "@/components/CurrencyProvider";
 import { Material } from "@/types/quote";
 import * as sessionStore from "@/lib/sessionStorage";
+import { MaterialInventory } from "./MaterialInventory";
 
 // --- Materials Form Component ---
 interface MaterialsFormProps {
@@ -62,16 +63,16 @@ const MaterialsForm = ({ initialData, onSubmit, onCancel, isEditing, currencySym
       unit: formData.unit,
       print_type: formData.print_type,
     }); // ID will be handled by parent or store
-    
+
     if (!isEditing) {
-        // Reset form after add only
-        setFormData({
-            name: "",
-            cost_per_unit: "",
-            unit: "kg",
-            print_type: "FDM",
-            description: "",
-        });
+      // Reset form after add only
+      setFormData({
+        name: "",
+        cost_per_unit: "",
+        unit: "kg",
+        print_type: "FDM",
+        description: "",
+      });
     }
   };
 
@@ -165,56 +166,100 @@ interface MaterialsListProps {
 }
 
 const MaterialsList = memo(({ materials, onEdit, onDelete, formatPrice }: MaterialsListProps) => {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const toggleExpand = (id: string) => {
+    setExpandedId(prev => prev === id ? null : id);
+  };
+
   return (
     <div className="border border-border rounded-lg overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-10"></TableHead>
             <TableHead>Name</TableHead>
             <TableHead>Type</TableHead>
             <TableHead>Cost per Unit</TableHead>
-            <TableHead>Unit</TableHead>
+            <TableHead>Stock</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {materials.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+              <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                 No materials added yet. Add your first material above.
               </TableCell>
             </TableRow>
           ) : (
-            materials.map((material) => (
-              <TableRow key={material.id}>
-                <TableCell className="font-medium">{material.name}</TableCell>
-                <TableCell>
-                  <span className="px-2 py-1 rounded-full text-xs bg-primary/10 text-primary">
-                    {material.print_type}
-                  </span>
-                </TableCell>
-                <TableCell>{formatPrice(material.cost_per_unit)}</TableCell>
-                <TableCell>{material.unit}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex gap-2 justify-end">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => onEdit(material)}
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => onDelete(material.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))
+            materials.map((material) => {
+              const stock = sessionStore.getMaterialStock(material.id);
+              const isLow = material.lowStockThreshold ? stock < material.lowStockThreshold : stock < 200;
+              const isExpanded = expandedId === material.id;
+
+              // Format weight: show kg when >= 1000g for FDM, L when >= 1000ml for Resin
+              const formatStock = (value: number) => {
+                if (material.print_type === "FDM") {
+                  return value >= 1000 ? `${(value / 1000).toFixed(value % 1000 === 0 ? 0 : 1)}kg` : `${value.toFixed(0)}g`;
+                } else {
+                  return value >= 1000 ? `${(value / 1000).toFixed(value % 1000 === 0 ? 0 : 1)}L` : `${value.toFixed(0)}ml`;
+                }
+              };
+
+              return (
+                <>
+                  <TableRow key={material.id} className="cursor-pointer hover:bg-muted/50" onClick={() => toggleExpand(material.id)}>
+                    <TableCell>
+                      <Button variant="ghost" size="icon" className="h-6 w-6">
+                        {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                      </Button>
+                    </TableCell>
+                    <TableCell className="font-medium">{material.name}</TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded-full text-xs ${material.print_type === "FDM" ? "bg-primary/10 text-primary" : "bg-purple-500/10 text-purple-600"}`}>
+                        {material.print_type}
+                      </span>
+                    </TableCell>
+                    <TableCell>{formatPrice(material.cost_per_unit)}/{material.unit}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Package className="w-4 h-4 text-muted-foreground" />
+                        <span className={isLow ? "text-destructive font-medium" : ""}>
+                          {formatStock(stock)}
+                        </span>
+                        {isLow && <span className="text-xs text-destructive">Low</span>}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex gap-2 justify-end">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onEdit(material)}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onDelete(material.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                  {isExpanded && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="bg-muted/30 p-4">
+                        <MaterialInventory material={material} />
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </>
+              );
+            })
           )}
         </TableBody>
       </Table>
@@ -246,7 +291,9 @@ const MaterialsManager = () => {
         return a.name.localeCompare(b.name);
       });
       setMaterials(data);
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as Error;
+      console.error(err);
       toast.error("Failed to load materials");
     } finally {
       setLoading(false);
@@ -270,8 +317,9 @@ const MaterialsManager = () => {
       }
 
       fetchMaterials();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to save material");
+    } catch (error) {
+      const err = error as Error;
+      toast.error(err.message || "Failed to save material");
     }
   };
 
@@ -290,8 +338,9 @@ const MaterialsManager = () => {
       sessionStore.deleteMaterial(id);
       toast.success("Material deleted successfully");
       fetchMaterials();
-    } catch (error: any) {
-      toast.error("Failed to delete material");
+    } catch (error) {
+      const err = error as Error;
+      toast.error(err.message || "Failed to delete material");
     }
   };
 

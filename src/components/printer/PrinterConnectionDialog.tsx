@@ -6,18 +6,19 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { RefreshCw, Wifi, Cloud, Check, AlertCircle } from 'lucide-react';
+import { RefreshCw, Wifi, Cloud, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { BambuDevice } from '@/types/printer';
 
 interface PrinterConnectionDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onConnected: (printer: any) => void;
+    onConnected: (printer: BambuDevice) => void;
 }
 
 export function PrinterConnectionDialog({ open, onOpenChange, onConnected }: PrinterConnectionDialogProps) {
     const [loading, setLoading] = useState(false);
-    const [cloudDevices, setCloudDevices] = useState<any[]>([]);
+    const [cloudDevices, setCloudDevices] = useState<BambuDevice[]>([]);
 
     // Login State
     const [email, setEmail] = useState('');
@@ -35,11 +36,12 @@ export function PrinterConnectionDialog({ open, onOpenChange, onConnected }: Pri
     const handleLogin = async () => {
         setLoading(true);
         try {
-            await (window as any).electronAPI.bambu.login({ email, password, code });
+            await window.electronAPI.bambu.login({ email, password, code });
             toast.success('Logged in to Bambu Cloud');
             fetchCloudDevices();
             setNeeds2FA(false);
-        } catch (err: any) {
+        } catch (error) {
+            const err = error as Error;
             if (err.message.includes('MFA') || err.message.includes('EMAIL_CODE')) {
                 setNeeds2FA(true);
                 toast.info('Verification code required');
@@ -54,28 +56,30 @@ export function PrinterConnectionDialog({ open, onOpenChange, onConnected }: Pri
     const fetchCloudDevices = async () => {
         setLoading(true);
         try {
-            const devices = await (window as any).electronAPI.bambu.getDevices();
+            const devices = await window.electronAPI.bambu.getDevices();
             setCloudDevices(devices);
-        } catch (err: any) {
+        } catch (error) {
+            const err = error as Error;
             toast.error('Failed to fetch devices: ' + err.message);
         } finally {
             setLoading(false);
         }
     };
 
-    const connectDevice = async (device: any) => {
+    const connectDevice = async (device: BambuDevice) => {
         setLoading(true);
         try {
-            await (window as any).electronAPI.printer.connect({
-                ip: device.dev_ip, // cloud connection might not strictly need IP if using MQTT proxy, but standard flow uses it or cached
+            await window.electronAPI.printer.connect({
+                // Cloud connection might not strictly need IP if using MQTT proxy
                 serial: device.dev_id,
-                accessCode: device.access_code, // might be undefined if from cloud fetch, backend handles cache
+                accessCode: device.access_code || '', // might be undefined if from cloud fetch
                 cloudMode: true
             });
             toast.success(`Connected to ${device.name}`);
             onConnected(device);
             onOpenChange(false);
-        } catch (err: any) {
+        } catch (error) {
+            const err = error as Error;
             toast.error('Connection failed: ' + err.message);
         } finally {
             setLoading(false);
@@ -85,16 +89,17 @@ export function PrinterConnectionDialog({ open, onOpenChange, onConnected }: Pri
     const connectLan = async () => {
         setLoading(true);
         try {
-            await (window as any).electronAPI.printer.connect({
+            await window.electronAPI.printer.connect({
                 ip: lanIp,
                 accessCode: lanAccessCode,
                 serial: lanSerial || 'unknown_serial', // serial is required for MQTT topic
                 cloudMode: false
             });
             toast.success(`Connected to ${lanIp}`);
-            onConnected({ dev_id: lanSerial, name: 'LAN Printer', dev_ip: lanIp });
+            onConnected({ dev_id: lanSerial, name: 'LAN Printer', model: 'Unknown', id: lanSerial });
             onOpenChange(false);
-        } catch (err: any) {
+        } catch (error) {
+            const err = error as Error;
             toast.error('LAN Connection failed: ' + err.message);
         } finally {
             setLoading(false);
@@ -169,7 +174,7 @@ export function PrinterConnectionDialog({ open, onOpenChange, onConnected }: Pri
                                             <CardContent className="p-4 flex justify-between items-center">
                                                 <div className="flex flex-col">
                                                     <span className="font-bold">{dev.name}</span>
-                                                    <span className="text-xs text-muted-foreground">{dev.printerModel} • {dev.dev_id}</span>
+                                                    <span className="text-xs text-muted-foreground">{dev.model} • {dev.dev_id}</span>
                                                 </div>
                                                 <Button size="sm" variant="secondary">Connect</Button>
                                             </CardContent>

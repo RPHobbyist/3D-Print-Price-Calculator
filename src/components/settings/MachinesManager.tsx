@@ -209,7 +209,7 @@ const MachinesList = memo(({ machines, onEdit, onDelete, formatPrice }: Machines
               <TableRow key={machine.id}>
                 <TableCell className="font-medium">{machine.name}</TableCell>
                 <TableCell>
-                  <span className="px-2 py-1 rounded-full text-xs bg-primary/10 text-primary">
+                  <span className={`px-2 py-1 rounded-full text-xs ${machine.print_type === "FDM" ? "bg-primary/10 text-primary" : "bg-purple-500/10 text-purple-600"}`}>
                     {machine.print_type}
                   </span>
                 </TableCell>
@@ -266,7 +266,9 @@ const MachinesManager = () => {
         return a.name.localeCompare(b.name);
       });
       setMachines(data);
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as Error;
+      console.error(err);
       toast.error("Failed to load machines");
     } finally {
       setLoading(false);
@@ -290,8 +292,9 @@ const MachinesManager = () => {
       }
 
       fetchMachines();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to save machine");
+    } catch (error) {
+      const err = error as Error;
+      toast.error(err.message || "Failed to save machine");
     }
   };
 
@@ -310,7 +313,9 @@ const MachinesManager = () => {
       sessionStore.deleteMachine(id);
       toast.success("Machine deleted successfully");
       fetchMachines();
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as Error;
+      console.error(err);
       toast.error("Failed to delete machine");
     }
   };

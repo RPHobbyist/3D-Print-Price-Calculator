@@ -1,7 +1,7 @@
 // Local Storage - Data persists until explicitly cleared
 // Data remains even after app closes/restarts
 
-import { QuoteData, Material, Machine, CostConstant, Customer } from "@/types/quote";
+import { QuoteData, Material, Machine, CostConstant, Customer, CustomerReview, MaterialSpool, CompanySettings } from "@/types/quote";
 
 // Generate unique IDs
 const generateId = (): string => {
@@ -78,6 +78,9 @@ const STORAGE_KEYS = {
     MACHINES: "session_machines",
     CONSTANTS: "session_constants",
     CUSTOMERS: "session_customers",
+    REVIEWS: "session_reviews",
+    SPOOLS: "session_spools",
+    COMPANY: "session_company",
     INITIALIZED: "session_initialized",
 };
 
@@ -89,6 +92,9 @@ const initializeDefaults = () => {
         localStorage.setItem(STORAGE_KEYS.MACHINES, JSON.stringify(defaultMachines));
         localStorage.setItem(STORAGE_KEYS.CONSTANTS, JSON.stringify(defaultConstants));
         localStorage.setItem(STORAGE_KEYS.CUSTOMERS, JSON.stringify([]));
+        localStorage.setItem(STORAGE_KEYS.REVIEWS, JSON.stringify([]));
+        localStorage.setItem(STORAGE_KEYS.SPOOLS, JSON.stringify([]));
+        localStorage.setItem(STORAGE_KEYS.COMPANY, JSON.stringify(null));
         localStorage.setItem(STORAGE_KEYS.INITIALIZED, "true");
     }
 };
@@ -226,6 +232,8 @@ export const resetSessionData = (): void => {
     localStorage.removeItem(STORAGE_KEYS.MACHINES);
     localStorage.removeItem(STORAGE_KEYS.CONSTANTS);
     localStorage.removeItem(STORAGE_KEYS.CUSTOMERS);
+    localStorage.removeItem(STORAGE_KEYS.REVIEWS);
+    localStorage.removeItem(STORAGE_KEYS.SPOOLS);
     initializeDefaults();
 };
 
@@ -253,11 +261,9 @@ export const saveCustomer = (customer: Omit<Customer, "id" | "createdAt"> & { id
         customers.unshift(newCustomer);
     }
     localStorage.setItem(STORAGE_KEYS.CUSTOMERS, JSON.stringify(customers));
-    // Return either the updated or new customer. Since we modified the array in place or pushed, we need to find it or return the constructed one.
-    // Simplifying return for new/update:
     return customer.id
         ? customers.find(c => c.id === customer.id)!
-        : customers[0]; // unshift puts new at 0
+        : customers[0];
 };
 
 export const deleteCustomer = (id: string): void => {
@@ -288,6 +294,160 @@ export const getCustomerStats = (customerId: string) => {
     };
 };
 
+// ==================== CUSTOMER REVIEWS ====================
+
+export const getReviews = (customerId?: string): CustomerReview[] => {
+    initializeDefaults();
+    const reviews: CustomerReview[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.REVIEWS) || "[]");
+    return customerId ? reviews.filter(r => r.customerId === customerId) : reviews;
+};
+
+export const saveReview = (review: Omit<CustomerReview, "id" | "createdAt"> & { id?: string }): CustomerReview => {
+    const reviews = getReviews();
+    if (review.id) {
+        const index = reviews.findIndex(r => r.id === review.id);
+        if (index !== -1) {
+            reviews[index] = { ...reviews[index], ...review } as CustomerReview;
+        }
+    } else {
+        const newReview: CustomerReview = {
+            ...review,
+            id: generateId(),
+            createdAt: new Date().toISOString(),
+        } as CustomerReview;
+        reviews.unshift(newReview);
+    }
+    localStorage.setItem(STORAGE_KEYS.REVIEWS, JSON.stringify(reviews));
+
+    // Update customer's average rating
+    updateCustomerRating(review.customerId);
+
+    return review.id ? reviews.find(r => r.id === review.id)! : reviews[0];
+};
+
+export const deleteReview = (id: string): void => {
+    const reviews = getReviews();
+    const review = reviews.find(r => r.id === id);
+    const filtered = reviews.filter(r => r.id !== id);
+    localStorage.setItem(STORAGE_KEYS.REVIEWS, JSON.stringify(filtered));
+
+    if (review) {
+        updateCustomerRating(review.customerId);
+    }
+};
+
+export const getCustomerAverageRating = (customerId: string): { average: number; count: number } => {
+    const reviews = getReviews(customerId);
+    if (reviews.length === 0) return { average: 0, count: 0 };
+    const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
+    return { average: sum / reviews.length, count: reviews.length };
+};
+
+const updateCustomerRating = (customerId: string): void => {
+    const { average, count } = getCustomerAverageRating(customerId);
+    const customers = getCustomers();
+    const index = customers.findIndex(c => c.id === customerId);
+    if (index !== -1) {
+        customers[index].averageRating = average;
+        customers[index].reviewCount = count;
+        localStorage.setItem(STORAGE_KEYS.CUSTOMERS, JSON.stringify(customers));
+    }
+};
+
+// ==================== MATERIAL SPOOLS (INVENTORY) ====================
+
+export const getSpools = (materialId?: string): MaterialSpool[] => {
+    initializeDefaults();
+    const spools: MaterialSpool[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.SPOOLS) || "[]");
+    return materialId ? spools.filter(s => s.materialId === materialId) : spools;
+};
+
+export const saveSpool = (spool: Omit<MaterialSpool, "id"> & { id?: string }): MaterialSpool => {
+    const spools = getSpools();
+    if (spool.id) {
+        const index = spools.findIndex(s => s.id === spool.id);
+        if (index !== -1) {
+            spools[index] = spool as MaterialSpool;
+        }
+    } else {
+        const newSpool: MaterialSpool = {
+            ...spool,
+            id: generateId(),
+        };
+        spools.push(newSpool);
+    }
+    localStorage.setItem(STORAGE_KEYS.SPOOLS, JSON.stringify(spools));
+    updateMaterialStock(spool.materialId);
+    return spool.id ? spools.find(s => s.id === spool.id)! : spools[spools.length - 1];
+};
+
+export const deleteSpool = (id: string): void => {
+    const spools = getSpools();
+    const spool = spools.find(s => s.id === id);
+    const filtered = spools.filter(s => s.id !== id);
+    localStorage.setItem(STORAGE_KEYS.SPOOLS, JSON.stringify(filtered));
+
+    if (spool) {
+        updateMaterialStock(spool.materialId);
+    }
+};
+
+export const deductFromSpool = (spoolId: string, amount: number): boolean => {
+    const spools = getSpools();
+    const index = spools.findIndex(s => s.id === spoolId);
+    if (index === -1) return false;
+
+    // Allow negative stock (if over-consumed) or adding back (if amount is negative)
+    const newWeight = spools[index].currentWeight - amount;
+    spools[index].currentWeight = newWeight;
+
+    localStorage.setItem(STORAGE_KEYS.SPOOLS, JSON.stringify(spools));
+    updateMaterialStock(spools[index].materialId);
+    return true;
+};
+
+export const restoreToSpool = (spoolId: string, amount: number): boolean => {
+    return deductFromSpool(spoolId, -amount);
+};
+
+export const getMaterialStock = (materialId: string): number => {
+    const spools = getSpools(materialId);
+    return spools.reduce((sum, s) => sum + s.currentWeight, 0);
+};
+
+export const getLowStockMaterials = (threshold?: number): Material[] => {
+    const materials = getMaterials();
+    return materials.filter(m => {
+        const stock = getMaterialStock(m.id);
+        const limit = m.lowStockThreshold ?? threshold ?? 200; // Default 200g threshold
+        return stock < limit && stock >= 0;
+    });
+};
+
+const updateMaterialStock = (materialId: string): void => {
+    const stock = getMaterialStock(materialId);
+    const materials = getMaterials();
+    const index = materials.findIndex(m => m.id === materialId);
+    if (index !== -1) {
+        materials[index].totalInStock = stock;
+        localStorage.setItem(STORAGE_KEYS.MATERIALS, JSON.stringify(materials));
+    }
+};
+
+// ==================== COMPANY SETTINGS ====================
+
+export const getCompanySettings = (): CompanySettings | null => {
+    initializeDefaults();
+    const data = localStorage.getItem(STORAGE_KEYS.COMPANY);
+    return data ? JSON.parse(data) : null;
+};
+
+export const saveCompanySettings = (settings: CompanySettings): void => {
+    localStorage.setItem(STORAGE_KEYS.COMPANY, JSON.stringify(settings));
+};
+
+// ==================== EXPORT/IMPORT ====================
+
 // Settings data structure for export/import
 export interface SettingsExport {
     version: string;
@@ -296,17 +456,23 @@ export interface SettingsExport {
     machines: Machine[];
     constants: CostConstant[];
     customers: Customer[];
+    reviews?: CustomerReview[];
+    spools?: MaterialSpool[];
+    company?: CompanySettings | null;
 }
 
 // Export all settings to JSON
 export const exportAllSettings = (): SettingsExport => {
     return {
-        version: "1.0",
+        version: "1.1",
         exportDate: new Date().toISOString(),
         materials: getMaterials(),
         machines: getMachines(),
         constants: getConstants(),
         customers: getCustomers(),
+        reviews: getReviews(),
+        spools: getSpools(),
+        company: getCompanySettings(),
     };
 };
 
@@ -323,7 +489,7 @@ export const importAllSettings = (data: SettingsExport): { success: boolean; mes
             return { success: false, message: "Settings data is corrupted" };
         }
 
-        // Validate customers (optional for backward compatibility, but good to check if present)
+        // Validate customers (optional for backward compatibility)
         if (data.customers && !Array.isArray(data.customers)) {
             return { success: false, message: "Customer data is corrupted" };
         }
@@ -342,9 +508,24 @@ export const importAllSettings = (data: SettingsExport): { success: boolean; mes
             localStorage.setItem(STORAGE_KEYS.CUSTOMERS, JSON.stringify(data.customers));
         }
 
+        // Import reviews (if present)
+        if (data.reviews) {
+            localStorage.setItem(STORAGE_KEYS.REVIEWS, JSON.stringify(data.reviews));
+        }
+
+        // Import spools (if present)
+        if (data.spools) {
+            localStorage.setItem(STORAGE_KEYS.SPOOLS, JSON.stringify(data.spools));
+        }
+
+        // Import company settings (if present)
+        if (data.company) {
+            localStorage.setItem(STORAGE_KEYS.COMPANY, JSON.stringify(data.company));
+        }
+
         return {
             success: true,
-            message: `Imported ${data.materials.length} materials, ${data.machines.length} machines, ${data.constants.length} consumables${data.customers ? `, ${data.customers.length} customers` : ''}`
+            message: `Imported ${data.materials.length} materials, ${data.machines.length} machines, ${data.constants.length} consumables${data.customers ? `, ${data.customers.length} customers` : ''}${data.reviews ? `, ${data.reviews.length} reviews` : ''}${data.spools ? `, ${data.spools.length} spools` : ''}`
         };
     } catch (error) {
         console.error("Import error:", error);

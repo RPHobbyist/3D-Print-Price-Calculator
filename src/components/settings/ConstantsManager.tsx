@@ -30,7 +30,7 @@ const ConstantsManager = () => {
     try {
       const rawData = sessionStore.getConstants();
 
-      const processedData = rawData.map((item: any) => {
+      const processedData = rawData.map((item: CostConstant) => {
         return {
           ...item,
           ...processVisibilityFromDescription(item.description)
@@ -38,7 +38,9 @@ const ConstantsManager = () => {
       });
 
       setConstants(processedData);
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as Error;
+      console.error(err);
       toast.error("Failed to load constants");
     } finally {
       setLoading(false);
@@ -74,9 +76,10 @@ const ConstantsManager = () => {
       resetForm();
       fetchConstants();
 
-    } catch (error: any) {
-      console.error("Save error:", error);
-      toast.error("An unexpected error occurred: " + error.message);
+    } catch (error) {
+      const err = error as Error;
+      console.error("Save error:", err);
+      toast.error("An unexpected error occurred: " + err.message);
     }
   };
 
@@ -98,7 +101,9 @@ const ConstantsManager = () => {
       sessionStore.deleteConstant(id);
       toast.success("Constant deleted successfully");
       fetchConstants();
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as Error;
+      console.error(err);
       toast.error("Failed to delete constant");
     }
   };

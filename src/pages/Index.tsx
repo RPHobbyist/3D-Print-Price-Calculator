@@ -19,6 +19,8 @@ import { QuoteData } from "@/types/quote";
 import { useSavedQuotes } from "@/hooks/useSavedQuotes";
 import { useBatchQuote } from "@/contexts/BatchQuoteContext";
 import { toast } from "sonner";
+import { LowStockBanner } from "@/components/shared/LowStockBanner";
+import WhatsNewDialog from "@/components/WhatsNewDialog";
 
 const Index = memo(() => {
   const navigate = useNavigate();
@@ -214,6 +216,7 @@ const Index = memo(() => {
         </div>
       </main>
 
+      <WhatsNewDialog />
       <Footer />
     </div>
   );

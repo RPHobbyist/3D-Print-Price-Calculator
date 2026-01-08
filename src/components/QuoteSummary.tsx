@@ -2,7 +2,7 @@ import { memo, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { FileText, Download, Save, Sparkles, FileDown, Package, Factory } from "lucide-react";
+import { FileText, Download, Save, Sparkles, FileDown, Package, Factory, AlertTriangle } from "lucide-react";
 import { QuoteData } from "@/types/quote";
 import { toast } from "sonner";
 import { useCurrency } from "@/components/CurrencyProvider";
@@ -10,6 +10,18 @@ import { printQuotePDF } from "@/lib/pdfGenerator";
 import { useBatchQuote } from "@/contexts/BatchQuoteContext";
 import { useProduction } from "@/contexts/ProductionContext";
 import { useCalculatorData } from "@/hooks/useCalculatorData";
+import { getSpools } from "@/lib/sessionStorage";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useState } from "react";
 
 interface QuoteSummaryProps {
   quoteData: QuoteData | null;
@@ -22,8 +34,13 @@ const QuoteSummary = memo(({ quoteData, onSaveQuote }: QuoteSummaryProps) => {
   const { addJob } = useProduction();
 
   // Fetch machines to resolve ID for auto-assignment
+  // Fetch machines to resolve ID for auto-assignment
   const { machines: fdmMachines } = useCalculatorData({ printType: 'FDM' });
   const { machines: resinMachines } = useCalculatorData({ printType: 'Resin' });
+
+  const [showLowStockAlert, setShowLowStockAlert] = useState(false);
+  const [pendingSave, setPendingSave] = useState(false);
+  const [stockShortage, setStockShortage] = useState<{ name: string, required: number, available: number, unit: string } | null>(null);
 
   const handleExport = useCallback(() => {
     if (!quoteData) return;
@@ -66,7 +83,41 @@ Generated: ${new Date().toLocaleString()}
 
   const handleSave = useCallback(() => {
     if (!quoteData) return;
+
+    // Check inventory if spool is selected
+    const spoolId = quoteData.parameters?.selectedSpoolId as string;
+    const materialId = quoteData.parameters?.materialId as string;
+
+    if (spoolId && materialId) {
+      const spools = getSpools(materialId);
+      const spool = spools.find(s => s.id === spoolId);
+
+      if (spool) {
+        // Calculate total weight needed (filamentWeight or resinVolume * quantity)
+        const weight = parseFloat(quoteData.parameters?.filamentWeight as string || quoteData.parameters?.resinVolume as string || "0");
+        const totalNeeded = weight * quoteData.quantity;
+
+        if (spool.currentWeight < totalNeeded) {
+          setStockShortage({
+            name: spool.name,
+            required: totalNeeded,
+            available: spool.currentWeight,
+            unit: quoteData.printType === 'Resin' ? 'ml' : 'g'
+          });
+          setShowLowStockAlert(true);
+          return;
+        }
+      }
+    }
+
     onSaveQuote(quoteData);
+  }, [quoteData, onSaveQuote]);
+
+  const confirmSave = useCallback(() => {
+    if (quoteData) {
+      onSaveQuote(quoteData);
+      setShowLowStockAlert(false);
+    }
   }, [quoteData, onSaveQuote]);
 
   const handlePDF = useCallback(() => {
@@ -126,13 +177,22 @@ Generated: ${new Date().toLocaleString()}
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary-foreground/5 rounded-full -translate-y-1/2 translate-x-1/2" />
         <div className="relative">
           <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="w-5 h-5 animate-pulse-soft" />
             <h2 className="text-xl font-bold">Quote Summary</h2>
           </div>
           <p className="text-sm opacity-90 font-medium">{quoteData.printType} Printing</p>
           <p className="text-sm opacity-75 mt-1">Project: {quoteData.projectName}</p>
+          {quoteData.parameters?.materialName && (
+            <p className="text-sm opacity-75 mt-1">Material: {quoteData.parameters.materialName}</p>
+          )}
           {quoteData.printColour && (
-            <p className="text-sm opacity-65">Colour: {quoteData.printColour}</p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-sm opacity-65">Colour:</span>
+              <div
+                className="w-5 h-5 rounded-full border-2 border-white/30"
+                style={{ backgroundColor: quoteData.printColour.split(';')[0] || quoteData.printColour }}
+                title={quoteData.printColour}
+              />
+            </div>
           )}
         </div>
       </div>
@@ -201,7 +261,7 @@ Generated: ${new Date().toLocaleString()}
         <div className="space-y-2.5 pt-2">
           <Button
             onClick={handleSave}
-            className="w-full bg-gradient-primary hover:opacity-90 transition-all shadow-card hover:shadow-elevated"
+            className="w-full bg-primary hover:bg-primary/90 transition-all shadow-card hover:shadow-elevated"
           >
             <Save className="w-4 h-4 mr-2" />
             Save Quote
@@ -245,6 +305,40 @@ Generated: ${new Date().toLocaleString()}
           </Button>
         </div>
       </div>
+
+      <AlertDialog open={showLowStockAlert} onOpenChange={setShowLowStockAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Insufficient Stock Warning
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {stockShortage && (
+                <div className="space-y-2">
+                  <p>
+                    This quote requires <strong>{stockShortage.required.toFixed(0)}{stockShortage.unit}</strong> of material,
+                    but <strong>{stockShortage.name}</strong> only has <strong>{stockShortage.available.toFixed(0)}{stockShortage.unit}</strong> remaining.
+                  </p>
+                  <p>
+                    Saving this quote will deduct the material and result in a
+                    negative stock level (<strong>{(stockShortage.available - stockShortage.required).toFixed(0)}{stockShortage.unit}</strong>).
+                  </p>
+                  <p className="font-medium text-foreground mt-2">
+                    Do you want to proceed anyway?
+                  </p>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmSave} className="bg-destructive hover:bg-destructive/90">
+              Proceed Anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 });

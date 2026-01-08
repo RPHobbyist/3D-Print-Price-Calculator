@@ -1,11 +1,12 @@
 import { useMemo, useState, useEffect } from "react";
 import { DragDropContext, DropResult } from "@hello-pangea/dnd";
 import { Button } from "@/components/ui/button";
-import { useProduction } from "@/contexts/ProductionContext";
+import { useProduction, ProductionJob } from "@/contexts/ProductionContext";
 import { useCalculatorData } from "@/hooks/useCalculatorData";
 import {
     Filter,
-    ArrowLeft
+    ArrowLeft,
+    Calculator
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -17,10 +18,11 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { JobCard } from "@/components/print-management/JobCard";
 import { KanbanColumn } from "@/components/print-management/KanbanColumn";
 import { PrinterConnectDialog } from "@/components/print-management/PrinterConnectDialog";
-import { PrintJobDialog } from "@/components/print-management/PrintJobDialog";
+import { PrintJobDialog, PrintJobData } from "@/components/print-management/PrintJobDialog";
+import { PrinterConnection, PrintOptions } from "@/types/printer";
+import { CapacityPlanner } from "@/components/print-management/CapacityPlanner";
 
 const PrintManagement = () => {
     const navigate = useNavigate();
@@ -57,22 +59,19 @@ const PrintManagement = () => {
     };
 
     // Printer Connection State
-    const [connections, setConnections] = useState<{
-        [key: string]: {
-            status: 'connected' | 'disconnected',
-            ip?: string,
-            printState?: string,
-            progress?: number,
-            remainingTime?: number
-        }
-    }>({});
+    const [connections, setConnections] = useState<Record<string, PrinterConnection>>({});
     const [connectDialogMachineId, setConnectDialogMachineId] = useState<string | null>(null);
-    const [printJob, setPrintJob] = useState<{ job: any; machineId: string } | null>(null);
+
+    // Typed state for print job
+    const [printJob, setPrintJob] = useState<{ job: PrintJobData; machineId: string } | null>(null);
+
+    // Capacity Planner state
+    const [capacityPlannerOpen, setCapacityPlannerOpen] = useState(false);
 
     useEffect(() => {
         if (!window.electronAPI?.printer) return;
 
-        const cleanupStatus = window.electronAPI.printer.onStatus((data: { ip: string; status: 'connected' | 'disconnected' }) => {
+        const cleanupStatus = window.electronAPI.printer.onStatus((data: { ip: string; status: string }) => {
             // We need to map IP back to machine ID or store it. 
             // Simplification: We update based on the IP stored in connections.
             setConnections(prev => {
@@ -80,7 +79,6 @@ const PrintManagement = () => {
                 if (machineId) {
                     return { ...prev, [machineId]: { ...prev[machineId], status: data.status } };
                 }
-                return prev;
                 return prev;
             });
         });
@@ -136,46 +134,7 @@ const PrintManagement = () => {
             console.log('Restoring printer connections:', printers);
             setConnections(prev => {
                 const next = { ...prev };
-                printers.forEach(p => {
-                    // Try to find machine ID by serial first (for Cloud Mode) or match existing IP logic
-                    // Here we map back to the ID used in our state.
-                    // Ideally we should know which Machine ID is associated with which Serial/IP.
-                    // For now, we might leave them 'orphaned' in state if we can't map, 
-                    // BUT since we connect via Dialog with specific Machine ID, we must persist that mapping.
-                    // Limiting factor: Backend doesn't know Machine ID. 
-                    // Frontend workaround: We'll just verify active connections match what we might expect,
-                    // OR we iterate our `machines` and if we see a match, we mark it connected.
-
-                    // Simple approach: Update status for any machine in our list that matches the serial/IP
-
-                    // Find machine with this serial (if available/stored) or just bind by IP if LAN?
-                    // The backend returns: ip, serial, cloudMode.
-
-                    // Iterate all machines to find a match? 
-                    // Current app doesn't seem to store Serial in Machine object explicitly used here,
-                    // but let's assume valid match if we can.
-
-                    // For this fix, let's just make sure if we have the machine ID in our session/local storage
-                    // we re-bind it. 
-                    // Actually `connections` state is purely ephemeral. We can iterate `machines` and match serials if we had them.
-
-                    // Let's iterate keys of `prev`? No, prev is empty.
-                    // We need to match valid machines.
-
-                    // Matching Strategy:
-                    // Since we don't strictly link Machine ID <-> Serial in DB yet, 
-                    // we can't perfectly restore WHICH card was connected if duplicate printers exist.
-                    // BUT, let's assume 1:1 for now or try to match by partials.
-                });
-
-                // Better approach for V1 Sync:
-                // Just put them in state keyed by their IP/Serial if possible?
-                // The `connections` object is keyed by `machineId`. 
-                // We need to know which `machineId` owns `p.ip` or `p.serial`.
-                // WE DON'T KNOW.
-
-                // Fix: We need to store the `machineId` <-> `connectionKey` mapping in localStorage
-                // so we can restore it on reload.
+                // Logic to restore connections would go here
                 return next;
             });
         });
@@ -193,7 +152,7 @@ const PrintManagement = () => {
                 const connectionKey = details.cloudMode ? `cloud:${details.serial}` : details.ip!;
                 setConnections(prev => ({
                     ...prev,
-                    [connectDialogMachineId]: { status: 'connected', ip: connectionKey }
+                    [connectDialogMachineId]: { status: 'connected', ip: connectionKey, serial: details.serial }
                 }));
 
                 // Persistence: Save mapping
@@ -205,20 +164,21 @@ const PrintManagement = () => {
             } else {
                 toast.error("Printer connection only available in Desktop App");
             }
-        } catch (error: any) {
-            console.error('[PrintManagement] Connection error:', error);
-            toast.error(`Failed to connect: ${error.message || 'Unknown error'}`);
+        } catch (error) {
+            const err = error as Error;
+            console.error('[PrintManagement] Connection error:', err);
+            toast.error(`Failed to connect: ${err.message || 'Unknown error'}`);
         }
         setConnectDialogMachineId(null);
     };
 
-    const handleSendFileInit = (machineId: string, job: any) => {
-        // job here might be the job object from Kanban
+    const handleSendFileInit = (machineId: string, job: PrintJobData) => {
         setPrintJob({ job, machineId });
     };
 
-    const handleSendFileConfirm = async (machineId: string, fileOrPath: File | string, options: any) => {
+    const handleSendFileConfirm = async (machineId: string, fileOrPath: File | string, options: PrintOptions) => {
         const conn = connections[machineId];
+        // conn.status checked against string, ensuring type safety
         if (!conn || conn.status !== 'connected' || !conn.ip) {
             toast.error("Printer not connected");
             return;
@@ -234,6 +194,7 @@ const PrintManagement = () => {
                 fileName = fileOrPath.split(/[\\/]/).pop() || 'unknown';
             } else {
                 // It's a File object - get path from Electron
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 filePath = (fileOrPath as any).path;
                 fileName = fileOrPath.name;
                 if (!filePath) {
@@ -374,6 +335,16 @@ const PrintManagement = () => {
                             ))}
                         </DropdownMenuContent>
                     </DropdownMenu>
+
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 gap-2 bg-card hover:bg-accent/50"
+                        onClick={() => setCapacityPlannerOpen(true)}
+                    >
+                        <Calculator className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="text-xs">Capacity</span>
+                    </Button>
                 </div>
             </div>
 
@@ -397,7 +368,11 @@ const PrintManagement = () => {
                                 isMachine={true}
                                 onConnect={() => setConnectDialogMachineId(col.rawId)}
                                 connectionStatus={connections[col.rawId]?.status || 'disconnected'}
-                                onSendFile={(file, job) => handleSendFileInit(col.rawId, { ...job, file })}
+                                // Cast to any or specialized Job type if needed by KanbanColumn, but here we pass localized wrapper
+                                // Or update KanbanColumn signature to accept PrintJobData-like structure?
+                                // Actually, KanbanColumn expects onSendFile(file, job: ProductionJob)
+                                // We are passing a compatible function.
+                                onSendFile={(file, job) => handleSendFileInit(col.rawId, job)}
                                 printerState={connections[col.rawId]}
                             />
                         ))}
@@ -415,10 +390,15 @@ const PrintManagement = () => {
             <PrintJobDialog
                 open={!!printJob}
                 onOpenChange={(open) => !open && setPrintJob(null)}
-                job={printJob?.job}
+                job={printJob?.job || null}
                 machines={machines}
                 connections={connections}
                 onSend={handleSendFileConfirm}
+            />
+
+            <CapacityPlanner
+                open={capacityPlannerOpen}
+                onOpenChange={setCapacityPlannerOpen}
             />
         </div>
     );

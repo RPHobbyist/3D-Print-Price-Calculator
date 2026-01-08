@@ -54,6 +54,7 @@ const GcodeUpload = ({ onDataExtracted }: GcodeUploadProps) => {
       // Strip the extension (e.g. .gcode) so the UI shows a clean Project Name
       const cleanName = stripFileExtension(file.name);
       // Get file path from Electron (File object has .path property in Electron)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const filePath = (file as any).path || '';
       console.log('📁 GcodeUpload - File path extracted:', filePath);
       console.log('📁 GcodeUpload - File name:', file.name);

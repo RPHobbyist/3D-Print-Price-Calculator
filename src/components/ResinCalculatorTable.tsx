@@ -7,6 +7,7 @@ import { calculateResinQuote, validateResinForm } from "@/lib/quoteCalculations"
 import { QuoteCalculator } from "./calculator/QuoteCalculator";
 import { FormFieldRow, TextField, SelectField } from "./calculator/FormField";
 import { ConsumablesSelector } from "./calculator/ConsumablesSelector";
+import { SpoolSelector } from "./calculator/SpoolSelector";
 import ResinFileUpload from "./ResinFileUpload";
 import { ResinFileData } from "@/lib/resinFileParser";
 import { useCurrency } from "@/components/CurrencyProvider";
@@ -36,6 +37,7 @@ const initialFormData: ResinFormData = {
 const ResinCalculatorTable = memo(({ onCalculate }: ResinCalculatorProps) => {
   const { materials, machines, constants, loading, getConstantValue } = useCalculatorData({ printType: "Resin" });
   const [formData, setFormData] = useState<ResinFormData>(initialFormData);
+  const [selectedSpoolId, setSelectedSpoolId] = useState<string>("");
   const { currency } = useCurrency();
 
   const updateField = useCallback(<K extends keyof ResinFormData>(field: K, value: ResinFormData[K]) => {
@@ -94,8 +96,14 @@ const ResinCalculatorTable = memo(({ onCalculate }: ResinCalculatorProps) => {
       return;
     }
 
+    // Include selectedSpoolId in formData for inventory tracking
+    const formDataWithSpool = {
+      ...formData,
+      selectedSpoolId: selectedSpoolId || undefined,
+    };
+
     const quoteData = calculateResinQuote({
-      formData,
+      formData: formDataWithSpool,
       material: selectedMaterial,
       machine: selectedMachine,
       electricityRate: getConstantValue("electricity"),
@@ -107,7 +115,7 @@ const ResinCalculatorTable = memo(({ onCalculate }: ResinCalculatorProps) => {
 
     onCalculate(quoteData);
     toast.success("Quote calculated successfully!");
-  }, [formData, materials, machines, constants, getConstantValue, onCalculate]);
+  }, [formData, selectedSpoolId, materials, machines, constants, getConstantValue, onCalculate]);
 
   const materialOptions = useMemo(() =>
     materials.map(m => ({
@@ -169,20 +177,30 @@ const ResinCalculatorTable = memo(({ onCalculate }: ResinCalculatorProps) => {
         />
       </FormFieldRow>
 
-      <FormFieldRow label="Print Colour">
-        <TextField
-          value={formData.printColour}
-          onChange={(v) => updateField("printColour", v)}
-          placeholder="e.g., Red, Blue, Black"
-        />
-      </FormFieldRow>
-
       <FormFieldRow label="Material" required>
         <SelectField
           value={formData.materialId}
-          onChange={(v) => updateField("materialId", v)}
+          onChange={(v) => {
+            updateField("materialId", v);
+            // Reset spool selection when material changes
+            setSelectedSpoolId("");
+            updateField("printColour", "");
+          }}
           placeholder="Select material"
           options={materialOptions}
+        />
+      </FormFieldRow>
+
+      <FormFieldRow label="Color" required>
+        <SpoolSelector
+          materialId={formData.materialId}
+          value={selectedSpoolId}
+          onChange={(spoolId, color) => {
+            setSelectedSpoolId(spoolId);
+            updateField("printColour", color);
+          }}
+          requiredWeight={(parseFloat(formData.resinVolume) || 0) * (parseInt(formData.quantity) || 1)}
+          itemType="bottle"
         />
       </FormFieldRow>
 

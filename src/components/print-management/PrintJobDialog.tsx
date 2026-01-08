@@ -16,16 +16,25 @@ import {
 } from "@/components/ui/select";
 import { RefreshCw, Timer, Weight } from "lucide-react";
 import { toast } from "sonner";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
+import { PrinterConnection, PrintOptions } from "@/types/printer";
+import { QuoteData, Machine } from "@/types/quote";
+
+// Define a minimal Job interface if not available elsewhere
+export interface PrintJobData {
+    id: string;
+    customerName?: string;
+    quote: QuoteData;
+    file?: File | string;
+    status?: string;
+}
 
 interface PrintJobDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    job: any; // Type strictly if possible
-    machines: any[];
-    connections: any;
-    onSend: (machineId: string, fileOrPath: any, options: any) => Promise<void>;
+    job: PrintJobData | null;
+    machines: Machine[];
+    connections: Record<string, PrinterConnection>;
+    onSend: (machineId: string, fileOrPath: File | string, options: PrintOptions) => Promise<void>;
 }
 
 export function PrintJobDialog({
@@ -40,7 +49,7 @@ export function PrintJobDialog({
     const [isSending, setIsSending] = useState(false);
 
     // Print Options State
-    const [options, setOptions] = useState({
+    const [options] = useState<PrintOptions>({
         timelapse: true,
         bedLeveling: true,
         flowCalibration: true,
@@ -50,7 +59,8 @@ export function PrintJobDialog({
     // Filter only connected machines
     const connectedMachines = machines.filter(
         (m) =>
-            connections[m.dev_id]?.status === "connected"
+            connections[m.id]?.status === "connected"
+        // connections uses machine.id as key in parent (PrintManagement.tsx)
     );
 
     const handleSend = async () => {
@@ -59,19 +69,11 @@ export function PrintJobDialog({
             return;
         }
 
+        if (!job) return;
+
         setIsSending(true);
         try {
-            // Use the job's quote file path or similar
-            // We assume job.quote has the necessary file info.
-            // If the job object structure is known, use it.
-            // job.quote.filePath might be needed?
-            // Or we pass the file object if this was from a drag event?
-
-            // Assuming job object has what we need or we pass it in.
-            // For now, let's assume `job.file` or `job.quote.filePath` is available.
-            // If not, we might need adjustments.
-
-            const fileToPrint = job.file || job.quote?.filePath; // Adjust based on actual data
+            const fileToPrint = job.file || job.quote?.filePath;
 
             if (!fileToPrint) {
                 toast.error("No file found for this job");
@@ -80,8 +82,10 @@ export function PrintJobDialog({
 
             await onSend(selectedMachineId, fileToPrint, options);
             onOpenChange(false);
-        } catch (e) {
+        } catch (error) {
+            const e = error as Error;
             console.error(e);
+            toast.error("Failed to send print job");
         } finally {
             setIsSending(false);
         }
@@ -103,33 +107,26 @@ export function PrintJobDialog({
                     {/* Thumbnail / Image Area */}
                     <div className="flex justify-center">
                         {/* Thumbnail if available, or placeholder */}
-                        {job.quote?.thumbnail ? (
-                            <img src={job.quote.thumbnail} alt="Thumbnail" className="w-48 h-48 object-contain" />
-                        ) : (
-                            <div className="w-48 h-48 bg-muted flex items-center justify-center rounded-lg text-muted-foreground">
-                                No Preview
-                            </div>
-                        )}
+                        <div className="w-48 h-48 bg-muted flex items-center justify-center rounded-lg text-muted-foreground">
+                            No Preview
+                        </div>
                     </div>
 
                     {/* Stats */}
                     <div className="flex justify-center gap-12 text-sm text-muted-foreground">
                         <div className="flex items-center gap-2">
                             <Timer className="w-4 h-4" />
-                            <span>{job.quote?.printTime || "0h 0m"}</span>
+                            <span>{job.quote?.parameters?.printTime || "0h 0m"}</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <Weight className="w-4 h-4" />
-                  //  Display grams if available
-                            <span>{job.quote?.materialWeight || "0"} g</span>
+                            <span>{job.quote?.parameters?.filamentWeight || "0"} g</span>
                         </div>
                     </div>
 
                     <div className="text-center font-medium">
                         {job.customerName || job.id} { /* Or Job Name */}
                     </div>
-
-
 
                     {/* Printer Selection */}
                     <div className="flex items-center gap-2">

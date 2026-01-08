@@ -49,7 +49,7 @@ All colors MUST be HSL.
     --gradient-primary: linear-gradient(135deg, hsl(220 80% 50%), hsl(220 70% 60%));
     --gradient-accent: linear-gradient(135deg, hsl(160 85% 40%), hsl(175 80% 45%));
     --gradient-subtle: linear-gradient(180deg, hsl(220 20% 98%), hsl(220 15% 96%));
-    --gradient-glow: radial-gradient(ellipse at top, hsl(220 80% 50% / 0.15), transparent 60%);
+    --gradient-glow: transparent;
 
     --shadow-card: 0 1px 3px hsl(220 25% 12% / 0.05), 0 4px 12px hsl(220 25% 12% / 0.05);
     --shadow-elevated: 0 4px 6px hsl(220 25% 12% / 0.05), 0 12px 40px hsl(220 25% 12% / 0.1);
@@ -126,13 +126,19 @@ All colors MUST be HSL.
     line-height: 1.6;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-heading);
     @apply tracking-tight font-semibold;
   }
 }
 
 @layer components {
+
   /* Animation classes */
   .animate-fade-in {
     animation: fadeIn 0.4s ease-out;
@@ -158,7 +164,7 @@ All colors MUST be HSL.
   .hover-lift {
     @apply transition-all duration-200;
   }
-  
+
   .hover-lift:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-elevated);
@@ -201,17 +207,32 @@ All colors MUST be HSL.
   }
 
   /* Staggered animations */
-  .stagger-1 { animation-delay: 0.1s; }
-  .stagger-2 { animation-delay: 0.2s; }
-  .stagger-3 { animation-delay: 0.3s; }
-  .stagger-4 { animation-delay: 0.4s; }
-  .stagger-5 { animation-delay: 0.5s; }
+  .stagger-1 {
+    animation-delay: 0.1s;
+  }
+
+  .stagger-2 {
+    animation-delay: 0.2s;
+  }
+
+  .stagger-3 {
+    animation-delay: 0.3s;
+  }
+
+  .stagger-4 {
+    animation-delay: 0.4s;
+  }
+
+  .stagger-5 {
+    animation-delay: 0.5s;
+  }
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -222,6 +243,7 @@ All colors MUST be HSL.
     opacity: 0;
     transform: translateY(16px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -233,6 +255,7 @@ All colors MUST be HSL.
     opacity: 0;
     transform: scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -244,6 +267,7 @@ All colors MUST be HSL.
     opacity: 0;
     transform: translateX(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -251,9 +275,12 @@ All colors MUST be HSL.
 }
 
 @keyframes pulseSoft {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.7;
   }

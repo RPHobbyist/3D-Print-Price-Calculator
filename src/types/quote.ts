@@ -33,6 +33,8 @@ export interface Customer {
   tags?: string[];
   notes?: string;
   createdAt: string;
+  averageRating?: number;
+  reviewCount?: number;
 }
 
 export interface QuoteParameters {
@@ -46,7 +48,7 @@ export interface QuoteParameters {
   laborHours?: string;
   overheadPercentage?: string;
   markupPercentage?: string;
-  [key: string]: any;
+  [key: string]: string | number | boolean | undefined | object;
 }
 
 export interface Material {
@@ -55,6 +57,8 @@ export interface Material {
   cost_per_unit: number;
   unit: string;
   print_type: "FDM" | "Resin";
+  totalInStock?: number;
+  lowStockThreshold?: number;
 }
 
 export interface Machine {
@@ -86,6 +90,7 @@ export interface FDMFormData {
   markupPercentage: string;
   quantity: string;
   selectedConsumableIds: string[];
+  selectedSpoolId?: string; // Selected spool for inventory tracking
   filePath?: string; // Optional file path for uploaded G-code
   customerId?: string;
   clientName?: string;
@@ -106,6 +111,7 @@ export interface ResinFormData {
   markupPercentage: string;
   quantity: string;
   selectedConsumableIds: string[];
+  selectedSpoolId?: string; // Selected spool for inventory tracking
   customerId?: string;
   clientName?: string;
 }
@@ -117,4 +123,63 @@ export interface QuoteStats {
   fdmCount: number;
   resinCount: number;
   recentQuotes: number;
+}
+
+// Customer Review/Rating System
+export interface CustomerReview {
+  id: string;
+  customerId: string;
+  quoteId?: string;
+  rating: 1 | 2 | 3 | 4 | 5;
+  comment?: string;
+  tags?: ('quality' | 'communication' | 'timeliness' | 'value')[];
+  createdAt: string;
+}
+
+// Material Inventory Tracking
+export interface MaterialSpool {
+  id: string;
+  materialId: string;
+  name?: string;           // e.g., "PLA Red #3"
+  color?: string;
+  initialWeight: number;   // grams (FDM) or ml (Resin)
+  currentWeight: number;   // Remaining
+  purchaseDate?: string;
+  purchaseCost?: number;
+  location?: string;       // e.g., "Shelf A1"
+  notes?: string;
+}
+
+// Capacity Planning
+export interface CapacityQuery {
+  quantity: number;
+  printTimePerUnit: number; // hours
+  machineIds?: string[];    // Specific machines or all
+  workHoursPerDay: number;  // e.g., 8 or 24
+  startDate?: string;
+}
+
+export interface CapacityResult {
+  totalPrintHours: number;
+  machineCount: number;
+  estimatedDays: number;
+  completionDate: Date;
+  utilizationPercent: number;
+  breakdown: {
+    machineId: string;
+    machineName: string;
+    unitsAssigned: number;
+    hoursOccupied: number;
+  }[];
+}
+
+export interface CompanySettings {
+  name: string;
+  address: string;
+  email: string;
+  phone: string;
+  website: string;
+  taxId?: string;
+  logoUrl?: string; // Optional logo buffer/base64
+  footerText?: string;
 }

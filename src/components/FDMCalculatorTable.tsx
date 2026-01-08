@@ -7,6 +7,7 @@ import { calculateFDMQuote, validateFDMForm } from "@/lib/quoteCalculations";
 import { QuoteCalculator } from "./calculator/QuoteCalculator";
 import { FormFieldRow, TextField, SelectField } from "./calculator/FormField";
 import { ConsumablesSelector } from "./calculator/ConsumablesSelector";
+import { SpoolSelector } from "./calculator/SpoolSelector";
 import GcodeUpload from "./GcodeUpload";
 import { GcodeData } from "@/lib/gcodeParser";
 import { useCurrency } from "@/components/CurrencyProvider";
@@ -37,6 +38,7 @@ const initialFormData: FDMFormData = {
 const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
   const { materials, machines, constants, loading, getConstantValue } = useCalculatorData({ printType: "FDM" });
   const [formData, setFormData] = useState<FDMFormData>(initialFormData);
+  const [selectedSpoolId, setSelectedSpoolId] = useState<string>("");
   const { currency } = useCurrency();
 
   const updateField = useCallback(<K extends keyof FDMFormData>(field: K, value: FDMFormData[K]) => {
@@ -61,19 +63,41 @@ const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
     if (data.printerModel) {
       const normalizedModel = normalize(data.printerModel);
 
-      console.log('Normalized G-code model:', normalizedModel);
+      console.log('G-code printer model:', data.printerModel, '| Normalized:', normalizedModel);
 
-      // find best match
+      // Find exact match only - the normalized G-code model must match the normalized machine name
       const matchedMachine = machines.find(m => {
         const normalizedMachineName = normalize(m.name);
-        // Check for containment in either direction
-        return normalizedMachineName.includes(normalizedModel) ||
-          normalizedModel.includes(normalizedMachineName);
+
+        // Exact normalized match
+        if (normalizedMachineName === normalizedModel) {
+          return true;
+        }
+
+        // Check if one fully contains the other AND they have same key identifiers
+        // e.g., "bambulaba1mini" should match "bambulaba1mini" but NOT "bambulaba1"
+        if (normalizedMachineName.includes(normalizedModel) || normalizedModel.includes(normalizedMachineName)) {
+          // Additional check: both must have the same suffix (mini, pro, plus, etc.) if any exists
+          const modelHasMini = normalizedModel.includes('mini');
+          const machineHasMini = normalizedMachineName.includes('mini');
+          const modelHasPro = normalizedModel.includes('pro');
+          const machineHasPro = normalizedMachineName.includes('pro');
+          const modelHasPlus = normalizedModel.includes('plus');
+          const machineHasPlus = normalizedMachineName.includes('plus');
+
+          // Only match if modifiers are the same
+          return modelHasMini === machineHasMini &&
+            modelHasPro === machineHasPro &&
+            modelHasPlus === machineHasPlus;
+        }
+
+        return false;
       });
 
       if (matchedMachine) {
         matchedMachineId = matchedMachine.id;
         toast.info(`Auto-selected machine: ${matchedMachine.name}`);
+        console.log(`Matched: ${matchedMachine.name}`);
       } else {
         console.log('No machine match found. Available:', machines.map(m => m.name));
       }
@@ -139,8 +163,14 @@ const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
       return;
     }
 
+    // Include selectedSpoolId in formData for inventory tracking
+    const formDataWithSpool = {
+      ...formData,
+      selectedSpoolId: selectedSpoolId || undefined,
+    };
+
     const quoteData = calculateFDMQuote({
-      formData,
+      formData: formDataWithSpool,
       material: selectedMaterial,
       machine: selectedMachine,
       electricityRate: getConstantValue("electricity"),
@@ -150,10 +180,10 @@ const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
       clientName: formData.clientName,
     });
 
-    console.log('📁 FDMCalculatorTable - Quote created with filePath:', quoteData.filePath);
+    console.log('📁 FDMCalculatorTable - Quote created with filePath:', quoteData.filePath, 'spoolId:', selectedSpoolId);
     onCalculate(quoteData);
     toast.success("Quote calculated successfully!");
-  }, [formData, materials, machines, constants, getConstantValue, onCalculate]);
+  }, [formData, selectedSpoolId, materials, machines, constants, getConstantValue, onCalculate]);
 
   const materialOptions = useMemo(() =>
     materials.map(m => ({
@@ -209,20 +239,29 @@ const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
         />
       </FormFieldRow>
 
-      <FormFieldRow label="Print Colour">
-        <TextField
-          value={formData.printColour}
-          onChange={(v) => updateField("printColour", v)}
-          placeholder="e.g., Red, Blue, Black"
-        />
-      </FormFieldRow>
-
       <FormFieldRow label="Material" required>
         <SelectField
           value={formData.materialId}
-          onChange={(v) => updateField("materialId", v)}
+          onChange={(v) => {
+            updateField("materialId", v);
+            // Reset spool selection when material changes
+            setSelectedSpoolId("");
+            updateField("printColour", "");
+          }}
           placeholder="Select material"
           options={materialOptions}
+        />
+      </FormFieldRow>
+
+      <FormFieldRow label="Color" required>
+        <SpoolSelector
+          materialId={formData.materialId}
+          value={selectedSpoolId}
+          onChange={(spoolId, color) => {
+            setSelectedSpoolId(spoolId);
+            updateField("printColour", color);
+          }}
+          requiredWeight={parseFloat(formData.filamentWeight) * (parseInt(formData.quantity) || 1) || 0}
         />
       </FormFieldRow>
 
