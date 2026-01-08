@@ -1,7 +1,7 @@
 import { useState, useCallback, memo, lazy, Suspense, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Printer, Sparkles, RotateCcw } from "lucide-react";
+import { Printer, RotateCcw, Settings, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import FDMCalculatorTable from "@/components/FDMCalculatorTable";
 import ResinCalculatorTable from "@/components/ResinCalculatorTable";
@@ -9,7 +9,7 @@ import QuoteSummary from "@/components/QuoteSummary";
 import BatchSummary from "@/components/BatchSummary";
 const SavedQuotesTable = lazy(() => import("@/components/SavedQuotesTable"));
 const QuotesDashboard = lazy(() => import("@/components/dashboard/QuotesDashboard").then(module => ({ default: module.QuotesDashboard })));
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { SYSTEM_CONFIG } from "@/lib/core-system";
 import { NavLink } from "@/components/NavLink";
 import { Footer } from "@/components/Footer";
@@ -19,7 +19,7 @@ import { QuoteData } from "@/types/quote";
 import { useSavedQuotes } from "@/hooks/useSavedQuotes";
 import { useBatchQuote } from "@/contexts/BatchQuoteContext";
 import { toast } from "sonner";
-import { LowStockBanner } from "@/components/shared/LowStockBanner";
+
 import WhatsNewDialog from "@/components/WhatsNewDialog";
 
 const Index = memo(() => {
@@ -113,16 +113,29 @@ const Index = memo(() => {
             </div>
             <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-center">
               <CurrencySelector />
+
+              <WhatsNewDialog trigger={
+                <Button variant="outline" size="sm" className="h-8 px-3 bg-background hover:bg-muted text-xs sm:text-sm border-input animate-breathe-yellow">
+                  What's New
+                </Button>
+              } />
+
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleReset}
-                className="hover:bg-secondary text-xs sm:text-sm"
+                className="h-8 px-3 bg-background hover:bg-muted text-xs sm:text-sm border-input"
               >
-                <RotateCcw className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <RotateCcw className="w-3.5 h-3.5 mr-2" />
                 Reset
               </Button>
-              <NavLink to="/settings">Settings</NavLink>
+
+              <Button variant="outline" size="sm" asChild className="h-8 px-3 bg-background hover:bg-muted text-xs sm:text-sm border-input">
+                <Link to="/settings">
+                  <Settings className="w-3.5 h-3.5 mr-2" />
+                  Settings
+                </Link>
+              </Button>
             </div>
           </div>
         </div>
@@ -189,7 +202,7 @@ const Index = memo(() => {
             <Card className="p-10 shadow-card">
               <div className="flex flex-col items-center justify-center gap-4">
                 <div className="relative">
-                  <Sparkles className="w-8 h-8 text-primary animate-pulse-soft" />
+                  <Loader2 className="w-8 h-8 text-primary animate-spin" />
                 </div>
                 <span className="text-muted-foreground font-medium">Loading saved quotes...</span>
               </div>
@@ -199,7 +212,7 @@ const Index = memo(() => {
               <Card className="p-10 shadow-card">
                 <div className="flex flex-col items-center justify-center gap-4">
                   <div className="relative">
-                    <Sparkles className="w-8 h-8 text-primary animate-pulse-soft" />
+                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
                   </div>
                   <span className="text-muted-foreground font-medium">Loading component...</span>
                 </div>
@@ -216,7 +229,6 @@ const Index = memo(() => {
         </div>
       </main>
 
-      <WhatsNewDialog />
       <Footer />
     </div>
   );

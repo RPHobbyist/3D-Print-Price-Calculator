@@ -19,7 +19,7 @@ export const CurrencySelector = () => {
 
     return (
         <Select value={currency.code} onValueChange={handleChange}>
-            <SelectTrigger className="w-32">
+            <SelectTrigger className="w-[100px] h-8 px-2">
                 <SelectValue>
                     <span className="flex items-center gap-2">
                         <span className="font-medium">{currency.symbol}</span>

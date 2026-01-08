@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { Button } from "@/components/ui/button";
-import { Calculator, Sparkles } from "lucide-react";
+import { Calculator, Loader2 } from "lucide-react";
 
 interface QuoteCalculatorProps {
   loading: boolean;
@@ -14,7 +14,7 @@ export const QuoteCalculator = memo(({ loading, onCalculate, children, uploadSec
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-pulse flex flex-col items-center gap-3">
-          <Sparkles className="w-8 h-8 text-primary animate-spin" />
+          <Loader2 className="w-8 h-8 text-primary animate-spin" />
           <span className="text-muted-foreground">Loading calculator...</span>
         </div>
       </div>
@@ -33,7 +33,7 @@ export const QuoteCalculator = memo(({ loading, onCalculate, children, uploadSec
 
       <Button
         onClick={onCalculate}
-        className="w-full bg-gradient-accent hover:opacity-90 transition-all shadow-elevated hover:shadow-card text-accent-foreground font-semibold"
+        className="w-full bg-accent hover:opacity-90 transition-all shadow-elevated hover:shadow-card text-accent-foreground font-semibold"
         size="lg"
       >
         <Calculator className="w-5 h-5 mr-2" />

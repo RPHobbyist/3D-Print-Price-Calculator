@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Package, CalendarDays, Building2, Paintbrush, ArrowRight, Sparkles } from "lucide-react";
+import { Package, CalendarDays, Building2, Paintbrush, ArrowRight } from "lucide-react";
 
 const CURRENT_VERSION = "1.2.0"; // Bumped version for new features
 const STORAGE_KEY = "last_seen_version";
 
-export const WhatsNewDialog = () => {
+export const WhatsNewDialog = ({ trigger }: { trigger?: React.ReactNode }) => {
     const [open, setOpen] = useState(false);
 
     useEffect(() => {
@@ -24,16 +24,18 @@ export const WhatsNewDialog = () => {
     };
 
     return (
-        <Dialog open={open} onOpenChange={(open) => !open && handleClose()}>
+        <Dialog open={open} onOpenChange={(val) => {
+            setOpen(val);
+            if (!val) handleClose();
+        }}>
+            {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
             <DialogContent className="max-w-2xl bg-card border-border p-0 overflow-hidden gap-0">
                 {/* Header Banner */}
-                <div className="bg-gradient-primary p-6 text-primary-foreground relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-4 opacity-10">
-                        <Sparkles className="w-32 h-32" />
-                    </div>
+                <div className="bg-primary p-6 text-primary-foreground relative overflow-hidden">
+
                     <div className="relative z-10">
                         <div className="flex items-center gap-2 mb-2 bg-white/10 w-fit px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm border border-white/20">
-                            <Sparkles className="w-3.5 h-3.5" />
+
                             <span>New Update {CURRENT_VERSION}</span>
                         </div>
                         <DialogTitle className="text-3xl font-bold tracking-tight">What's New</DialogTitle>

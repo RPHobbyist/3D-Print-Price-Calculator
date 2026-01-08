@@ -2,7 +2,7 @@ import { memo, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { FileText, Download, Save, Sparkles, FileDown, Package, Factory, AlertTriangle } from "lucide-react";
+import { FileText, Download, Save, FileDown, Package, Factory, AlertTriangle } from "lucide-react";
 import { QuoteData } from "@/types/quote";
 import { toast } from "sonner";
 import { useCurrency } from "@/components/CurrencyProvider";
