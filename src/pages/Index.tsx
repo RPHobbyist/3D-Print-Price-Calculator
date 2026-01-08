@@ -1,7 +1,7 @@
 import { useState, useCallback, memo, lazy, Suspense, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Printer, RotateCcw, Settings, Loader2 } from "lucide-react";
+import { Printer, RotateCcw, Settings, Loader2, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import FDMCalculatorTable from "@/components/FDMCalculatorTable";
 import ResinCalculatorTable from "@/components/ResinCalculatorTable";
@@ -21,9 +21,12 @@ import { useBatchQuote } from "@/contexts/BatchQuoteContext";
 import { toast } from "sonner";
 
 import WhatsNewDialog from "@/components/WhatsNewDialog";
+import { FeedbackDialog } from "@/components/FeedbackDialog";
 
 const Index = memo(() => {
   const navigate = useNavigate();
+  const [showWhatsNew, setShowWhatsNew] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
   const [quoteData, setQuoteData] = useState<QuoteData | null>(null);
   const [resetKey, setResetKey] = useState(0);
   const {
@@ -114,12 +117,6 @@ const Index = memo(() => {
             <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-center">
               <CurrencySelector />
 
-              <WhatsNewDialog trigger={
-                <Button variant="outline" size="sm" className="h-8 px-3 bg-background hover:bg-muted text-xs sm:text-sm border-input animate-breathe-yellow">
-                  What's New
-                </Button>
-              } />
-
               <Button
                 variant="outline"
                 size="sm"
@@ -135,6 +132,27 @@ const Index = memo(() => {
                   <Settings className="w-3.5 h-3.5 mr-2" />
                   Settings
                 </Link>
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  console.log("Feedback button clicked");
+                  setShowFeedback(true);
+                }}
+                className="h-8 px-3 bg-background hover:bg-muted text-xs sm:text-sm border-input"
+              >
+                Feedback
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowWhatsNew(true)}
+                className="h-8 px-3 bg-background hover:bg-muted text-xs sm:text-sm border-input animate-breathe-yellow"
+              >
+                What's New
               </Button>
             </div>
           </div>
@@ -230,6 +248,10 @@ const Index = memo(() => {
       </main>
 
       <Footer />
+
+      {/* Dialogs */}
+      <WhatsNewDialog externalOpen={showWhatsNew} onExternalOpenChange={setShowWhatsNew} />
+      <FeedbackDialog open={showFeedback} onOpenChange={setShowFeedback} />
     </div>
   );
 });

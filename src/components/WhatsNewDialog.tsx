@@ -6,17 +6,32 @@ import { Package, CalendarDays, Building2, Paintbrush, ArrowRight } from "lucide
 const CURRENT_VERSION = "1.2.0"; // Bumped version for new features
 const STORAGE_KEY = "last_seen_version";
 
-export const WhatsNewDialog = ({ trigger }: { trigger?: React.ReactNode }) => {
-    const [open, setOpen] = useState(false);
+export const WhatsNewDialog = ({
+    trigger,
+    externalOpen,
+    onExternalOpenChange
+}: {
+    trigger?: React.ReactNode;
+    externalOpen?: boolean;
+    onExternalOpenChange?: (open: boolean) => void;
+}) => {
+    const [internalOpen, setInternalOpen] = useState(false);
+
+    // Use external control if provided, otherwise use internal state
+    const open = externalOpen !== undefined ? externalOpen : internalOpen;
+    const setOpen = onExternalOpenChange || setInternalOpen;
 
     useEffect(() => {
-        const lastSeen = localStorage.getItem(STORAGE_KEY);
-        if (lastSeen !== CURRENT_VERSION) {
-            // Small delay to appear after app load
-            const timer = setTimeout(() => setOpen(true), 1000);
-            return () => clearTimeout(timer);
+        // Only auto-open if not externally controlled
+        if (externalOpen === undefined) {
+            const lastSeen = localStorage.getItem(STORAGE_KEY);
+            if (lastSeen !== CURRENT_VERSION) {
+                // Small delay to appear after app load
+                const timer = setTimeout(() => setInternalOpen(true), 1000);
+                return () => clearTimeout(timer);
+            }
         }
-    }, []);
+    }, [externalOpen]);
 
     const handleClose = () => {
         localStorage.setItem(STORAGE_KEY, CURRENT_VERSION);
