@@ -48,7 +48,9 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
     if ('electronAPI' in window) {
       try {
         const devices = await window.electronAPI.bambu.getDevices();
-        setPrinters(devices);
+        // Ensure id property exists for BambuDevice interface compatibility
+        const mappedDevices = devices.map((d: any) => ({ ...d, id: d.dev_id || d.id }));
+        setPrinters(mappedDevices);
         const conns = await window.electronAPI.printer.getConnectedPrinters();
         const connMap = conns.reduce((acc: Record<string, PrinterConnection>, c: PrinterConnection) => ({ ...acc, [c.serial]: c }), {});
         setConnections(connMap);
@@ -161,7 +163,7 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
           <div>
             <h3 className="text-xl font-semibold text-foreground">No Saved Quotes</h3>
             <p className="text-sm text-muted-foreground mt-2 max-w-sm">
-              Calculate and save quotes to see them here. All quotes are stored permanently in the database.
+              Calculate and save quotes to see them here.
             </p>
           </div>
         </div>
@@ -397,7 +399,7 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
       <PrintJobDialog
         open={!!sendingQuote}
         onOpenChange={(open) => !open && setSendingQuote(null)}
-        job={{ quote: sendingQuote }}
+        job={{ id: sendingQuote?.id || "temp-job", quote: sendingQuote }}
         machines={printers}
         connections={connections}
         onSend={handleSendFileConfirm}

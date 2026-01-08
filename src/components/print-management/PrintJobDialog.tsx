@@ -32,7 +32,7 @@ interface PrintJobDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     job: PrintJobData | null;
-    machines: Machine[];
+    machines: { id: string; name: string; }[];
     connections: Record<string, PrinterConnection>;
     onSend: (machineId: string, fileOrPath: File | string, options: PrintOptions) => Promise<void>;
 }
