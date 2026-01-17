@@ -1,10 +1,10 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Loader2 } from "lucide-react";
-import { LargeThumbnailPreview } from "./shared/ThumbnailPreview";
+import { LargeThumbnailPreview } from "@/components/shared/ThumbnailPreview";
 import { stripFileExtension } from "@/lib/utils";
 import { toast } from "sonner";
-import { parseResinFile, ResinFileData } from "@/lib/resinFileParser";
+import { parseResinFile, ResinFileData } from "@/lib/parsers/resinFileParser";
 
 interface ResinFileUploadProps {
   onDataExtracted: (data: ResinFileData) => void;

@@ -17,7 +17,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Calculator, Calendar, Clock, CheckCircle2, XCircle, Printer } from "lucide-react";
 import { Machine } from "@/types/quote";
 import { calculateCapacity, formatDate, formatHours } from "@/lib/capacityCalculator";
-import { getMachines } from "@/lib/sessionStorage";
+import { getMachines } from "@/lib/core/sessionStorage";
 
 interface CapacityPlannerProps {
     open: boolean;

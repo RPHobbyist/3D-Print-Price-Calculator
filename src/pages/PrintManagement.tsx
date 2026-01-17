@@ -100,7 +100,7 @@ const PrintManagement = () => {
                             duration: 10000,
                             action: {
                                 label: 'Dismiss',
-                                onClick: () => console.log('Dismissed')
+                                onClick: () => { }
                             }
                         });
                         // Could also play sound here
@@ -131,7 +131,6 @@ const PrintManagement = () => {
         if (!window.electronAPI?.printer) return;
 
         window.electronAPI.printer.getConnectedPrinters().then(printers => {
-            console.log('Restoring printer connections:', printers);
             setConnections(prev => {
                 const next = { ...prev };
                 // Logic to restore connections would go here
@@ -144,9 +143,7 @@ const PrintManagement = () => {
         if (!connectDialogMachineId) return;
         try {
             if (window.electronAPI) {
-                console.log('[PrintManagement] Initiating connection:', { serial: details.serial, cloudMode: details.cloudMode });
                 const result = await window.electronAPI.printer.connect(details);
-                console.log('[PrintManagement] Connection result:', result);
 
                 // Use appropriate connection key: cloud mode uses serial, LAN uses IP
                 const connectionKey = details.cloudMode ? `cloud:${details.serial}` : details.ip!;
@@ -166,7 +163,6 @@ const PrintManagement = () => {
             }
         } catch (error) {
             const err = error as Error;
-            console.error('[PrintManagement] Connection error:', err);
             toast.error(`Failed to connect: ${err.message || 'Unknown error'}`);
         }
         setConnectDialogMachineId(null);
@@ -211,7 +207,6 @@ const PrintManagement = () => {
 
             toast.success("Print started successfully!");
         } catch (error) {
-            console.error(error);
             toast.error("Failed to send file");
         }
     };

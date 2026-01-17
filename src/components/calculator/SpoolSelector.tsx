@@ -1,7 +1,7 @@
 import { useMemo, useEffect, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertTriangle, Package, XCircle } from "lucide-react";
-import { getSpools, getMaterialStock } from "@/lib/sessionStorage";
+import { getSpools, getMaterialStock } from "@/lib/core/sessionStorage";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface SpoolSelectorProps {

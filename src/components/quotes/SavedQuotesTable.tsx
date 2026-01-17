@@ -9,8 +9,9 @@ import { PrintJobDialog } from "@/components/print-management/PrintJobDialog";
 import { QuoteData } from "@/types/quote";
 import { BambuDevice, PrinterConnection, PrintOptions } from "@/types/printer";
 import { toast } from "sonner";
-import * as XLSX from "xlsx";
-import { useCurrency } from "@/components/CurrencyProvider";
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
+import { useCurrency } from "@/components/shared/CurrencyProvider";
 
 // New Hooks & Components
 import { useQuotesFilter } from "@/hooks/useQuotesFilter";
@@ -49,7 +50,7 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
       try {
         const devices = await window.electronAPI.bambu.getDevices();
         // Ensure id property exists for BambuDevice interface compatibility
-        const mappedDevices = devices.map((d: any) => ({ ...d, id: d.dev_id || d.id }));
+        const mappedDevices = devices.map((d: Partial<BambuDevice> & { dev_id?: string }) => ({ ...d, id: d.dev_id || d.id } as BambuDevice));
         setPrinters(mappedDevices);
         const conns = await window.electronAPI.printer.getConnectedPrinters();
         const connMap = conns.reduce((acc: Record<string, PrinterConnection>, c: PrinterConnection) => ({ ...acc, [c.serial]: c }), {});
@@ -93,43 +94,67 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
 
   const { currency, formatPrice } = useCurrency();
 
-  const exportToExcel = useCallback(() => {
+  const exportToExcel = useCallback(async () => {
     if (quotes.length === 0) {
       toast.error("No quotes to export");
       return;
     }
 
-    const exportData = quotes.map((quote, index) => ({
-      "S.No": index + 1,
-      "Project Name": quote.projectName,
-      "Client": quote.clientName || "",
-      "Print Type": quote.printType,
-      "Colour": quote.printColour,
-      "Material": quote.parameters.materialName,
-      "Machine": quote.parameters.machineName,
-      "Material Cost": formatPrice(quote.materialCost),
-      "Machine Time Cost": formatPrice(quote.machineTimeCost),
-      "Electricity Cost": formatPrice(quote.electricityCost),
-      "Labor Cost": formatPrice(quote.laborCost),
-      "Consumables Cost": quote.parameters.consumablesTotal ? formatPrice(quote.parameters.consumablesTotal) : formatPrice(0),
-      "Overhead Cost": formatPrice(quote.overheadCost),
-      "Subtotal": formatPrice(quote.subtotal),
-      "Markup": formatPrice(quote.markup),
-      "Total Price": formatPrice(quote.totalPrice),
-      "Notes": quote.notes || "",
-      "Created At": quote.createdAt ? new Date(quote.createdAt).toLocaleString() : "",
-    }));
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Quotes");
 
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Quotes");
+    worksheet.columns = [
+      { header: "S.No", key: "sno", width: 8 },
+      { header: "Project Name", key: "projectName", width: 25 },
+      { header: "Client", key: "clientName", width: 20 },
+      { header: "Print Type", key: "printType", width: 12 },
+      { header: "Colour", key: "printColour", width: 15 },
+      { header: "Material", key: "materialName", width: 20 },
+      { header: "Machine", key: "machineName", width: 20 },
+      { header: "Material Cost", key: "materialCost", width: 15 },
+      { header: "Machine Cost", key: "machineTimeCost", width: 15 },
+      { header: "Electricity", key: "electricityCost", width: 15 },
+      { header: "Labor", key: "laborCost", width: 15 },
+      { header: "Consumables", key: "consumablesCost", width: 15 },
+      { header: "Overhead", key: "overheadCost", width: 15 },
+      { header: "Subtotal", key: "subtotal", width: 15 },
+      { header: "Markup", key: "markup", width: 15 },
+      { header: "Total Price", key: "totalPrice", width: 15 },
+      { header: "Notes", key: "notes", width: 30 },
+      { header: "Date", key: "createdAt", width: 20 },
+    ];
 
-    const colWidths = Object.keys(exportData[0] || {}).map((key) => ({
-      wch: Math.max(key.length, 15),
-    }));
-    worksheet["!cols"] = colWidths;
+    quotes.forEach((quote, index) => {
+      worksheet.addRow({
+        sno: index + 1,
+        projectName: quote.projectName,
+        clientName: quote.clientName || "",
+        printType: quote.printType,
+        printColour: quote.printColour,
+        materialName: quote.parameters.materialName,
+        machineName: quote.parameters.machineName,
+        materialCost: formatPrice(quote.materialCost),
+        machineTimeCost: formatPrice(quote.machineTimeCost),
+        electricityCost: formatPrice(quote.electricityCost),
+        laborCost: formatPrice(quote.laborCost),
+        consumablesCost: quote.parameters.consumablesTotal ? formatPrice(quote.parameters.consumablesTotal) : formatPrice(0),
+        overheadCost: formatPrice(quote.overheadCost),
+        subtotal: formatPrice(quote.subtotal),
+        markup: formatPrice(quote.markup),
+        totalPrice: formatPrice(quote.totalPrice),
+        notes: quote.notes || "",
+        createdAt: quote.createdAt ? new Date(quote.createdAt).toLocaleString() : "",
+      });
+    });
 
-    XLSX.writeFile(workbook, `3d-print-quotes-${Date.now()}.xlsx`);
+    // Style the header row
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    saveAs(blob, `3d-print-quotes-${Date.now()}.xlsx`);
+
     toast.success("Quotes exported to Excel!");
   }, [quotes, formatPrice]);
 

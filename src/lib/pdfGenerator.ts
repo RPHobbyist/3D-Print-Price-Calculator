@@ -1,5 +1,5 @@
 import { QuoteData } from "@/types/quote";
-import { getCompanySettings } from "@/lib/sessionStorage";
+import { getCompanySettings } from "@/lib/core/sessionStorage";
 
 /**
  * Generate a printable HTML template for the quote

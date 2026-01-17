@@ -8,7 +8,7 @@ import { Plus, Pencil, Trash2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { CostConstant } from "@/types/quote";
 import { processVisibilityFromDescription, addVisibilityTag } from "@/lib/utils";
-import * as sessionStore from "@/lib/sessionStorage";
+import * as sessionStore from "@/lib/core/sessionStorage";
 
 const ConstantsManager = () => {
   const [constants, setConstants] = useState<CostConstant[]>([]);

@@ -1,9 +1,9 @@
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, FileCode, Loader2 } from "lucide-react";
-import { ThumbnailPreview } from "./shared/ThumbnailPreview";
+import { ThumbnailPreview } from "@/components/shared/ThumbnailPreview";
 import { stripFileExtension } from "@/lib/utils";
-import { parseGcode, parse3mf, GcodeData } from "@/lib/gcodeParser";
+import { parseGcode, parse3mf, GcodeData } from "@/lib/parsers/gcodeParser";
 import { toast } from "sonner";
 
 interface GcodeUploadProps {
@@ -56,8 +56,7 @@ const GcodeUpload = ({ onDataExtracted }: GcodeUploadProps) => {
       // Get file path from Electron (File object has .path property in Electron)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const filePath = (file as any).path || '';
-      console.log('📁 GcodeUpload - File path extracted:', filePath);
-      console.log('📁 GcodeUpload - File name:', file.name);
+
       onDataExtracted({ ...data, fileName: cleanName, filePath });
 
       // Update local preview state if a thumbnail was found

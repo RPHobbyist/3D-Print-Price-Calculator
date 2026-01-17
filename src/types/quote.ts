@@ -10,12 +10,16 @@ export interface QuoteData {
   subtotal: number;
   markup: number;
   totalPrice: number;
+  paintingCost?: number; // New: Cost of hand painting
   unitPrice: number;  // Price per single unit
   quantity: number;   // Number of units
   printType: "FDM" | "Resin";
   projectName: string;
   printColour: string;
   parameters: QuoteParameters;
+  paintingTime?: number; // hours
+  paintingLayers?: number;
+  surfaceAreaCm2?: number; // Surface area in cm²
   createdAt?: string;
   notes?: string;
   filePath?: string;  // Original uploaded file path for printing
@@ -94,6 +98,12 @@ export interface FDMFormData {
   filePath?: string; // Optional file path for uploaded G-code
   customerId?: string;
   clientName?: string;
+  // Painting params (Beta)
+  paintingTime?: string; // Hours spent on painting labor
+  paintingLayers?: string; // Number of paint coats/layers
+  paintCostPerMl?: string; // Cost per ml of paint
+  paintUsagePerCm2?: string; // ml of paint used per cm² per layer
+  surfaceAreaCm2?: string; // Surface area in cm² (auto-filled from 3MF)
 }
 
 export interface ResinFormData {
@@ -114,6 +124,12 @@ export interface ResinFormData {
   selectedSpoolId?: string; // Selected spool for inventory tracking
   customerId?: string;
   clientName?: string;
+  // Painting params (Beta)
+  paintingTime?: string; // Hours spent on painting labor
+  paintingLayers?: string; // Number of paint coats/layers
+  paintCostPerMl?: string; // Cost per ml of paint
+  paintUsagePerCm2?: string; // ml of paint used per cm² per layer
+  surfaceAreaCm2?: string; // Surface area in cm² (auto-filled from 3MF)
 }
 
 export interface QuoteStats {

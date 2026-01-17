@@ -1,32 +1,59 @@
-
-import SavedQuotesTable from "@/components/SavedQuotesTable";
+import SavedQuotesTable from "@/components/quotes/SavedQuotesTable";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { CurrencySelector } from "@/components/CurrencySelector";
+import { CurrencySelector } from "@/components/shared/CurrencySelector";
+import { useCallback } from "react";
+import { useSavedQuotes } from "@/hooks/useSavedQuotes";
 
 const SavedQuotes = () => {
     const navigate = useNavigate();
+    const {
+        quotes,
+        deleteQuote,
+        updateNotes,
+        duplicateQuote,
+    } = useSavedQuotes();
+
+    const handleDeleteQuote = useCallback(async (index: number) => {
+        const quote = quotes[index];
+        if (quote && quote.id) {
+            await deleteQuote(quote.id);
+        }
+    }, [quotes, deleteQuote]);
+
+    const handleUpdateNotes = useCallback(async (index: number, notes: string) => {
+        const quote = quotes[index];
+        if (quote && quote.id) {
+            await updateNotes(quote.id, notes);
+        }
+    }, [quotes, updateNotes]);
+
+    const handleDuplicateQuote = useCallback(async (index: number) => {
+        const quote = quotes[index];
+        if (quote) {
+            await duplicateQuote(quote);
+        }
+    }, [quotes, duplicateQuote]);
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-background flex flex-col">
             {/* Header */}
-            <header className="border-b bg-card/80 backdrop-blur top-0 z-50 sticky">
-                <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+            <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+                <div className="container mx-auto px-4 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => navigate('/')}
-                            className="rounded-full hover:bg-muted"
+                            onClick={() => navigate("/")}
+                            className="text-muted-foreground hover:text-foreground"
                         >
-                            <ChevronLeft className="w-5 h-5 text-muted-foreground" />
+                            <ChevronLeft className="w-5 h-5" />
                         </Button>
-                        <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                        <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">
                             Saved Quotes
                         </h1>
                     </div>
-
                     <div className="flex items-center gap-3">
                         <CurrencySelector />
                     </div>
@@ -35,7 +62,12 @@ const SavedQuotes = () => {
 
             {/* Content */}
             <main className="container mx-auto px-4 py-8">
-                <SavedQuotesTable />
+                <SavedQuotesTable
+                    quotes={quotes}
+                    onDeleteQuote={handleDeleteQuote}
+                    onUpdateNotes={handleUpdateNotes}
+                    onDuplicateQuote={handleDuplicateQuote}
+                />
             </main>
         </div>
     );

@@ -50,7 +50,20 @@ export const calculateFDMQuote = ({
   const laborCost = laborHours * laborRate;
   const consumablesTotal = consumables.reduce((sum, c) => sum + c.value, 0);
 
-  const subtotalBeforeOverhead = materialCost + machineTimeCost + electricityCost + laborCost + consumablesTotal;
+  // Painting Calculation
+  const paintingTime = formData.paintingTime ? parseFloat(formData.paintingTime) : 0;
+  const paintingLayers = formData.paintingLayers ? parseInt(formData.paintingLayers) : 0;
+  const paintCostPerMl = formData.paintCostPerMl ? parseFloat(formData.paintCostPerMl) : 0;
+  const paintUsagePerCm2 = formData.paintUsagePerCm2 ? parseFloat(formData.paintUsagePerCm2) : 0; // ml per cm² per layer
+  const surfaceAreaCm2 = formData.surfaceAreaCm2 ? parseFloat(formData.surfaceAreaCm2) : 0;
+  const surfaceAreaCm2ForStorage = surfaceAreaCm2; // Keep cm² value for storage
+
+  const paintingLaborCost = paintingTime * laborRate;
+  // New formula: area(cm²) × usage(ml/cm²) × layers × cost($/ml)
+  const paintingMaterialCost = surfaceAreaCm2 * paintUsagePerCm2 * paintingLayers * paintCostPerMl;
+  const paintingCost = paintingLaborCost + paintingMaterialCost;
+
+  const subtotalBeforeOverhead = materialCost + machineTimeCost + electricityCost + laborCost + consumablesTotal + paintingCost;
   const overheadCost = (subtotalBeforeOverhead * overheadPercentage) / 100;
   const subtotal = subtotalBeforeOverhead + overheadCost;
 
@@ -68,6 +81,7 @@ export const calculateFDMQuote = ({
     overheadCost: overheadCost * quantity,
     subtotal: subtotal * quantity,
     markup: markup * quantity,
+    paintingCost: paintingCost * quantity,
     unitPrice,
     quantity,
     totalPrice,
@@ -83,7 +97,13 @@ export const calculateFDMQuote = ({
       machineName: machine.name,
       consumables,
       consumablesTotal,
+      paintingTime,
+      paintingLayers,
+      paintCostPerMl,
+      paintUsagePerCm2,
+      surfaceAreaCm2: formData.surfaceAreaCm2 ? parseFloat(formData.surfaceAreaCm2) : undefined,
     },
+    surfaceAreaCm2: surfaceAreaCm2ForStorage,
   };
 };
 
@@ -115,7 +135,20 @@ export const calculateResinQuote = ({
   const laborCost = laborHours * laborRate;
   const consumablesTotal = consumables.reduce((sum, c) => sum + c.value, 0);
 
-  const subtotalBeforeOverhead = materialCost + machineTimeCost + electricityCost + laborCost + consumablesTotal;
+  // Painting Calculation
+  const paintingTime = formData.paintingTime ? parseFloat(formData.paintingTime) : 0;
+  const paintingLayers = formData.paintingLayers ? parseInt(formData.paintingLayers) : 0;
+  const paintCostPerMl = formData.paintCostPerMl ? parseFloat(formData.paintCostPerMl) : 0;
+  const paintUsagePerCm2 = formData.paintUsagePerCm2 ? parseFloat(formData.paintUsagePerCm2) : 0; // ml per cm² per layer
+  const surfaceAreaCm2 = formData.surfaceAreaCm2 ? parseFloat(formData.surfaceAreaCm2) : 0;
+  const surfaceAreaCm2ForStorage = surfaceAreaCm2; // Keep cm² value for storage
+
+  const paintingLaborCost = paintingTime * laborRate;
+  // New formula: area(cm²) × usage(ml/cm²) × layers × cost($/ml)
+  const paintingMaterialCost = surfaceAreaCm2 * paintUsagePerCm2 * paintingLayers * paintCostPerMl;
+  const paintingCost = paintingLaborCost + paintingMaterialCost;
+
+  const subtotalBeforeOverhead = materialCost + machineTimeCost + electricityCost + laborCost + consumablesTotal + paintingCost;
   const overheadCost = (subtotalBeforeOverhead * overheadPercentage) / 100;
   const subtotal = subtotalBeforeOverhead + overheadCost;
 
@@ -133,6 +166,7 @@ export const calculateResinQuote = ({
     overheadCost: overheadCost * quantity,
     subtotal: subtotal * quantity,
     markup: markup * quantity,
+    paintingCost: paintingCost * quantity,
     unitPrice,
     quantity,
     totalPrice,
@@ -147,7 +181,13 @@ export const calculateResinQuote = ({
       machineName: machine.name,
       consumables,
       consumablesTotal,
+      paintingTime,
+      paintingLayers,
+      paintCostPerMl,
+      paintUsagePerCm2,
+      surfaceAreaCm2: formData.surfaceAreaCm2 ? parseFloat(formData.surfaceAreaCm2) : undefined,
     },
+    surfaceAreaCm2: surfaceAreaCm2ForStorage,
   };
 };
 

@@ -16,7 +16,7 @@ import {
 import { Package, Plus, Trash2, MapPin, AlertTriangle, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { MaterialSpool, Material } from "@/types/quote";
-import { getSpools, saveSpool, deleteSpool } from "@/lib/sessionStorage";
+import { getSpools, saveSpool, deleteSpool } from "@/lib/core/sessionStorage";
 
 interface MaterialInventoryProps {
     material: Material;

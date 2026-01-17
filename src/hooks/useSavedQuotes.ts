@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { QuoteData, QuoteStats } from "@/types/quote";
 import { toast } from "sonner";
-import * as sessionStore from "@/lib/sessionStorage";
+import * as sessionStore from "@/lib/core/sessionStorage";
 
 // Helper function to deduct inventory when a quote is saved
 const deductInventoryFromQuote = (quote: QuoteData) => {
@@ -21,7 +21,7 @@ const deductInventoryFromQuote = (quote: QuoteData) => {
   if (selectedSpoolId) {
     const success = sessionStore.deductFromSpool(selectedSpoolId, totalDeduction);
     if (success) {
-      console.log(`[Inventory] Deducted ${totalDeduction}g from selected spool (${selectedSpoolId})`);
+
       return;
     }
   }
@@ -48,7 +48,7 @@ const deductInventoryFromQuote = (quote: QuoteData) => {
 
   const success = sessionStore.deductFromSpool(targetSpool.id, totalDeduction);
   if (success) {
-    console.log(`[Inventory] Deducted ${totalDeduction}g from spool "${targetSpool.name}" (${targetSpool.id})`);
+
   }
 };
 
@@ -68,7 +68,7 @@ const restoreInventoryFromQuote = (quote: QuoteData) => {
   if (selectedSpoolId) {
     const success = sessionStore.restoreToSpool(selectedSpoolId, totalRestoration);
     if (success) {
-      console.log(`[Inventory] Restored ${totalRestoration}g/ml to selected spool (${selectedSpoolId})`);
+
     }
   }
   // Note: We don't auto-restore for fallback matches as it might restore to the wrong spool

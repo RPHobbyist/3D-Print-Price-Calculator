@@ -3,25 +3,25 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Printer, RotateCcw, Settings, Loader2, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import FDMCalculatorTable from "@/components/FDMCalculatorTable";
-import ResinCalculatorTable from "@/components/ResinCalculatorTable";
-import QuoteSummary from "@/components/QuoteSummary";
-import BatchSummary from "@/components/BatchSummary";
-const SavedQuotesTable = lazy(() => import("@/components/SavedQuotesTable"));
+import FDMCalculatorTable from "@/components/calculator/FDMCalculatorTable";
+import ResinCalculatorTable from "@/components/calculator/ResinCalculatorTable";
+import QuoteSummary from "@/components/quotes/QuoteSummary";
+import BatchSummary from "@/components/quotes/BatchSummary";
+const SavedQuotesTable = lazy(() => import("@/components/quotes/SavedQuotesTable"));
 const QuotesDashboard = lazy(() => import("@/components/dashboard/QuotesDashboard").then(module => ({ default: module.QuotesDashboard })));
 import { useNavigate, Link } from "react-router-dom";
-import { SYSTEM_CONFIG } from "@/lib/core-system";
-import { NavLink } from "@/components/NavLink";
-import { Footer } from "@/components/Footer";
+import { SYSTEM_CONFIG } from "@/lib/core/core-system";
+import { NavLink } from "@/components/layout/NavLink";
+import { Footer } from "@/components/layout/Footer";
 
-import { CurrencySelector } from "@/components/CurrencySelector";
+import { CurrencySelector } from "@/components/shared/CurrencySelector";
 import { QuoteData } from "@/types/quote";
 import { useSavedQuotes } from "@/hooks/useSavedQuotes";
 import { useBatchQuote } from "@/contexts/BatchQuoteContext";
 import { toast } from "sonner";
 
-import WhatsNewDialog from "@/components/WhatsNewDialog";
-import { FeedbackDialog } from "@/components/FeedbackDialog";
+import WhatsNewDialog from "@/components/feedback/WhatsNewDialog";
+import { FeedbackDialog } from "@/components/feedback/FeedbackDialog";
 
 const Index = memo(() => {
   const navigate = useNavigate();
@@ -95,7 +95,7 @@ const Index = memo(() => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-gradient-subtle flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Glow effect */}
       <div className="fixed inset-0 bg-gradient-glow pointer-events-none" />
 
@@ -138,7 +138,7 @@ const Index = memo(() => {
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  console.log("Feedback button clicked");
+
                   setShowFeedback(true);
                 }}
                 className="h-8 px-3 bg-background hover:bg-muted text-xs sm:text-sm border-input"
@@ -175,7 +175,7 @@ const Index = memo(() => {
           <div className="space-y-6 animate-fade-in">
             <Card className="shadow-elevated border-border bg-card overflow-hidden hover-glow">
               <Tabs defaultValue="fdm" className="w-full">
-                <div className="border-b border-border px-3 sm:px-6 pt-4 sm:pt-6">
+                <div className="border-b border-border px-3 sm:px-6 pt-4 sm:pt-6 pb-4">
                   <TabsList className="bg-secondary/50 p-1 sm:p-1.5 rounded-xl w-full sm:w-auto">
                     <TabsTrigger
                       value="fdm"

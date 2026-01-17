@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Trash2, Package, FileDown, X } from 'lucide-react';
 import { useBatchQuote } from '@/contexts/BatchQuoteContext';
-import { useCurrency } from '@/components/CurrencyProvider';
+import { useCurrency } from '@/components/shared/CurrencyProvider';
 import { toast } from 'sonner';
 
 const BatchSummary = memo(() => {

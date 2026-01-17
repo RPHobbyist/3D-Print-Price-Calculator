@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ProductionJob } from "@/contexts/ProductionContext"; // Ensure export
 import { useProduction } from "@/contexts/ProductionContext";
-import { useCurrency } from "@/components/CurrencyProvider";
+import { useCurrency } from "@/components/shared/CurrencyProvider";
 import {
     Clock,
     MoreVertical,
@@ -98,12 +98,9 @@ export const JobCard = memo(({ job, index, isConnected, onSendFile, printStatus 
                                         <DropdownMenuItem
                                             onClick={() => {
                                                 if (printStatus?.state === 'RUNNING') return;
-                                                console.log('📁 JobCard - Job quote filePath:', job.quote.filePath);
                                                 if (job.quote.filePath) {
-                                                    console.log('✅ Using stored file path:', job.quote.filePath);
                                                     onSendFile(job.quote.filePath, job);
                                                 } else {
-                                                    console.log('❌ No file path stored, opening file picker');
                                                     fileInputRef.current?.click();
                                                 }
                                             }}

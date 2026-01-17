@@ -5,12 +5,12 @@ import { Separator } from "@/components/ui/separator";
 import { FileText, Download, Save, FileDown, Package, Factory, AlertTriangle } from "lucide-react";
 import { QuoteData } from "@/types/quote";
 import { toast } from "sonner";
-import { useCurrency } from "@/components/CurrencyProvider";
+import { useCurrency } from "@/components/shared/CurrencyProvider";
 import { printQuotePDF } from "@/lib/pdfGenerator";
 import { useBatchQuote } from "@/contexts/BatchQuoteContext";
 import { useProduction } from "@/contexts/ProductionContext";
 import { useCalculatorData } from "@/hooks/useCalculatorData";
-import { getSpools } from "@/lib/sessionStorage";
+import { getSpools } from "@/lib/core/sessionStorage";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -213,6 +213,9 @@ Generated: ${new Date().toLocaleString()}
             )}
             {quoteData.overheadCost > 0 && (
               <CostRow label="Overhead" value={quoteData.overheadCost} />
+            )}
+            {quoteData.paintingCost && quoteData.paintingCost > 0 && (
+              <CostRow label="Painting (Beta)" value={quoteData.paintingCost} />
             )}
           </div>
 

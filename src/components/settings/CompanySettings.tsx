@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Building2, Save, Upload, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { getCompanySettings, saveCompanySettings } from "@/lib/sessionStorage";
+import { getCompanySettings, saveCompanySettings } from "@/lib/core/sessionStorage";
 import { CompanySettings as CompanySettingsType } from "@/types/quote";
 
 const CompanySettings = () => {

@@ -11,6 +11,7 @@ export interface GcodeData {
   thumbnail?: string;
   fileName?: string;
   filePath?: string; // Full path to the uploaded file
+  surfaceAreaMm2?: number; // Estimated or calculated surface area
 }
 
 /**
@@ -233,7 +234,7 @@ export async function parse3mf(file: File): Promise<GcodeData> {
     const zip = await JSZip.loadAsync(file);
     const fileNames = Object.keys(zip.files);
 
-    console.log('3MF archive contents:', fileNames);
+
 
     // Step 1: Look for G-code file inside Metadata folder or anywhere
     const gcodePath = fileNames.find(
@@ -242,7 +243,7 @@ export async function parse3mf(file: File): Promise<GcodeData> {
     );
 
     if (gcodePath) {
-      console.log('Found G-code:', gcodePath);
+
       const gcodeText = await zip.files[gcodePath].async('string');
       const result = parseGcode(gcodeText);
 
@@ -320,6 +321,138 @@ export async function parse3mf(file: File): Promise<GcodeData> {
       }
     }
 
+    // --- Surface Area Calculation (Hierarchical) ---
+    let surfaceAreaMm2 = 0;
+    // Try standard name first, then fallback to any .model file
+    let modelPath = fileNames.find(p => p.toLowerCase().endsWith('3dmodel.model'));
+    if (!modelPath) {
+      modelPath = fileNames.find(p => p.toLowerCase().endsWith('.model'));
+    }
+
+    if (modelPath) {
+      try {
+        const modelContent = await zip.files[modelPath].async('string');
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(modelContent, "text/xml");
+
+        // Helper to find elements ignoring namespace prefixes
+        const getElements = (root: Element | Document, tagName: string) => {
+          // Fast path
+          const els = root.getElementsByTagName(tagName);
+          if (els.length > 0) return Array.from(els);
+          // Prefix path
+          const mEls = root.getElementsByTagName('m:' + tagName);
+          if (mEls.length > 0) return Array.from(mEls);
+          // Warning: getElementsByTagName('*') with filter is slow, but robust for mixed namespaces
+          // Optimization: Check typical namespaces manually if needed? 
+          // For now, assume if direct lookup fails, we iterate.
+          const all = root.getElementsByTagName('*');
+          const matches = [];
+          for (let i = 0; i < all.length; i++) {
+            // localName is the safe generic way
+            if (all[i].localName === tagName) {
+              matches.push(all[i]);
+            }
+          }
+          return matches;
+        };
+
+        const meshes = getElements(xmlDoc, 'mesh');
+
+        for (const mesh of meshes) {
+          const vertices = getElements(mesh, 'vertex');
+          const triangles = getElements(mesh, 'triangle');
+
+          // Parse vertices
+          const v: { x: number; y: number; z: number }[] = [];
+          for (let i = 0; i < vertices.length; i++) {
+            v.push({
+              x: parseFloat(vertices[i].getAttribute('x') || '0'),
+              y: parseFloat(vertices[i].getAttribute('y') || '0'),
+              z: parseFloat(vertices[i].getAttribute('z') || '0')
+            });
+          }
+
+          // Calculate area for each triangle
+          for (let i = 0; i < triangles.length; i++) {
+            const v1Index = parseInt(triangles[i].getAttribute('v1') || '0');
+            const v2Index = parseInt(triangles[i].getAttribute('v2') || '0');
+            const v3Index = parseInt(triangles[i].getAttribute('v3') || '0');
+
+            if (v[v1Index] && v[v2Index] && v[v3Index]) {
+              const p1 = v[v1Index];
+              const p2 = v[v2Index];
+              const p3 = v[v3Index];
+
+              // Vector A = P2 - P1
+              const ax = p2.x - p1.x;
+              const ay = p2.y - p1.y;
+              const az = p2.z - p1.z;
+
+              // Vector B = P3 - P1
+              const bx = p3.x - p1.x;
+              const by = p3.y - p1.y;
+              const bz = p3.z - p1.z;
+
+              // Cross Product A x B
+              const cx = ay * bz - az * by;
+              const cy = az * bx - ax * bz;
+              const cz = ax * by - ay * bx;
+
+              // Area = 0.5 * |A x B|
+              const area = 0.5 * Math.sqrt(cx * cx + cy * cy + cz * cz);
+              if (!isNaN(area)) {
+                surfaceAreaMm2 += area;
+              }
+            }
+          }
+        }
+
+        // --- SCALE FACTOR CALCULATION ---
+        // We need to check if the model is scaled in the build/item list
+        let scaleFactor = 1.0;
+        const buildItems = getElements(xmlDoc, 'item');
+
+        for (const item of buildItems) {
+          const transform = item.getAttribute('transform');
+          if (transform) {
+            // Format: "m00 m01 m02 n0 m10 m11 m12 n1 m20 m21 m22 n2"
+            // We just want to extract the scaling components (diagonal) approximately
+            const parts = transform.split(/\s+/).map(parseFloat);
+            if (parts.length >= 10) {
+              // Simple assumption: uniform scaling or taking the average scaling
+              // m00, m11, m22 correspond to indices 0, 4, 8 in a 3x3 matrix logic, 
+              // but in 3MF 4x3 matrix it is: 
+              // m00 m01 m02
+              // m10 m11 m12
+              // m20 m21 m22
+              // x   y   z 
+              // Flattened string usually: m00 m01 m02 m10 m11 m12 m20 m21 m22 x y z (12 values)
+
+              const sx = Math.abs(parts[0]);
+              const sy = Math.abs(parts[4]);
+              const sz = Math.abs(parts[8]);
+
+              // Surface area scales with the square of the linear scale
+              // Approximate composite scale for area (if uniform)
+              const avgScale = (sx + sy + sz) / 3;
+              scaleFactor = avgScale * avgScale;
+            }
+          }
+        }
+
+        // Apply scale (this is rough for non-unifrom scaling, but much better than nothing)
+        if (scaleFactor !== 1.0) {
+          surfaceAreaMm2 *= scaleFactor;
+        }
+
+      } catch (e) {
+        console.error("Failed to parse 3MF structure:", e);
+      }
+    } else {
+      // No file found ending in '3dmodel.model'
+    }
+
     // Step 3: Try to find a thumbnail image if not found yet
     const thumbPath = fileNames.find(p =>
       (p.toLowerCase().endsWith('.png') || p.toLowerCase().endsWith('.jpg')) &&
@@ -332,18 +465,17 @@ export async function parse3mf(file: File): Promise<GcodeData> {
       thumbnail = `data:image/${ext};base64,${thumbData}`;
     }
 
-    console.log('Fallback extraction result:', { printTimeHours, filamentWeightGrams, printerModel, hasThumbnail: !!thumbnail });
-
     return {
       printTimeHours: Math.round(printTimeHours * 100) / 100,
       filamentWeightGrams: Math.round(filamentWeightGrams * 10) / 10,
       printerModel: printerModel || undefined,
       thumbnail: thumbnail || undefined,
+      filamentSettingsId: undefined, // 3MF parsing limitation (for now)
+      surfaceAreaMm2: surfaceAreaMm2 > 0 ? Math.round(surfaceAreaMm2 * 100) / 100 : undefined,
     };
 
   } catch (error) {
-    console.error('Error parsing 3MF file:', error);
+    // Error parsing 3MF file
     return { printTimeHours: 0, filamentWeightGrams: 0 };
   }
 }
-

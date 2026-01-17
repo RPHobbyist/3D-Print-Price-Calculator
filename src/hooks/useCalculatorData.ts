@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Material, Machine, CostConstant } from "@/types/quote";
 import { processVisibilityFromDescription } from "@/lib/utils";
 import { toast } from "sonner";
-import * as sessionStore from "@/lib/sessionStorage";
+import * as sessionStore from "@/lib/core/sessionStorage";
 
 interface UseCalculatorDataOptions {
   printType: "FDM" | "Resin";

@@ -27,17 +27,26 @@ interface TextFieldProps {
   placeholder?: string;
   type?: "text" | "number";
   step?: string;
+  className?: string;
+  endAdornment?: React.ReactNode;
 }
 
-export const TextField = memo(({ value, onChange, placeholder, type = "text", step }: TextFieldProps) => (
-  <Input
-    type={type}
-    step={step}
-    placeholder={placeholder}
-    value={value}
-    onChange={(e) => onChange(e.target.value)}
-    className="bg-background border-input focus:ring-2 focus:ring-primary/20"
-  />
+export const TextField = memo(({ value, onChange, placeholder, type = "text", step, className, endAdornment }: TextFieldProps) => (
+  <div className="relative flex items-center w-full">
+    <Input
+      type={type}
+      step={step}
+      placeholder={placeholder}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={`bg-background border-input focus:ring-2 focus:ring-primary/20 w-full ${endAdornment ? 'pr-20' : ''} ${className || ''}`}
+    />
+    {endAdornment && (
+      <div className="absolute right-1 top-1/2 -translate-y-1/2">
+        {endAdornment}
+      </div>
+    )}
+  </div>
 ));
 
 TextField.displayName = "TextField";

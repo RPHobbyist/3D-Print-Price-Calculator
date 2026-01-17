@@ -4,15 +4,16 @@ import { toast } from "sonner";
 import { QuoteData, FDMFormData } from "@/types/quote";
 import { useCalculatorData } from "@/hooks/useCalculatorData";
 import { calculateFDMQuote, validateFDMForm } from "@/lib/quoteCalculations";
-import { QuoteCalculator } from "./calculator/QuoteCalculator";
-import { FormFieldRow, TextField, SelectField } from "./calculator/FormField";
-import { ConsumablesSelector } from "./calculator/ConsumablesSelector";
-import { SpoolSelector } from "./calculator/SpoolSelector";
+import { QuoteCalculator } from "./QuoteCalculator";
+import { FormFieldRow, TextField, SelectField } from "./FormField";
+import { ConsumablesSelector } from "./ConsumablesSelector";
+import { SpoolSelector } from "./SpoolSelector";
 import GcodeUpload from "./GcodeUpload";
-import { GcodeData } from "@/lib/gcodeParser";
-import { useCurrency } from "@/components/CurrencyProvider";
-import { ClientSelector } from "@/components/ClientSelector";
+import { GcodeData } from "@/lib/parsers/gcodeParser";
+import { useCurrency } from "@/components/shared/CurrencyProvider";
+import { ClientSelector } from "@/components/shared/ClientSelector";
 import { Customer } from "@/types/quote";
+import { SurfaceAreaUpload } from "./SurfaceAreaUpload";
 
 interface FDMCalculatorProps {
   onCalculate: (data: QuoteData) => void;
@@ -32,7 +33,13 @@ const initialFormData: FDMFormData = {
   selectedConsumableIds: [],
   filePath: "", // Store uploaded file path
   customerId: "",
+
   clientName: "",
+  paintingTime: "",
+  paintingLayers: "",
+  paintCostPerMl: "",
+  paintUsagePerCm2: "",
+  surfaceAreaCm2: "",
 };
 
 const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
@@ -63,7 +70,7 @@ const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
     if (data.printerModel) {
       const normalizedModel = normalize(data.printerModel);
 
-      console.log('G-code printer model:', data.printerModel, '| Normalized:', normalizedModel);
+
 
       // Find exact match only - the normalized G-code model must match the normalized machine name
       const matchedMachine = machines.find(m => {
@@ -97,42 +104,40 @@ const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
       if (matchedMachine) {
         matchedMachineId = matchedMachine.id;
         toast.info(`Auto-selected machine: ${matchedMachine.name}`);
-        console.log(`Matched: ${matchedMachine.name}`);
       } else {
-        console.log('No machine match found. Available:', machines.map(m => m.name));
+        // No machine match found
       }
-    }
 
-    // Match material from filament_settings_id
-    if (data.filamentSettingsId) {
-      const normalizedMaterial = normalize(data.filamentSettingsId);
-      console.log('Normalized G-code material:', normalizedMaterial);
+      // Match material from filament_settings_id
+      if (data.filamentSettingsId) {
+        const normalizedMaterial = normalize(data.filamentSettingsId);
 
-      const matchedMaterial = materials.find(m => {
-        const normalizedName = normalize(m.name);
-        return normalizedName.includes(normalizedMaterial) ||
-          normalizedMaterial.includes(normalizedName);
-      });
+        const matchedMaterial = materials.find(m => {
+          const normalizedName = normalize(m.name);
+          return normalizedName.includes(normalizedMaterial) ||
+            normalizedMaterial.includes(normalizedName);
+        });
 
-      if (matchedMaterial) {
-        matchedMaterialId = matchedMaterial.id;
-        toast.info(`Auto-selected material: ${matchedMaterial.name}`);
-      } else {
-        console.log('No material match found. Available:', materials.map(m => m.name));
+        if (matchedMaterial) {
+          matchedMaterialId = matchedMaterial.id;
+          toast.info(`Auto-selected material: ${matchedMaterial.name}`);
+        } else {
+          // No material match found
+        }
       }
-    }
 
-    console.log('📁 FDMCalculatorTable - Received file path:', data.filePath);
-    setFormData(prev => ({
-      ...prev,
-      projectName: data.fileName ? data.fileName.substring(0, data.fileName.lastIndexOf('.')) || data.fileName : prev.projectName,
-      printTime: data.printTimeHours > 0 ? data.printTimeHours.toString() : prev.printTime,
-      filamentWeight: data.filamentWeightGrams > 0 ? data.filamentWeightGrams.toString() : prev.filamentWeight,
-      machineId: matchedMachineId || prev.machineId,
-      materialId: matchedMaterialId || prev.materialId,
-      printColour: data.filamentColour || prev.printColour,
-      filePath: data.filePath || prev.filePath, // Store the file path
-    }));
+      setFormData(prev => ({
+        ...prev,
+        projectName: data.fileName ? data.fileName.substring(0, data.fileName.lastIndexOf('.')) || data.fileName : prev.projectName,
+        printTime: data.printTimeHours > 0 ? data.printTimeHours.toString() : prev.printTime,
+        filamentWeight: data.filamentWeightGrams > 0 ? data.filamentWeightGrams.toString() : prev.filamentWeight,
+        machineId: matchedMachineId || prev.machineId,
+        materialId: matchedMaterialId || prev.materialId,
+        printColour: data.filamentColour || prev.printColour,
+        filePath: data.filePath || prev.filePath, // Store the file path
+        surfaceAreaCm2: data.surfaceAreaMm2 ? (data.surfaceAreaMm2 / 100).toString() : undefined,
+      }));
+    }
   }, [machines, materials]);
 
   const handleConsumablesChange = useCallback((selectedIds: string[]) => {
@@ -163,6 +168,20 @@ const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
       return;
     }
 
+    // Validate mandatory constants
+    const electricityRate = getConstantValue("electricity");
+    const laborRate = getConstantValue("labor");
+
+    if (!electricityRate || electricityRate <= 0) {
+      toast.error("Electricity Rate is required. Please set it in Settings → Consumables.");
+      return;
+    }
+
+    if (!laborRate || laborRate <= 0) {
+      toast.error("Labor Rate is required. Please set it in Settings → Consumables.");
+      return;
+    }
+
     // Include selectedSpoolId in formData for inventory tracking
     const formDataWithSpool = {
       ...formData,
@@ -180,7 +199,6 @@ const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
       clientName: formData.clientName,
     });
 
-    console.log('📁 FDMCalculatorTable - Quote created with filePath:', quoteData.filePath, 'spoolId:', selectedSpoolId);
     onCalculate(quoteData);
     toast.success("Quote calculated successfully!");
   }, [formData, selectedSpoolId, materials, machines, constants, getConstantValue, onCalculate]);
@@ -341,6 +359,102 @@ const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
           placeholder="1"
         />
       </FormFieldRow>
+
+      <div className="pt-4 px-2 sm:px-4 border-t border-border">
+        <div className="flex items-center gap-2 mb-4">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Post Processing</h3>
+          <span className="px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-500 text-[10px] font-bold border border-blue-500/20">BETA</span>
+        </div>
+
+        <FormFieldRow label="Include Painting">
+          <div className="flex items-center h-10">
+            <input
+              type="checkbox"
+              className="w-5 h-5 rounded border-input bg-background"
+              checked={!!formData.paintingLayers && parseInt(formData.paintingLayers) > 0}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  updateField("paintingLayers", "1");
+                  updateField("paintingTime", "0.5");
+                } else {
+                  updateField("paintingLayers", "");
+                  updateField("paintingTime", "");
+                }
+              }}
+            />
+            <span className="ml-2 text-sm text-foreground">Enable</span>
+          </div>
+        </FormFieldRow>
+
+        {!!formData.paintingLayers && (
+          <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+            <FormFieldRow label="Surface Area (cm²)">
+              <div className="flex gap-2 w-full">
+                <TextField
+                  type="number"
+                  value={formData.surfaceAreaCm2}
+                  onChange={(v) => updateField("surfaceAreaCm2", v)}
+                  placeholder="Enter area manually"
+                  endAdornment={
+                    <SurfaceAreaUpload
+                      className="border-none hover:bg-transparent px-2"
+                      onSurfaceAreaDetected={(area) => updateField("surfaceAreaCm2", (area / 100).toString())}
+                    />
+                  }
+                />
+                {formData.surfaceAreaCm2 && (
+                  <div className="text-xs text-muted-foreground self-center whitespace-nowrap">
+                    (Auto-detected from 3MF)
+                  </div>
+                )}
+              </div>
+            </FormFieldRow>
+
+
+
+            <FormFieldRow label="Labor Steps / Layers">
+              <TextField
+                type="number"
+                step="1"
+                value={formData.paintingLayers}
+                onChange={(v) => updateField("paintingLayers", v)}
+                placeholder="2"
+              />
+            </FormFieldRow>
+
+            <FormFieldRow label={`Paint Cost (${currency.symbol}/ml)`}>
+              <TextField
+                type="number"
+                step="0.01"
+                value={formData.paintCostPerMl}
+                onChange={(v) => updateField("paintCostPerMl", v)}
+                placeholder="0.05"
+              />
+            </FormFieldRow>
+
+            <FormFieldRow label="Paint Usage (ml/cm²)">
+              <TextField
+                type="number"
+                step="0.001"
+                value={formData.paintUsagePerCm2 || ""}
+                onChange={(v) => updateField("paintUsagePerCm2", v)}
+                placeholder="0.01"
+              />
+            </FormFieldRow>
+
+            <FormFieldRow label="Painting Labor (hrs)">
+              <TextField
+                type="number"
+                step="0.1"
+                value={formData.paintingTime}
+                onChange={(v) => updateField("paintingTime", v)}
+                placeholder="0.5"
+              />
+            </FormFieldRow>
+          </div>
+        )}
+      </div>
+
     </QuoteCalculator>
   );
 });

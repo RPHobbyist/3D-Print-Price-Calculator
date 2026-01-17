@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { QuoteData } from "@/types/quote";
-import { useCurrency } from "@/components/CurrencyProvider";
+import { useCurrency } from "@/components/shared/CurrencyProvider";
 
 interface QuoteDetailsDialogProps {
     quote: QuoteData | null;

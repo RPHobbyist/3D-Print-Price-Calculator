@@ -18,6 +18,20 @@ export interface PublicFeedback {
     issueUrl: string;
 }
 
+// GitHub API response types
+interface GitHubLabel {
+    name: string;
+}
+
+interface GitHubIssue {
+    number: number;
+    title: string;
+    body?: string;
+    created_at: string;
+    html_url: string;
+    labels: GitHubLabel[];
+}
+
 /**
  * Fetch all public feedback from GitHub Issues (no token required)
  */
@@ -38,12 +52,12 @@ export async function fetchPublicFeedback(): Promise<PublicFeedback[]> {
             return [];
         }
 
-        const issues = await response.json();
+        const issues = await response.json() as GitHubIssue[];
 
         // Parse issues into feedback format
-        const feedback: PublicFeedback[] = issues.map((issue: any) => {
+        const feedback: PublicFeedback[] = issues.map((issue: GitHubIssue) => {
             // Extract rating from labels
-            const ratingLabel = issue.labels.find((label: any) =>
+            const ratingLabel = issue.labels.find((label: GitHubLabel) =>
                 label.name.startsWith('rating-')
             );
             const rating = ratingLabel ? parseInt(ratingLabel.name.split('-')[1]) : 0;

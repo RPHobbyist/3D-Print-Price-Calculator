@@ -4,14 +4,15 @@ import { toast } from "sonner";
 import { QuoteData, ResinFormData } from "@/types/quote";
 import { useCalculatorData } from "@/hooks/useCalculatorData";
 import { calculateResinQuote, validateResinForm } from "@/lib/quoteCalculations";
-import { QuoteCalculator } from "./calculator/QuoteCalculator";
-import { FormFieldRow, TextField, SelectField } from "./calculator/FormField";
-import { ConsumablesSelector } from "./calculator/ConsumablesSelector";
-import { SpoolSelector } from "./calculator/SpoolSelector";
+import { QuoteCalculator } from "./QuoteCalculator";
+import { FormFieldRow, TextField, SelectField } from "./FormField";
+import { ConsumablesSelector } from "./ConsumablesSelector";
+import { SpoolSelector } from "./SpoolSelector";
 import ResinFileUpload from "./ResinFileUpload";
-import { ResinFileData } from "@/lib/resinFileParser";
-import { useCurrency } from "@/components/CurrencyProvider";
-import { ClientSelector } from "@/components/ClientSelector";
+import { ResinFileData } from "@/lib/parsers/resinFileParser";
+import { useCurrency } from "@/components/shared/CurrencyProvider";
+import { ClientSelector } from "@/components/shared/ClientSelector";
+import { SurfaceAreaUpload } from "./SurfaceAreaUpload";
 
 interface ResinCalculatorProps {
   onCalculate: (data: QuoteData) => void;
@@ -32,6 +33,11 @@ const initialFormData: ResinFormData = {
   markupPercentage: "20",
   quantity: "1",
   selectedConsumableIds: [],
+  paintingTime: "",
+  paintingLayers: "",
+  paintCostPerMl: "",
+  paintUsagePerCm2: "",
+  surfaceAreaCm2: "",
 };
 
 const ResinCalculatorTable = memo(({ onCalculate }: ResinCalculatorProps) => {
@@ -96,6 +102,19 @@ const ResinCalculatorTable = memo(({ onCalculate }: ResinCalculatorProps) => {
       return;
     }
 
+    // Validate mandatory constants
+    const electricityRate = getConstantValue("electricity");
+    const laborRate = getConstantValue("labor");
+
+    if (!electricityRate || electricityRate <= 0) {
+      toast.error("Electricity Rate is required. Please set it in Settings → Consumables.");
+      return;
+    }
+
+    if (!laborRate || laborRate <= 0) {
+      toast.error("Labor Rate is required. Please set it in Settings → Consumables.");
+      return;
+    }
     // Include selectedSpoolId in formData for inventory tracking
     const formDataWithSpool = {
       ...formData,
@@ -308,7 +327,97 @@ const ResinCalculatorTable = memo(({ onCalculate }: ResinCalculatorProps) => {
           placeholder="1"
         />
       </FormFieldRow>
-    </QuoteCalculator>
+
+      <div className="pt-4 px-2 sm:px-4 border-t border-border">
+        <div className="flex items-center gap-2 mb-4">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Post Processing</h3>
+          <span className="px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-500 text-[10px] font-bold border border-blue-500/20">BETA</span>
+        </div>
+
+        <FormFieldRow label="Include Painting">
+          <div className="flex items-center h-10">
+            <input
+              type="checkbox"
+              className="w-5 h-5 rounded border-input bg-background"
+              checked={!!formData.paintingLayers && parseInt(formData.paintingLayers) > 0}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  updateField("paintingLayers", "1");
+                  updateField("paintingTime", "0.5");
+                } else {
+                  updateField("paintingLayers", "");
+                  updateField("paintingTime", "");
+                }
+              }}
+            />
+            <span className="ml-2 text-sm text-foreground">Enable</span>
+          </div>
+        </FormFieldRow>
+
+        {!!formData.paintingLayers && (
+          <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+            <FormFieldRow label="Surface Area (cm²)">
+              <div className="flex gap-2 items-center">
+                <TextField
+                  type="number"
+                  value={formData.surfaceAreaCm2}
+                  onChange={(v) => updateField("surfaceAreaCm2", v)}
+                  placeholder="Enter area manually"
+                  className="flex-1"
+                  endAdornment={
+                    <SurfaceAreaUpload
+                      className="border-none hover:bg-transparent px-2"
+                      onSurfaceAreaDetected={(area) => updateField("surfaceAreaCm2", (area / 100).toString())}
+                    />
+                  }
+                />
+              </div>
+            </FormFieldRow>
+
+            <FormFieldRow label="Labor Steps / Layers">
+              <TextField
+                type="number"
+                step="1"
+                value={formData.paintingLayers}
+                onChange={(v) => updateField("paintingLayers", v)}
+                placeholder="2"
+              />
+            </FormFieldRow>
+
+            <FormFieldRow label={`Paint Cost (${currency.symbol}/ml)`}>
+              <TextField
+                type="number"
+                step="0.01"
+                value={formData.paintCostPerMl}
+                onChange={(v) => updateField("paintCostPerMl", v)}
+                placeholder="0.05"
+              />
+            </FormFieldRow>
+
+            <FormFieldRow label="Paint Usage (ml/cm²)">
+              <TextField
+                type="number"
+                step="0.001"
+                value={formData.paintUsagePerCm2 || ""}
+                onChange={(v) => updateField("paintUsagePerCm2", v)}
+                placeholder="0.01"
+              />
+            </FormFieldRow>
+
+            <FormFieldRow label="Painting Labor (hrs)">
+              <TextField
+                type="number"
+                step="0.1"
+                value={formData.paintingTime}
+                onChange={(v) => updateField("paintingTime", v)}
+                placeholder="0.5"
+              />
+            </FormFieldRow>
+          </div>
+        )}
+      </div>
+
+    </QuoteCalculator >
   );
 });
 

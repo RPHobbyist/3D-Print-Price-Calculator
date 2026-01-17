@@ -61,20 +61,20 @@ export async function parseCxdlpv4(file: File): Promise<ResinFileData> {
     const buffer = await file.arrayBuffer();
     const dataView = new DataView(buffer);
 
-    console.log('File size:', buffer.byteLength);
+
 
     let offset = 0;
 
     // Read magic size (4 bytes, Big Endian)
     const magicSize = dataView.getUint32(offset, false);
     offset += 4;
-    console.log('Magic size:', magicSize);
+
 
     // Read magic string
     const magicBytes = new Uint8Array(buffer, offset, magicSize);
     const magic = String.fromCharCode(...magicBytes).replace(/\0/g, '');
     offset += magicSize;
-    console.log('Magic:', magic);
+
 
     // Validate magic
     if (!magic.startsWith('CXSW3D')) {
@@ -85,20 +85,20 @@ export async function parseCxdlpv4(file: File): Promise<ResinFileData> {
     // Read version (2 bytes, Big Endian)
     const version = dataView.getUint16(offset, false);
     offset += 2;
-    console.log('Version:', version);
+
 
     // Read printer model (null-terminated string with length prefix)
     const printerModelResult = readNullTerminatedString(dataView, offset);
     const printerModel = printerModelResult.value;
     offset += printerModelResult.bytesRead;
-    console.log('Printer model:', printerModel);
+
 
     // Read ResolutionX and ResolutionY (2 bytes each)
     const resolutionX = dataView.getUint16(offset, true);
     offset += 2;
     const resolutionY = dataView.getUint16(offset, true);
     offset += 2;
-    console.log('Resolution:', resolutionX, 'x', resolutionY);
+
 
     // Read BedSizeX, BedSizeY, BedSizeZ (3 floats, 4 bytes each)
     const bedSizeX = dataView.getFloat32(offset, true);
@@ -107,22 +107,22 @@ export async function parseCxdlpv4(file: File): Promise<ResinFileData> {
     offset += 4;
     const bedSizeZ = dataView.getFloat32(offset, true);
     offset += 4;
-    console.log('Bed size:', bedSizeX, bedSizeY, bedSizeZ);
+
 
     // Read PrintHeight (float)
     const printHeight = dataView.getFloat32(offset, true);
     offset += 4;
-    console.log('Print height:', printHeight);
+
 
     // Read LayerHeight (float)
     const layerHeight = dataView.getFloat32(offset, true);
     offset += 4;
-    console.log('Layer height:', layerHeight);
+
 
     // Read BottomLayersCount (4 bytes)
     const bottomLayersCount = dataView.getUint32(offset, true);
     offset += 4;
-    console.log('Bottom layers:', bottomLayersCount);
+
 
     // Read PreviewSmallOffsetAddress (4 bytes)
     const previewSmallOffset = dataView.getUint32(offset, true);
@@ -135,7 +135,7 @@ export async function parseCxdlpv4(file: File): Promise<ResinFileData> {
     // Read LayerCount (4 bytes)
     const layerCount = dataView.getUint32(offset, true);
     offset += 4;
-    console.log('Layer count:', layerCount);
+
 
     // Read PreviewLargeOffsetAddress (4 bytes)
     const previewLargeOffset = dataView.getUint32(offset, true);
@@ -144,7 +144,7 @@ export async function parseCxdlpv4(file: File): Promise<ResinFileData> {
     // Read PrintTime (4 bytes) - in seconds
     const printTimeSeconds = dataView.getUint32(offset, true);
     offset += 4;
-    console.log('Print time (seconds):', printTimeSeconds);
+
 
     // Skip ProjectorType (4 bytes)
     offset += 4;
@@ -152,7 +152,7 @@ export async function parseCxdlpv4(file: File): Promise<ResinFileData> {
     // Read PrintParametersOffsetAddress (4 bytes)
     const printParamsOffset = dataView.getUint32(offset, true);
     offset += 4;
-    console.log('Print params offset:', printParamsOffset);
+
 
     // Read VolumeMl from PrintParameters section
     // VolumeMl is at offset 20 within PrintParameters (after 5 floats)
@@ -160,7 +160,7 @@ export async function parseCxdlpv4(file: File): Promise<ResinFileData> {
     if (printParamsOffset > 0 && printParamsOffset + 24 < buffer.byteLength) {
       // Skip first 5 floats (BottomLiftHeight, BottomLiftSpeed, LiftHeight, LiftSpeed, RetractSpeed)
       volumeMl = dataView.getFloat32(printParamsOffset + 20, true);
-      console.log('Volume (ml):', volumeMl);
+
     }
 
     // Extract thumbnail from preview section
@@ -172,7 +172,7 @@ export async function parseCxdlpv4(file: File): Promise<ResinFileData> {
         const previewResY = dataView.getUint32(previewLargeOffset + 4, true);
         const previewDataSize = dataView.getUint32(previewLargeOffset + 8, true);
 
-        console.log('Preview:', previewResX, 'x', previewResY, 'size:', previewDataSize);
+
 
         // Validate preview data
         if (previewResX > 0 && previewResX <= 1024 &&
@@ -212,9 +212,9 @@ export async function parseCxdlpv4(file: File): Promise<ResinFileData> {
 
               ctx.putImageData(imageData, 0, 0);
               thumbnail = canvas.toDataURL('image/png');
-              console.log('Thumbnail extracted successfully');
+
             } else {
-              console.log('Preview size mismatch, expected:', expectedSize, 'got:', previewDataSize);
+
             }
           }
         }
@@ -240,7 +240,7 @@ export async function parseCxdlpv4(file: File): Promise<ResinFileData> {
       thumbnail: thumbnail || undefined,
     };
 
-    console.log('CXDLPV4 parse result:', result);
+
     return result;
 
   } catch (error) {
@@ -286,24 +286,24 @@ async function parseCtbFormat(buffer: ArrayBuffer): Promise<ResinFileData> {
     const validMagics = [0x12FD0019, 0x12FD0086, 0x12FD0106, 0xFF220810];
 
     if (!validMagics.includes(magic)) {
-      console.log('Not a valid CTB file, magic:', magic.toString(16));
+
       return parseGenericBinary(buffer);
     }
 
     const version = dataView.getUint32(4, true);
-    console.log('CTB version:', version);
+
 
     // Read dimensions
     const bedSizeX = dataView.getFloat32(8, true);
     const bedSizeY = dataView.getFloat32(12, true);
     const bedSizeZ = dataView.getFloat32(16, true);
-    console.log('Bed size:', bedSizeX, 'x', bedSizeY, 'x', bedSizeZ);
+
 
     // Skip unknown fields (8 bytes)
     const totalHeightMm = dataView.getFloat32(28, true);
     const layerHeightMm = dataView.getFloat32(32, true);
 
-    console.log('Total height:', totalHeightMm, 'mm, Layer height:', layerHeightMm, 'mm');
+
 
     // Read counts and offsets
     const bottomLayersCount = dataView.getUint32(48, true);
@@ -317,9 +317,7 @@ async function parseCtbFormat(buffer: ArrayBuffer): Promise<ResinFileData> {
     // Skip ProjectorType at 80
     const printParametersOffset = dataView.getUint32(84, true);
 
-    console.log('Layer count:', layerCount, 'Print time:', printTimeSeconds, 's');
-    console.log('Resolution:', resolutionX, 'x', resolutionY);
-    console.log('PrintParams offset:', printParametersOffset);
+
 
     // Try to read VolumeMl from PrintParameters section
     // PrintParameters structure:
@@ -333,7 +331,7 @@ async function parseCtbFormat(buffer: ArrayBuffer): Promise<ResinFileData> {
     let resinVolumeMl = 0;
     if (printParametersOffset > 0 && printParametersOffset + 28 <= buffer.byteLength) {
       const volumeFromParams = dataView.getFloat32(printParametersOffset + 20, true);
-      console.log('Volume from PrintParams:', volumeFromParams, 'ml');
+
       if (Number.isFinite(volumeFromParams) && volumeFromParams > 0 && volumeFromParams < 10000) {
         resinVolumeMl = Math.round(volumeFromParams * 10) / 10;
       }
@@ -345,7 +343,7 @@ async function parseCtbFormat(buffer: ArrayBuffer): Promise<ResinFileData> {
       const printAreaMm2 = (resolutionX * resolutionY) * (pixelSizeMm * pixelSizeMm) * 0.3;
       const estimatedVolumeMm3 = printAreaMm2 * totalHeightMm;
       resinVolumeMl = Math.round((estimatedVolumeMm3 / 1000) * 10) / 10;
-      console.log('Estimated volume:', resinVolumeMl, 'ml');
+
     }
 
     // Try to extract thumbnail from preview section
@@ -357,7 +355,7 @@ async function parseCtbFormat(buffer: ArrayBuffer): Promise<ResinFileData> {
         const previewResY = dataView.getUint32(previewLargeOffset + 4, true);
         const previewDataSize = dataView.getUint32(previewLargeOffset + 8, true);
 
-        console.log('Preview:', previewResX, 'x', previewResY, 'size:', previewDataSize);
+
 
         if (previewResX > 0 && previewResX <= 800 &&
           previewResY > 0 && previewResY <= 480 &&
@@ -404,7 +402,7 @@ async function parseCtbFormat(buffer: ArrayBuffer): Promise<ResinFileData> {
 
             ctx.putImageData(imageData, 0, 0);
             thumbnail = canvas.toDataURL('image/png');
-            console.log('CTB thumbnail extracted');
+
           }
         }
       } catch (thumbError) {
@@ -575,42 +573,42 @@ export async function parseResinFile(file: File): Promise<ResinFileData> {
 
   // CTB format (CHITUBOX) - used by Elegoo, Phrozen, Anycubic
   if (fileName.endsWith('.ctb')) {
-    console.log('Parsing CTB format (CHITUBOX)');
+
     const buffer = await file.arrayBuffer();
     return parseCtbFormat(buffer);
   }
 
   // FDG format - Elegoo Mars/Saturn (similar to CTB)
   if (fileName.endsWith('.fdg')) {
-    console.log('Parsing FDG format (Elegoo)');
+
     const buffer = await file.arrayBuffer();
     return parseCtbFormat(buffer);
   }
 
   // GOO format - Anycubic Cloud printers
   if (fileName.endsWith('.goo')) {
-    console.log('Parsing GOO format (Anycubic Cloud)');
+
     const buffer = await file.arrayBuffer();
     return parsePhotonFormat(buffer);
   }
 
   // Photon/PWMO format - Anycubic Photon series
   if (fileName.endsWith('.photon') || fileName.endsWith('.pwmo')) {
-    console.log('Parsing Photon format (Anycubic)');
+
     const buffer = await file.arrayBuffer();
     return parsePhotonFormat(buffer);
   }
 
   // SL1S format - Prusa SL1/SL1S Speed (ZIP archive with config)
   if (fileName.endsWith('.sl1s') || fileName.endsWith('.sl1')) {
-    console.log('Parsing SL1S format (Prusa)');
+
     const buffer = await file.arrayBuffer();
     return parseGenericBinary(buffer);
   }
 
   // FORM format - Formlabs
   if (fileName.endsWith('.form')) {
-    console.log('Parsing FORM format (Formlabs)');
+
     const buffer = await file.arrayBuffer();
     return parseGenericBinary(buffer);
   }

@@ -6,9 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Pencil, Trash2, ChevronDown, ChevronRight, Package } from "lucide-react";
 import { toast } from "sonner";
-import { useCurrency } from "@/components/CurrencyProvider";
+import { useCurrency } from "@/components/shared/CurrencyProvider";
 import { Material } from "@/types/quote";
-import * as sessionStore from "@/lib/sessionStorage";
+import * as sessionStore from "@/lib/core/sessionStorage";
 import { MaterialInventory } from "./MaterialInventory";
 
 // --- Materials Form Component ---

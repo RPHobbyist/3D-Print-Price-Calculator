@@ -2,7 +2,7 @@ import { memo } from "react";
 import { QuoteStats } from "@/types/quote";
 import { StatsCard } from "./StatsCard";
 import { FileText, TrendingUp, Printer, Clock } from "lucide-react";
-import { useCurrency } from "@/components/CurrencyProvider";
+import { useCurrency } from "@/components/shared/CurrencyProvider";
 
 interface QuotesDashboardProps {
   stats: QuoteStats;

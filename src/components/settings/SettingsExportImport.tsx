@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Download, Upload, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import { exportAllSettings, importAllSettings, SettingsExport } from "@/lib/sessionStorage";
+import { exportAllSettings, importAllSettings, SettingsExport } from "@/lib/core/sessionStorage";
 
 interface SettingsExportImportProps {
     onSettingsChanged?: () => void;

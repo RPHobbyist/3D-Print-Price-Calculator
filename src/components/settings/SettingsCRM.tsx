@@ -8,10 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Trash2, Pencil, Users, Phone, Mail, Search, Plus, Eye, Building2 } from "lucide-react";
 import { Customer } from "@/types/quote";
-import { getCustomers, saveCustomer, deleteCustomer } from "@/lib/sessionStorage";
+import { getCustomers, saveCustomer, deleteCustomer } from "@/lib/core/sessionStorage";
 import { toast } from "sonner";
 import { CustomerDetailsDialog } from "@/components/crm/CustomerDetailsDialog";
-import { useCurrency } from "@/components/CurrencyProvider";
+import { useCurrency } from "@/components/shared/CurrencyProvider";
 import { Badge } from "@/components/ui/badge";
 
 interface CustomerStats {
@@ -25,7 +25,7 @@ const useAllCustomerStats = (customers: Customer[]) => {
 
     useEffect(() => {
         const newStats: Record<string, CustomerStats> = {};
-        import("@/lib/sessionStorage").then(({ getCustomerStats }) => {
+        import("@/lib/core/sessionStorage").then(({ getCustomerStats }) => {
             customers.forEach(c => {
                 newStats[c.id] = getCustomerStats(c.id);
             });

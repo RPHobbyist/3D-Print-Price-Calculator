@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter, Routes, Route } from "react-router-dom";
 import { BatchQuoteProvider } from "@/contexts/BatchQuoteContext";
 import { ProductionProvider } from "@/contexts/ProductionContext";
-import { CurrencyProvider } from "@/components/CurrencyProvider";
+import { CurrencyProvider } from "@/components/shared/CurrencyProvider";
 import { useAppProtection } from "@/hooks/useAppProtection";
 
 // Lazy load pages for code splitting

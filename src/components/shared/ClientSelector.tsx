@@ -16,7 +16,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import { getCustomers, saveCustomer } from "@/lib/sessionStorage";
+import { getCustomers, saveCustomer } from "@/lib/core/sessionStorage";
 import { Customer } from "@/types/quote";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";

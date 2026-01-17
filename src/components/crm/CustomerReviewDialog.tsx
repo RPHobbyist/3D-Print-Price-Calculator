@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Star, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
-import { saveReview } from "@/lib/sessionStorage";
+import { saveReview } from "@/lib/core/sessionStorage";
 import { CustomerReview } from "@/types/quote";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -101,8 +101,8 @@ export function CustomerReviewDialog({
                                 >
                                     <Star
                                         className={`w-8 h-8 transition-colors ${star <= (hoveredStar ?? rating)
-                                                ? "fill-yellow-400 text-yellow-400"
-                                                : "text-muted-foreground/30"
+                                            ? "fill-yellow-400 text-yellow-400"
+                                            : "text-muted-foreground/30"
                                             }`}
                                     />
                                 </button>
@@ -118,8 +118,8 @@ export function CustomerReviewDialog({
                                 <label
                                     key={tag.value}
                                     className={`flex items-center gap-2 px-3 py-1.5 rounded-full border cursor-pointer transition-colors ${selectedTags.includes(tag.value)
-                                            ? "bg-primary/10 border-primary text-primary"
-                                            : "bg-muted/50 border-border hover:bg-muted"
+                                        ? "bg-primary/10 border-primary text-primary"
+                                        : "bg-muted/50 border-border hover:bg-muted"
                                         }`}
                                 >
                                     <Checkbox

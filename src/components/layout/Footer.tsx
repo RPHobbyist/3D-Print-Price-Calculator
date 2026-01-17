@@ -1,11 +1,11 @@
 import { Youtube } from "lucide-react";
-import { FeatureSuggestion } from "./FeatureSuggestion";
+import { FeatureSuggestion } from "@/components/feedback/FeatureSuggestion";
 import { Link } from "react-router-dom";
 import { lazy, Suspense } from "react";
-import { SYSTEM_CONFIG } from "@/lib/core-system";
+import { SYSTEM_CONFIG } from "@/lib/core/core-system";
 
 // Lazy load the license dialog to reduce initial bundle size
-const LicenseDialog = lazy(() => import("./LicenseDialog").then(m => ({ default: m.LicenseDialog })));
+const LicenseDialog = lazy(() => import("@/components/feedback/LicenseDialog").then(m => ({ default: m.LicenseDialog })));
 
 // GitHub icon component (lucide-react doesn't have GitHub icon)
 const GithubIcon = () => (
