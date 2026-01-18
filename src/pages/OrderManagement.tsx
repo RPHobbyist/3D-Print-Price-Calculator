@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { OrderList } from "@/components/kanban/OrderList";
-import { KanbanProvider } from "@/contexts/KanbanContext";
+import { KanbanProvider } from "@/contexts/KanbanProvider";
 import { useSavedQuotes } from "@/hooks/useSavedQuotes";
 
 const OrderManagement = memo(() => {
