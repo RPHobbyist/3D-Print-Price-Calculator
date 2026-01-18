@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, memo } from "react";
+import { useState, useCallback, useMemo, memo, useEffect } from "react";
 import { Calculator } from "lucide-react";
 import { toast } from "sonner";
 import { QuoteData, FDMFormData } from "@/types/quote";
@@ -10,10 +10,11 @@ import { ConsumablesSelector } from "./ConsumablesSelector";
 import { SpoolSelector } from "./SpoolSelector";
 import GcodeUpload from "./GcodeUpload";
 import { GcodeData } from "@/lib/parsers/gcodeParser";
-import { useCurrency } from "@/components/shared/CurrencyProvider";
+import { useCurrency } from "@/hooks/useCurrency";
 import { ClientSelector } from "@/components/shared/ClientSelector";
-import { Customer } from "@/types/quote";
+import { Customer, Employee } from "@/types/quote";
 import { SurfaceAreaUpload } from "./SurfaceAreaUpload";
+import { getEmployees } from "@/lib/core/sessionStorage";
 
 interface FDMCalculatorProps {
   onCalculate: (data: QuoteData) => void;
@@ -30,11 +31,14 @@ const initialFormData: FDMFormData = {
   overheadPercentage: "",
   markupPercentage: "20",
   quantity: "1",
+  priority: "Medium",
+  dueDate: "",
   selectedConsumableIds: [],
   filePath: "", // Store uploaded file path
   customerId: "",
 
   clientName: "",
+  assignedEmployeeId: "",
   paintingTime: "",
   paintingLayers: "",
   paintCostPerMl: "",
@@ -47,6 +51,12 @@ const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
   const [formData, setFormData] = useState<FDMFormData>(initialFormData);
   const [selectedSpoolId, setSelectedSpoolId] = useState<string>("");
   const { currency } = useCurrency();
+  const [employees, setEmployees] = useState<Employee[]>([]);
+
+  // Load employees on mount
+  useEffect(() => {
+    setEmployees(getEmployees());
+  }, []);
 
   const updateField = useCallback(<K extends keyof FDMFormData>(field: K, value: FDMFormData[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -300,7 +310,7 @@ const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
         />
       </FormFieldRow>
 
-      <FormFieldRow label="Print Time (hours)" required highlight>
+      <FormFieldRow label="Print Time (hours)" required>
         <TextField
           type="number"
           step="0.1"
@@ -310,7 +320,7 @@ const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
         />
       </FormFieldRow>
 
-      <FormFieldRow label="Filament Weight (grams)" required highlight>
+      <FormFieldRow label="Filament Weight (grams)" required>
         <TextField
           type="number"
           step="0.1"
@@ -350,13 +360,47 @@ const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
         />
       </FormFieldRow>
 
-      <FormFieldRow label="Quantity" highlight>
+      <FormFieldRow label="Quantity">
         <TextField
           type="number"
           step="1"
           value={formData.quantity}
           onChange={(v) => updateField("quantity", v)}
           placeholder="1"
+        />
+      </FormFieldRow>
+
+      <FormFieldRow label="Order Priority">
+        <SelectField
+          value={formData.priority || "Medium"}
+          onChange={(v) => updateField("priority", v)}
+          placeholder="Select priority"
+          options={[
+            { id: "Low", label: "Low" },
+            { id: "Medium", label: "Medium" },
+            { id: "High", label: "High" },
+          ]}
+        />
+      </FormFieldRow>
+
+      <FormFieldRow label="Due Date">
+        <input
+          type="date"
+          value={formData.dueDate || ""}
+          onChange={(e) => updateField("dueDate", e.target.value)}
+          className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        />
+      </FormFieldRow>
+
+      <FormFieldRow label="Assigned Employee">
+        <SelectField
+          value={formData.assignedEmployeeId || "none"}
+          onChange={(v) => updateField("assignedEmployeeId", v === "none" ? "" : v)}
+          options={[
+            { id: "none", label: "-- Select Employee --" },
+            ...employees.map(e => ({ id: e.id, label: `${e.name} (${e.jobPosition})` }))
+          ]}
+          placeholder="Select employee"
         />
       </FormFieldRow>
 

@@ -1,36 +1,8 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { useState, useEffect, useCallback, ReactNode } from 'react';
 import { QuoteData } from '@/types/quote';
 import { toast } from 'sonner';
-
-export type JobStatus = 'queued' | 'printing' | 'post_processing' | 'completed';
-export type JobPriority = 'low' | 'normal' | 'high';
-
-export interface ProductionJob {
-    id: string;
-    quote: QuoteData;
-    status: JobStatus;
-    machineId: string | null; // null means unassigned/global queue
-    priority: JobPriority;
-    createdAt: string;
-    startedAt?: string;
-    completedAt?: string;
-    notes?: string;
-    // For sorting within the same status/machine
-    order: number;
-}
-
-interface ProductionContextType {
-    jobs: ProductionJob[];
-    addJob: (quote: QuoteData, machineId?: string | null) => void;
-    updateJob: (jobId: string, updates: Partial<ProductionJob>) => void;
-    moveJob: (jobId: string, newStatus: JobStatus, newMachineId: string | null, newIndex?: number) => void;
-    removeJob: (jobId: string) => void;
-    clearCompleted: () => void;
-    getJobsByMachine: (machineId: string) => ProductionJob[];
-    getUnassignedJobs: () => ProductionJob[];
-}
-
-const ProductionContext = createContext<ProductionContextType | undefined>(undefined);
+import { ProductionJob, JobStatus } from '@/types/production';
+import { ProductionContext } from '@/contexts/ProductionContext';
 
 const STORAGE_KEY = 'production_manager_jobs';
 
@@ -155,12 +127,4 @@ export const ProductionProvider = ({ children }: { children: ReactNode }) => {
             {children}
         </ProductionContext.Provider>
     );
-};
-
-export const useProduction = () => {
-    const context = useContext(ProductionContext);
-    if (!context) {
-        throw new Error('useProduction must be used within a ProductionProvider');
-    }
-    return context;
 };

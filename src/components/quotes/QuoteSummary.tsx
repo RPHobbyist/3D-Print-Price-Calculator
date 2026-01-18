@@ -5,10 +5,10 @@ import { Separator } from "@/components/ui/separator";
 import { FileText, Download, Save, FileDown, Package, Factory, AlertTriangle } from "lucide-react";
 import { QuoteData } from "@/types/quote";
 import { toast } from "sonner";
-import { useCurrency } from "@/components/shared/CurrencyProvider";
+import { useCurrency } from "@/hooks/useCurrency";
 import { printQuotePDF } from "@/lib/pdfGenerator";
-import { useBatchQuote } from "@/contexts/BatchQuoteContext";
-import { useProduction } from "@/contexts/ProductionContext";
+import { useBatchQuote } from "@/hooks/useBatchQuote";
+import { useProduction } from "@/hooks/useProduction";
 import { useCalculatorData } from "@/hooks/useCalculatorData";
 import { getSpools } from "@/lib/core/sessionStorage";
 import {

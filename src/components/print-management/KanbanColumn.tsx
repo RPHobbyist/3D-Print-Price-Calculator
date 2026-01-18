@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { Droppable } from "@hello-pangea/dnd";
 import { Badge } from "@/components/ui/badge";
-import { ProductionJob } from "@/contexts/ProductionContext";
+import { ProductionJob } from "@/types/production";
 import { Printer, Package } from "lucide-react";
 import { JobCard } from "./JobCard";
 

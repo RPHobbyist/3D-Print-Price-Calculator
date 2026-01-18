@@ -1,4 +1,5 @@
-import { useCurrency, CURRENCIES, Currency } from "./CurrencyProvider";
+import { useCurrency } from "@/hooks/useCurrency";
+import { CURRENCIES, Currency } from "@/types/currency";
 import {
     Select,
     SelectContent,

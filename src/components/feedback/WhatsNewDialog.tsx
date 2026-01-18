@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Package, CalendarDays, Building2, Paintbrush, ArrowRight } from "lucide-react";
+import { Package, CalendarDays, Building2, Paintbrush, ArrowRight, Users, Hammer } from "lucide-react";
 
-const CURRENT_VERSION = "1.2.0"; // Bumped version for new features
+const CURRENT_VERSION = "1.3.0"; // Bumped version for new features
 const STORAGE_KEY = "last_seen_version";
 
 export const WhatsNewDialog = ({
@@ -65,14 +65,20 @@ export const WhatsNewDialog = ({
 
                     <FeatureItem
                         icon={<Package className="w-6 h-6 text-blue-500" />}
-                        title="Inventory Management"
-                        description="Track your filament spools and resin bottles. The calculator now automatically checks stock levels and deducts usage from specific items."
+                        title="Order Manager Board"
+                        description="Visualize your production flow! Check box orders from Pending to Printing to Delivery."
                     />
 
                     <FeatureItem
                         icon={<CalendarDays className="w-6 h-6 text-purple-500" />}
                         title="Capacity Planner"
                         description="Plan big projects with ease. Select your printers and see exactly how long a job will take and when it will be finished."
+                    />
+
+                    <FeatureItem
+                        icon={<Package className="w-6 h-6 text-orange-500" />}
+                        title="Inventory Management"
+                        description="Track your filament spools and resin bottles. The calculator now automatically checks stock levels and deducts usage."
                     />
 
                     <FeatureItem
@@ -83,8 +89,26 @@ export const WhatsNewDialog = ({
 
                     <FeatureItem
                         icon={<Paintbrush className="w-6 h-6 text-pink-500" />}
-                        title="Enhanced Experience"
-                        description="Enjoy a smoother experience with visual color swatches, improved quote layouts, and smarter printer matching."
+                        title="Cleaner Interface"
+                        description="We've polished the calculators. Removed distracting highlights and unified the look for a cleaner, more professional experience."
+                    />
+
+                    <FeatureItem
+                        icon={<Users className="w-6 h-6 text-cyan-500" />}
+                        title="Employee Assignment"
+                        description="Delegate work effectively. Assign specific employees to print jobs and track who is working on what."
+                    />
+
+                    <FeatureItem
+                        icon={<Hammer className="w-6 h-6 text-yellow-500" />}
+                        title="Post Processing"
+                        description="Calculate finishing costs with precision. Now includes options for painting."
+                    />
+
+                    <FeatureItem
+                        icon={<Building2 className="w-6 h-6 text-indigo-500" />}
+                        title="Performance Boost"
+                        description="Under-the-hood improvements make the app faster and more stable, with reliable state management during updates."
                     />
 
                 </div>

@@ -1,26 +1,6 @@
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import { useState, useCallback, useEffect, ReactNode } from 'react';
 import { QuoteData } from '@/types/quote';
-
-interface BatchQuoteContextType {
-    batchItems: QuoteData[];
-    addItem: (item: QuoteData) => void;
-    removeItem: (index: number) => void;
-    updateItem: (index: number, item: QuoteData) => void;
-    clearBatch: () => void;
-    batchTotals: {
-        totalItems: number;
-        totalQuantity: number;
-        totalMaterialCost: number;
-        totalMachineTimeCost: number;
-        totalElectricityCost: number;
-        totalLaborCost: number;
-        totalOverheadCost: number;
-        totalMarkup: number;
-        grandTotal: number;
-    };
-}
-
-const BatchQuoteContext = createContext<BatchQuoteContextType | undefined>(undefined);
+import { BatchQuoteContext } from '@/contexts/BatchQuoteContext';
 
 const STORAGE_KEY = 'batch_quote_items';
 
@@ -103,12 +83,4 @@ export const BatchQuoteProvider = ({ children }: { children: ReactNode }) => {
             {children}
         </BatchQuoteContext.Provider>
     );
-};
-
-export const useBatchQuote = () => {
-    const context = useContext(BatchQuoteContext);
-    if (!context) {
-        throw new Error('useBatchQuote must be used within a BatchQuoteProvider');
-    }
-    return context;
 };

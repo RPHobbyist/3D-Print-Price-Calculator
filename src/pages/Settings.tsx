@@ -1,13 +1,14 @@
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Database, Printer, Package, Users, Building2 } from "lucide-react";
+import { Database, Printer, Package, Users, Building2, UserCircle } from "lucide-react";
 import MaterialsManager from "@/components/settings/MaterialsManager";
 import MachinesManager from "@/components/settings/MachinesManager";
 import ConstantsManager from "@/components/settings/ConstantsManager";
 import SettingsExportImport from "@/components/settings/SettingsExportImport";
 import SettingsCRM from "@/components/settings/SettingsCRM";
+import SettingsEmployee from "@/components/settings/SettingsEmployee";
 import CompanySettings from "@/components/settings/CompanySettings";
-import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { SYSTEM_CONFIG } from "@/lib/core/core-system";
 import { NavLink } from "@/components/layout/NavLink";
 import { Footer } from "@/components/layout/Footer";
@@ -114,6 +115,13 @@ const Settings = () => {
                   <Building2 className="w-4 h-4 mr-2" />
                   Company
                 </TabsTrigger>
+                <TabsTrigger
+                  value="employees"
+                  className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-card rounded-lg px-5 py-2.5 transition-all duration-200"
+                >
+                  <UserCircle className="w-4 h-4 mr-2" />
+                  Employees
+                </TabsTrigger>
               </TabsList>
             </div>
 
@@ -135,6 +143,10 @@ const Settings = () => {
 
             <TabsContent value="company" className="p-6 mt-0 animate-fade-in">
               <CompanySettings />
+            </TabsContent>
+
+            <TabsContent value="employees" className="p-6 mt-0 animate-fade-in">
+              <SettingsEmployee />
             </TabsContent>
           </Tabs>
         </Card>

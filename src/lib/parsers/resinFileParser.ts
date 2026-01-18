@@ -82,8 +82,7 @@ export async function parseCxdlpv4(file: File): Promise<ResinFileData> {
       return parseGenericBinary(buffer);
     }
 
-    // Read version (2 bytes, Big Endian)
-    const version = dataView.getUint16(offset, false);
+    // Skip version (2 bytes)
     offset += 2;
 
 
@@ -93,43 +92,31 @@ export async function parseCxdlpv4(file: File): Promise<ResinFileData> {
     offset += printerModelResult.bytesRead;
 
 
-    // Read ResolutionX and ResolutionY (2 bytes each)
-    const resolutionX = dataView.getUint16(offset, true);
-    offset += 2;
-    const resolutionY = dataView.getUint16(offset, true);
-    offset += 2;
-
-
-    // Read BedSizeX, BedSizeY, BedSizeZ (3 floats, 4 bytes each)
-    const bedSizeX = dataView.getFloat32(offset, true);
-    offset += 4;
-    const bedSizeY = dataView.getFloat32(offset, true);
-    offset += 4;
-    const bedSizeZ = dataView.getFloat32(offset, true);
+    // Skip ResolutionX/Y (2 bytes each)
     offset += 4;
 
 
-    // Read PrintHeight (float)
-    const printHeight = dataView.getFloat32(offset, true);
+    // Skip BedSizeX/Y/Z (3 floats, 4 bytes each)
+    offset += 12;
+
+
+    // Skip PrintHeight (float)
     offset += 4;
 
 
-    // Read LayerHeight (float)
-    const layerHeight = dataView.getFloat32(offset, true);
+    // Skip LayerHeight (float)
     offset += 4;
 
 
-    // Read BottomLayersCount (4 bytes)
-    const bottomLayersCount = dataView.getUint32(offset, true);
+    // Skip BottomLayersCount (4 bytes)
     offset += 4;
 
 
-    // Read PreviewSmallOffsetAddress (4 bytes)
-    const previewSmallOffset = dataView.getUint32(offset, true);
+    // Skip PreviewSmallOffsetAddress (4 bytes)
+    const previewSmallOffset = dataView.getUint32(offset, true); // Kept in case needed later, but marked unused
     offset += 4;
 
-    // Read LayersDefinitionOffsetAddress (4 bytes)
-    const layersDefOffset = dataView.getUint32(offset, true);
+    // Skip LayersDefinitionOffsetAddress (4 bytes)
     offset += 4;
 
     // Read LayerCount (4 bytes)
@@ -214,7 +201,7 @@ export async function parseCxdlpv4(file: File): Promise<ResinFileData> {
               thumbnail = canvas.toDataURL('image/png');
 
             } else {
-
+              // Preview size doesn't match expected size
             }
           }
         }
@@ -290,32 +277,49 @@ async function parseCtbFormat(buffer: ArrayBuffer): Promise<ResinFileData> {
       return parseGenericBinary(buffer);
     }
 
-    const version = dataView.getUint32(4, true);
+    // Skip version (4 bytes)
+    // const version = dataView.getUint32(4, true);
 
-
-    // Read dimensions
-    const bedSizeX = dataView.getFloat32(8, true);
-    const bedSizeY = dataView.getFloat32(12, true);
-    const bedSizeZ = dataView.getFloat32(16, true);
-
+    // Skip dimensions (bed size x, y, z) - 12 bytes
+    // const bedSizeX = dataView.getFloat32(8, true);
+    // const bedSizeY = dataView.getFloat32(12, true);
+    // const bedSizeZ = dataView.getFloat32(16, true);
 
     // Skip unknown fields (8 bytes)
-    const totalHeightMm = dataView.getFloat32(28, true);
-    const layerHeightMm = dataView.getFloat32(32, true);
+    // Skip TotalHeightMm (float)
+    // Skip LayerHeightMm (float)
 
 
+    // Read counts and offsets - we only need specific ones
+    // offset 48: BottomLayersCount (4 bytes)
+    // offset 52: ResolutionX (4 bytes)
+    // offset 56: ResolutionY (4 bytes)
+    // offset 60: PreviewLargeOffset (4 bytes)
+    // offset 64: LayersDefinitionOffset (4 bytes)
+    // offset 68: LayerCount (4 bytes)
+    // offset 72: PreviewSmallOffset (4 bytes)
+    // offset 76: PrintTime (4 bytes)
 
-    // Read counts and offsets
-    const bottomLayersCount = dataView.getUint32(48, true);
+    // We can read just what we need:
+
+    // Read necessary header values
+    const bedSizeX = dataView.getFloat32(12, true);
+    // const bedSizeY = dataView.getFloat32(16, true); // Unused for now but kept for reference
+    // const bedSizeZ = dataView.getFloat32(20, true); // Unused
+    const layerHeight = dataView.getFloat32(24, true);
+
+    // Skip...
+
     const resolutionX = dataView.getUint32(52, true);
     const resolutionY = dataView.getUint32(56, true);
+
     const previewLargeOffset = dataView.getUint32(60, true);
-    const layersDefOffset = dataView.getUint32(64, true);
     const layerCount = dataView.getUint32(68, true);
-    const previewSmallOffset = dataView.getUint32(72, true);
     const printTimeSeconds = dataView.getUint32(76, true);
     // Skip ProjectorType at 80
     const printParametersOffset = dataView.getUint32(84, true);
+
+    const totalHeightMm = layerHeight * layerCount;
 
 
 

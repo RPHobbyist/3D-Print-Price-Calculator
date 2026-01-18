@@ -1,7 +1,7 @@
 // Local Storage - Data persists until explicitly cleared
 // Data remains even after app closes/restarts
 
-import { QuoteData, Material, Machine, CostConstant, Customer, CustomerReview, MaterialSpool, CompanySettings } from "@/types/quote";
+import { QuoteData, Material, Machine, CostConstant, Customer, CustomerReview, MaterialSpool, CompanySettings, QuoteStatus, Employee } from "@/types/quote";
 
 // Generate unique IDs
 const generateId = (): string => {
@@ -81,6 +81,7 @@ const STORAGE_KEYS = {
     REVIEWS: "session_reviews",
     SPOOLS: "session_spools",
     COMPANY: "session_company",
+    EMPLOYEES: "session_employees",
     INITIALIZED: "session_initialized",
 };
 
@@ -102,7 +103,16 @@ const initializeDefaults = () => {
 // Quotes
 export const getQuotes = (): QuoteData[] => {
     initializeDefaults();
-    return JSON.parse(localStorage.getItem(STORAGE_KEYS.QUOTES) || "[]");
+    const rawQuotes = JSON.parse(localStorage.getItem(STORAGE_KEYS.QUOTES) || "[]");
+
+    // Migration: Ensure all quotes have a status and proper defaults
+    return rawQuotes.map((q: QuoteData) => ({
+        ...q,
+        status: q.status || 'PENDING',
+        statusTimeline: q.statusTimeline || { PENDING: q.createdAt },
+        assignedMachineId: q.assignedMachineId || undefined,
+        actualPrintTime: q.actualPrintTime || undefined
+    }));
 };
 
 export const saveQuote = (quote: QuoteData): QuoteData => {
@@ -126,6 +136,25 @@ export const updateQuoteNotes = (id: string, notes: string): void => {
     const quotes = getQuotes().map(q =>
         q.id === id ? { ...q, notes } : q
     );
+    localStorage.setItem(STORAGE_KEYS.QUOTES, JSON.stringify(quotes));
+};
+
+export const updateQuoteStatus = (id: string, status: QuoteStatus): void => {
+    const quotes = getQuotes().map(q => {
+        if (q.id === id) {
+            return {
+                ...q,
+                status,
+                statusTimeline: {
+                    ...q.statusTimeline,
+                    [status]: new Date().toISOString()
+                },
+                // If moving to DONE, allow setting completedAt logic
+                ...(status === 'DONE' && !q.statusTimeline?.DONE ? { actualPrintTime: q.actualPrintTime /* Keep if set */ } : {})
+            };
+        }
+        return q;
+    });
     localStorage.setItem(STORAGE_KEYS.QUOTES, JSON.stringify(quotes));
 };
 
@@ -292,6 +321,45 @@ export const getCustomerStats = (customerId: string) => {
         lastOrderDate,
         quotes: customerQuotes
     };
+};
+
+// ==================== EMPLOYEES ====================
+
+export const getEmployees = (): Employee[] => {
+    initializeDefaults();
+    return JSON.parse(localStorage.getItem(STORAGE_KEYS.EMPLOYEES) || "[]");
+};
+
+export const saveEmployee = (employee: Omit<Employee, "id" | "createdAt"> & { id?: string }): Employee => {
+    const employees = getEmployees();
+    if (employee.id) {
+        // Update existing
+        const index = employees.findIndex(e => e.id === employee.id);
+        if (index !== -1) {
+            employees[index] = { ...employees[index], ...employee };
+        }
+    } else {
+        // Add new
+        const newEmployee: Employee = {
+            ...employee,
+            id: generateId(),
+            createdAt: new Date().toISOString(),
+        };
+        employees.unshift(newEmployee);
+    }
+    localStorage.setItem(STORAGE_KEYS.EMPLOYEES, JSON.stringify(employees));
+    return employee.id
+        ? employees.find(e => e.id === employee.id)!
+        : employees[0];
+};
+
+export const deleteEmployee = (id: string): void => {
+    const employees = getEmployees().filter(e => e.id !== id);
+    localStorage.setItem(STORAGE_KEYS.EMPLOYEES, JSON.stringify(employees));
+};
+
+export const getEmployee = (id: string): Employee | undefined => {
+    return getEmployees().find(e => e.id === id);
 };
 
 // ==================== CUSTOMER REVIEWS ====================

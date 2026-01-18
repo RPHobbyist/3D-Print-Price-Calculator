@@ -1,7 +1,7 @@
 import { useState, useCallback, memo, lazy, Suspense, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Printer, RotateCcw, Settings, Loader2, MessageSquare } from "lucide-react";
+import { Printer, RotateCcw, Settings, Loader2, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import FDMCalculatorTable from "@/components/calculator/FDMCalculatorTable";
 import ResinCalculatorTable from "@/components/calculator/ResinCalculatorTable";
@@ -11,21 +11,20 @@ const SavedQuotesTable = lazy(() => import("@/components/quotes/SavedQuotesTable
 const QuotesDashboard = lazy(() => import("@/components/dashboard/QuotesDashboard").then(module => ({ default: module.QuotesDashboard })));
 import { useNavigate, Link } from "react-router-dom";
 import { SYSTEM_CONFIG } from "@/lib/core/core-system";
-import { NavLink } from "@/components/layout/NavLink";
+
 import { Footer } from "@/components/layout/Footer";
 
 import { CurrencySelector } from "@/components/shared/CurrencySelector";
 import { QuoteData } from "@/types/quote";
 import { useSavedQuotes } from "@/hooks/useSavedQuotes";
-import { useBatchQuote } from "@/contexts/BatchQuoteContext";
+import { useBatchQuote } from "@/hooks/useBatchQuote";
 import { toast } from "sonner";
 
 import WhatsNewDialog from "@/components/feedback/WhatsNewDialog";
 import { FeedbackDialog } from "@/components/feedback/FeedbackDialog";
-
 const Index = memo(() => {
   const navigate = useNavigate();
-  const [showWhatsNew, setShowWhatsNew] = useState(false);
+  const [showWhatsNew, setShowWhatsNew] = useState<boolean | undefined>(undefined);
   const [showFeedback, setShowFeedback] = useState(false);
   const [quoteData, setQuoteData] = useState<QuoteData | null>(null);
   const [resetKey, setResetKey] = useState(0);
@@ -37,7 +36,6 @@ const Index = memo(() => {
     deleteQuote,
     updateNotes,
     duplicateQuote,
-    refetch,
   } = useSavedQuotes();
 
   const { clearBatch } = useBatchQuote();
@@ -52,25 +50,17 @@ const Index = memo(() => {
     await saveQuote(quote);
   }, [saveQuote]);
 
-  const handleDeleteQuote = useCallback(async (index: number) => {
-    const quote = quotes[index];
-    if (quote.id) {
-      await deleteQuote(quote.id);
-    }
-  }, [quotes, deleteQuote]);
+  const handleDeleteQuote = useCallback(async (id: string) => {
+    await deleteQuote(id);
+  }, [deleteQuote]);
 
-  const handleUpdateNotes = useCallback(async (index: number, notes: string) => {
-    const quote = quotes[index];
-    if (quote.id) {
-      await updateNotes(quote.id, notes);
-    }
-  }, [quotes, updateNotes]);
+  const handleUpdateNotes = useCallback(async (id: string, notes: string) => {
+    await updateNotes(id, notes);
+  }, [updateNotes]);
 
-  const handleDuplicateQuote = useCallback(async (index: number) => {
-    const quote = quotes[index];
+  const handleDuplicateQuote = useCallback(async (quote: QuoteData) => {
     await duplicateQuote(quote);
-
-  }, [quotes, duplicateQuote]);
+  }, [duplicateQuote]);
 
   useEffect(() => {
     // Check if user has seen the new CRM announcement
@@ -216,6 +206,19 @@ const Index = memo(() => {
 
         {/* Saved Quotes Section */}
         <div className="mt-10 animate-fade-in stagger-3">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col gap-1">
+              <h2 className="text-2xl font-bold tracking-tight">Recent Quotes</h2>
+              <p className="text-muted-foreground text-sm">Your recently calculated quotes.</p>
+            </div>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/order-management">
+                <LayoutDashboard className="w-4 h-4 mr-2" />
+                Open Order Manager
+              </Link>
+            </Button>
+          </div>
+
           {loading ? (
             <Card className="p-10 shadow-card">
               <div className="flex flex-col items-center justify-center gap-4">

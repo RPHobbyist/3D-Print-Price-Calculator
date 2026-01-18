@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { QuoteData } from "@/types/quote";
-import { useCurrency } from "@/components/shared/CurrencyProvider";
+import { useCurrency } from "@/hooks/useCurrency";
 
 interface QuoteDetailsDialogProps {
     quote: QuoteData | null;
@@ -69,10 +69,10 @@ export const QuoteDetailsDialog = memo(({ quote, open, onOpenChange }: QuoteDeta
                                 <CostDetailRow label="Markup" value={quote.markup} formatPrice={formatPrice} />
                             </div>
 
-                            <div className="bg-gradient-accent rounded-xl p-4 mt-4 shadow-card">
+                            <div className="border border-border rounded-xl p-4 mt-4 bg-muted/30">
                                 <div className="flex justify-between items-center">
-                                    <span className="font-semibold text-accent-foreground">Total Price:</span>
-                                    <span className="text-2xl font-bold text-accent-foreground tabular-nums">
+                                    <span className="font-semibold text-foreground">Total Price:</span>
+                                    <span className="text-2xl font-bold text-foreground tabular-nums">
                                         {formatPrice(quote.totalPrice)}
                                     </span>
                                 </div>

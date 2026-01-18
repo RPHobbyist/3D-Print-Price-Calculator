@@ -1,12 +1,12 @@
 import { QuoteData } from "@/types/quote";
-import { getCompanySettings } from "@/lib/core/sessionStorage";
+import { getCompanySettings, getCustomer } from "@/lib/core/sessionStorage";
 
 /**
- * Generate a printable HTML template for the quote
+ * Generate a professional invoice HTML template for the quote
  */
 export function generateQuoteHTML(quote: QuoteData, currencySymbol: string): string {
   const formatPrice = (value: number) => `${currencySymbol}${value.toFixed(2)}`;
-  const quoteNumber = `Q-${Date.now().toString(36).toUpperCase()}`;
+  const quoteNumber = `INV-${Date.now().toString(36).toUpperCase()}`;
   const date = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -14,13 +14,19 @@ export function generateQuoteHTML(quote: QuoteData, currencySymbol: string): str
   });
 
   const company = getCompanySettings();
+  const customer = quote.customerId ? getCustomer(quote.customerId) : null;
+
+  // Format due date if available
+  const dueDateStr = quote.dueDate
+    ? new Date(quote.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+    : null;
 
   return `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Quote - ${quote.projectName}</title>
+  <title>Invoice - ${quote.projectName}</title>
   <style>
     * {
       margin: 0;
@@ -28,139 +34,268 @@ export function generateQuoteHTML(quote: QuoteData, currencySymbol: string): str
       box-sizing: border-box;
     }
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      line-height: 1.6;
-      color: #1a1a2e;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.5;
+      color: #1f2937;
       padding: 40px;
       max-width: 800px;
       margin: 0 auto;
+      background: #fff;
     }
+    
+    /* Header Section */
     .header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
       margin-bottom: 40px;
       padding-bottom: 20px;
-      border-bottom: 3px solid #6366f1;
+      border-bottom: 2px solid #e5e7eb;
     }
     .company-info img {
-      max-height: 80px;
+      max-height: 60px;
       margin-bottom: 10px;
       object-fit: contain;
     }
     .company-info h1 {
-      font-size: 28px;
-      color: #6366f1;
+      font-size: 24px;
+      color: #111827;
       margin-bottom: 5px;
+      font-weight: 700;
     }
     .company-info p {
-      color: #64748b;
-      font-size: 14px;
+      color: #6b7280;
+      font-size: 13px;
       margin-bottom: 2px;
     }
-    /* Handle whitespace in address */
     .company-address {
       white-space: pre-line; 
     }
-    .quote-info {
+    .invoice-badge {
       text-align: right;
     }
-    .quote-info h2 {
-      font-size: 24px;
-      color: #1a1a2e;
-      margin-bottom: 10px;
+    .invoice-badge h2 {
+      font-size: 28px;
+      color: #374151;
+      margin-bottom: 8px;
+      font-weight: 700;
+      letter-spacing: 2px;
     }
-    .quote-info p {
-      color: #64748b;
-      font-size: 14px;
+    .invoice-badge p {
+      color: #6b7280;
+      font-size: 13px;
+      margin-bottom: 4px;
     }
-    .project-details {
-      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-      color: white;
-      padding: 25px;
-      border-radius: 12px;
+    .invoice-badge strong {
+      color: #374151;
+    }
+
+    /* Billing Section */
+    .billing-section {
+      display: flex;
+      justify-content: space-between;
       margin-bottom: 30px;
+      gap: 40px;
     }
-    .project-details h3 {
-      font-size: 20px;
-      margin-bottom: 10px;
+    .bill-to, .invoice-details {
+      flex: 1;
     }
-    .project-details p {
-      opacity: 0.9;
+    .section-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #9ca3af;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+    .bill-to h3 {
+      font-size: 16px;
+      color: #111827;
+      margin-bottom: 4px;
+    }
+    .bill-to p {
+      color: #6b7280;
+      font-size: 13px;
+      margin-bottom: 2px;
+    }
+    .invoice-details {
+      text-align: right;
+    }
+    .invoice-details .detail-row {
+      display: flex;
+      justify-content: flex-end;
+      gap: 20px;
+      margin-bottom: 4px;
+    }
+    .invoice-details .label {
+      color: #6b7280;
+      font-size: 13px;
+    }
+    .invoice-details .value {
+      color: #111827;
+      font-size: 13px;
+      font-weight: 500;
+      min-width: 100px;
+      text-align: right;
+    }
+    .priority-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .priority-high { background: #fef2f2; color: #dc2626; }
+    .priority-medium { background: #fffbeb; color: #d97706; }
+    .priority-low { background: #f3f4f6; color: #6b7280; }
+
+    /* Project Details */
+    .project-section {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 25px;
+    }
+    .project-section h3 {
+      font-size: 16px;
+      margin-bottom: 12px;
+      color: #111827;
+    }
+    .project-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+    }
+    .project-item .label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #9ca3af;
+      margin-bottom: 2px;
+    }
+    .project-item .value {
       font-size: 14px;
+      color: #374151;
+      font-weight: 500;
     }
+
+    /* Cost Table */
     .cost-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 30px;
+      margin-bottom: 25px;
     }
     .cost-table th {
       text-align: left;
-      padding: 15px;
-      background: #f8fafc;
-      border-bottom: 2px solid #e2e8f0;
-      color: #475569;
+      padding: 12px 15px;
+      background: #f9fafb;
+      border-bottom: 2px solid #e5e7eb;
+      color: #6b7280;
       font-weight: 600;
       text-transform: uppercase;
-      font-size: 12px;
+      font-size: 11px;
       letter-spacing: 0.5px;
     }
+    .cost-table th:last-child {
+      text-align: right;
+    }
     .cost-table td {
-      padding: 15px;
-      border-bottom: 1px solid #e2e8f0;
+      padding: 12px 15px;
+      border-bottom: 1px solid #f3f4f6;
+      font-size: 14px;
     }
     .cost-table td:last-child {
       text-align: right;
       font-weight: 500;
-      font-family: 'Courier New', monospace;
+      font-family: 'SF Mono', 'Courier New', monospace;
+    }
+    .subtotal-row {
+      background: #f9fafb;
     }
     .subtotal-row td {
-      background: #f8fafc;
       font-weight: 600;
+      border-top: 2px solid #e5e7eb;
     }
-    .markup-row td {
-      color: #64748b;
-    }
+
+    /* Total Section */
     .total-section {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      background: #111827;
       color: white;
-      padding: 25px;
-      border-radius: 12px;
+      padding: 20px 25px;
+      border-radius: 8px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 30px;
     }
     .total-section h3 {
-      font-size: 18px;
+      font-size: 14px;
+      font-weight: 500;
+      opacity: 0.9;
     }
     .total-section .amount {
-      font-size: 32px;
+      font-size: 28px;
       font-weight: 700;
+      font-family: 'SF Mono', 'Courier New', monospace;
     }
+
+    /* Notes Section */
+    .notes-section {
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+      padding: 15px 20px;
+      border-radius: 8px;
+      margin-bottom: 25px;
+    }
+    .notes-section h4 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #92400e;
+      margin-bottom: 8px;
+    }
+    .notes-section p {
+      font-size: 13px;
+      color: #78350f;
+    }
+
+    /* Terms Section */
     .terms {
-      background: #f8fafc;
+      background: #f9fafb;
       padding: 20px;
       border-radius: 8px;
       font-size: 12px;
-      color: #64748b;
+      color: #6b7280;
+      margin-bottom: 30px;
     }
     .terms h4 {
-      color: #475569;
+      color: #374151;
       margin-bottom: 10px;
-      font-size: 14px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
     .terms ul {
       margin-left: 20px;
     }
-    .footer {
-      margin-top: 40px;
-      text-align: center;
-      color: #94a3b8;
-      font-size: 12px;
-      padding-top: 20px;
-      border-top: 1px solid #e2e8f0;
+    .terms li {
+      margin-bottom: 4px;
     }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      color: #9ca3af;
+      font-size: 11px;
+      padding-top: 20px;
+      border-top: 1px solid #e5e7eb;
+    }
+    .footer p {
+      margin-bottom: 4px;
+    }
+
     @media print {
       body {
         padding: 20px;
@@ -172,97 +307,142 @@ export function generateQuoteHTML(quote: QuoteData, currencySymbol: string): str
   </style>
 </head>
 <body>
+  <!-- Header -->
   <div class="header">
     <div class="company-info">
       ${company?.logoUrl ? `<img src="${company.logoUrl}" alt="Company Logo" />` : ''}
-      <h1>${company?.name || '3D Print Quote'}</h1>
-      ${company?.address
-      ? `<p class="company-address">${company.address}</p>`
-      : '<p>Professional 3D Printing Services</p>'}
+      <h1>${company?.name || 'Your Company'}</h1>
+      ${company?.address ? `<p class="company-address">${company.address}</p>` : ''}
       ${company?.phone ? `<p>${company.phone}</p>` : ''}
       ${company?.email ? `<p>${company.email}</p>` : ''}
       ${company?.website ? `<p>${company.website}</p>` : ''}
       ${company?.taxId ? `<p>Tax ID: ${company.taxId}</p>` : ''}
     </div>
-    <div class="quote-info">
-      <h2>QUOTE</h2>
-      <p><strong>Quote #:</strong> ${quoteNumber}</p>
-      <p><strong>Date:</strong> ${date}</p>
-      <p><strong>Valid For:</strong> 30 days</p>
+    <div class="invoice-badge">
+      <h2>INVOICE</h2>
+      <p><strong>${quoteNumber}</strong></p>
     </div>
   </div>
 
-  <div class="project-details">
-    <h3>${quote.projectName}</h3>
-    <p><strong>Print Type:</strong> ${quote.printType}</p>
-    ${quote.printColour ? `<p><strong>Colour:</strong> ${quote.printColour}</p>` : ''}
-    ${quote.parameters?.materialName ? `<p><strong>Material:</strong> ${quote.parameters.materialName}</p>` : ''}
-    ${quote.parameters?.machineName ? `<p><strong>Machine:</strong> ${quote.parameters.machineName}</p>` : ''}
+  <!-- Billing Section -->
+  <div class="billing-section">
+    <div class="bill-to">
+      <div class="section-title">Bill To</div>
+      ${customer ? `
+        <h3>${customer.name}</h3>
+        ${customer.company ? `<p>${customer.company}</p>` : ''}
+        ${customer.address ? `<p>${customer.address}</p>` : ''}
+        ${customer.email ? `<p>${customer.email}</p>` : ''}
+        ${customer.phone ? `<p>${customer.phone}</p>` : ''}
+      ` : quote.clientName ? `
+        <h3>${quote.clientName}</h3>
+      ` : `
+        <p style="color: #9ca3af; font-style: italic;">No client specified</p>
+      `}
+    </div>
+    <div class="invoice-details">
+      <div class="section-title">Invoice Details</div>
+      <div class="detail-row">
+        <span class="label">Invoice Date:</span>
+        <span class="value">${date}</span>
+      </div>
+      ${dueDateStr ? `
+      <div class="detail-row">
+        <span class="label">Due Date:</span>
+        <span class="value">${dueDateStr}</span>
+      </div>
+      ` : ''}
+      ${quote.priority ? `
+      <div class="detail-row">
+        <span class="label">Priority:</span>
+        <span class="value">
+          <span class="priority-badge priority-${quote.priority.toLowerCase()}">${quote.priority}</span>
+        </span>
+      </div>
+      ` : ''}
+      <div class="detail-row">
+        <span class="label">Status:</span>
+        <span class="value">${quote.status || 'Pending'}</span>
+      </div>
+    </div>
   </div>
 
+  <!-- Project Details -->
+  <div class="project-section">
+    <h3>${quote.projectName}</h3>
+    <div class="project-grid">
+      <div class="project-item">
+        <div class="label">Print Type</div>
+        <div class="value">${quote.printType}</div>
+      </div>
+      <div class="project-item">
+        <div class="label">Material</div>
+        <div class="value">${quote.parameters?.materialName || '-'}</div>
+      </div>
+      <div class="project-item">
+        <div class="label">Quantity</div>
+        <div class="value">${quote.quantity}x</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cost Breakdown Table -->
   <table class="cost-table">
     <thead>
       <tr>
         <th>Description</th>
-        <th style="text-align: right;">Amount</th>
+        <th>Amount</th>
       </tr>
     </thead>
     <tbody>
       <tr>
-        <td>Material Cost</td>
-        <td>${formatPrice(quote.materialCost)}</td>
+        <td>Manufacturing Cost</td>
+        <td>${formatPrice(quote.materialCost + quote.machineTimeCost + quote.electricityCost + quote.overheadCost + (quote.parameters?.consumablesTotal || 0) + (quote.paintingCost || 0))}</td>
       </tr>
       <tr>
-        <td>Machine Time</td>
-        <td>${formatPrice(quote.machineTimeCost)}</td>
-      </tr>
-      ${quote.electricityCost > 0 ? `
-      <tr>
-        <td>Electricity</td>
-        <td>${formatPrice(quote.electricityCost)}</td>
-      </tr>
-      ` : ''}
-      ${quote.laborCost > 0 ? `
-      <tr>
-        <td>Labor</td>
+        <td>Labour Charges</td>
         <td>${formatPrice(quote.laborCost)}</td>
       </tr>
-      ` : ''}
-      ${quote.overheadCost > 0 ? `
-      <tr>
-        <td>Overhead</td>
-        <td>${formatPrice(quote.overheadCost)}</td>
-      </tr>
-      ` : ''}
       <tr class="subtotal-row">
         <td>Subtotal</td>
         <td>${formatPrice(quote.subtotal)}</td>
       </tr>
-      <tr class="markup-row">
-        <td>Profit Markup</td>
+      <tr>
+        <td>Tax</td>
         <td>+${formatPrice(quote.markup)}</td>
       </tr>
     </tbody>
   </table>
 
+  <!-- Total -->
   <div class="total-section">
     <h3>Total Amount Due</h3>
     <div class="amount">${formatPrice(quote.totalPrice)}</div>
   </div>
 
+  <!-- Notes -->
+  ${quote.notes ? `
+  <div class="notes-section">
+    <h4>Notes</h4>
+    <p>${quote.notes}</p>
+  </div>
+  ` : ''}
+
+  <!-- Terms -->
   <div class="terms">
     <h4>Terms & Conditions</h4>
     <ul>
-      <li>This quote is valid for 30 days from the date of issue.</li>
+      <li>This invoice is valid for 30 days from the date of issue.</li>
       <li>50% deposit required to begin production.</li>
       <li>Final payment due upon completion and before delivery.</li>
       <li>Prices are subject to material availability.</li>
     </ul>
   </div>
 
+  <!-- Footer -->
   <div class="footer">
     <p>${company?.footerText || 'Thank you for your business!'}</p>
-    <p>Generated by 3D Print Price Calculator • Rp Hobbyist</p>
+    <p>Generated by 3D Print Price Calculator</p>
   </div>
 </body>
 </html>

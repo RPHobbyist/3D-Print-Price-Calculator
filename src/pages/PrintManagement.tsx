@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { DragDropContext, DropResult } from "@hello-pangea/dnd";
 import { Button } from "@/components/ui/button";
-import { useProduction, ProductionJob } from "@/contexts/ProductionContext";
+import { useProduction } from "@/hooks/useProduction";
 import { useCalculatorData } from "@/hooks/useCalculatorData";
 import {
     Filter,

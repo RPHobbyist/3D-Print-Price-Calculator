@@ -6,7 +6,7 @@
 const _d = (s: string): string => {
     try {
         return typeof window !== 'undefined' ? window.atob(s) : Buffer.from(s, 'base64').toString('utf-8');
-    } catch (e) {
+    } catch {
         return "";
     }
 };

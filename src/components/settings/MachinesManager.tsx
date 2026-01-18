@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Pencil, Trash2, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
-import { useCurrency } from "@/components/shared/CurrencyProvider";
+import { useCurrency } from "@/hooks/useCurrency";
 import { Machine } from "@/types/quote";
 import * as sessionStore from "@/lib/core/sessionStorage";
 import {
@@ -86,9 +86,11 @@ const MachinesForm = ({ initialData, onSubmit, onCancel, isEditing, currencySymb
         {isEditing ? "Edit Machine" : "Add New Machine"}
       </h3>
 
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid md:grid-cols-2 gap-4 items-end">
         <div className="space-y-2">
-          <Label htmlFor="name">Machine Name *</Label>
+          <div className="flex items-center gap-2 min-h-[24px]">
+            <Label htmlFor="name">Machine Name *</Label>
+          </div>
           <Input
             id="name"
             value={formData.name}
@@ -99,7 +101,9 @@ const MachinesForm = ({ initialData, onSubmit, onCancel, isEditing, currencySymb
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="print_type">Print Type *</Label>
+          <div className="flex items-center gap-2 min-h-[24px]">
+            <Label htmlFor="print_type">Print Type *</Label>
+          </div>
           <Select
             value={formData.print_type}
             onValueChange={(value: "FDM" | "Resin") => setFormData({ ...formData, print_type: value })}
@@ -115,7 +119,7 @@ const MachinesForm = ({ initialData, onSubmit, onCancel, isEditing, currencySymb
         </div>
 
         <div className="space-y-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-h-[24px]">
             <Label htmlFor="hourly_cost">Hourly Cost ({currencySymbol}) *</Label>
             <TooltipProvider>
               <Tooltip>
@@ -150,7 +154,9 @@ const MachinesForm = ({ initialData, onSubmit, onCancel, isEditing, currencySymb
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="power_consumption_watts">Power Consumption (Watts)</Label>
+          <div className="flex items-center gap-2 min-h-[24px]">
+            <Label htmlFor="power_consumption_watts">Power Consumption (Watts)</Label>
+          </div>
           <Input
             id="power_consumption_watts"
             type="number"

@@ -15,7 +15,7 @@ interface CalculatorData {
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
-  getConstantValue: (name: string) => number;
+  getConstantValue: (_name: string) => number;
 }
 
 export const useCalculatorData = ({ printType }: UseCalculatorDataOptions): CalculatorData => {

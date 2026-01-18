@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { CurrencySelector } from "@/components/shared/CurrencySelector";
 import { useCallback } from "react";
 import { useSavedQuotes } from "@/hooks/useSavedQuotes";
+import { QuoteData } from "@/types/quote";
 
 const SavedQuotes = () => {
     const navigate = useNavigate();
@@ -15,26 +16,19 @@ const SavedQuotes = () => {
         duplicateQuote,
     } = useSavedQuotes();
 
-    const handleDeleteQuote = useCallback(async (index: number) => {
-        const quote = quotes[index];
-        if (quote && quote.id) {
-            await deleteQuote(quote.id);
-        }
-    }, [quotes, deleteQuote]);
+    const handleDeleteQuote = useCallback(async (id: string) => {
+        await deleteQuote(id);
+    }, [deleteQuote]);
 
-    const handleUpdateNotes = useCallback(async (index: number, notes: string) => {
-        const quote = quotes[index];
-        if (quote && quote.id) {
-            await updateNotes(quote.id, notes);
-        }
-    }, [quotes, updateNotes]);
+    const handleUpdateNotes = useCallback(async (id: string, notes: string) => {
+        await updateNotes(id, notes);
+    }, [updateNotes]);
 
-    const handleDuplicateQuote = useCallback(async (index: number) => {
-        const quote = quotes[index];
+    const handleDuplicateQuote = useCallback(async (quote: QuoteData) => {
         if (quote) {
             await duplicateQuote(quote);
         }
-    }, [quotes, duplicateQuote]);
+    }, [duplicateQuote]);
 
     return (
         <div className="min-h-screen bg-background flex flex-col">

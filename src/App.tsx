@@ -8,6 +8,7 @@ import { BatchQuoteProvider } from "@/contexts/BatchQuoteContext";
 import { ProductionProvider } from "@/contexts/ProductionContext";
 import { CurrencyProvider } from "@/components/shared/CurrencyProvider";
 import { useAppProtection } from "@/hooks/useAppProtection";
+import OrderManagement from "./pages/OrderManagement";
 
 // Lazy load pages for code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -57,6 +58,7 @@ const App = () => {
                     <Route path="/" element={<Index />} />
                     <Route path="/settings" element={<Settings />} />
                     <Route path="/saved-quotes" element={<SavedQuotes />} />
+                    <Route path="/order-management" element={<OrderManagement />} />
 
                     <Route path="/print-management" element={<PrintManagement />} />
                     <Route path="*" element={<NotFound />} />

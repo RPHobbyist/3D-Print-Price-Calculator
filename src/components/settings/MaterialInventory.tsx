@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,13 +40,13 @@ export function MaterialInventory({ material, onStockChanged }: MaterialInventor
         notes: "",
     });
 
-    const loadSpools = () => {
+    const loadSpools = useCallback(() => {
         setSpools(getSpools(material.id));
-    };
+    }, [material.id]);
 
     useEffect(() => {
         loadSpools();
-    }, [material.id]);
+    }, [loadSpools]);
 
     const totalStock = useMemo(() => {
         return spools.reduce((sum, s) => sum + s.currentWeight, 0);

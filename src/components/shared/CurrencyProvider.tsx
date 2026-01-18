@@ -1,34 +1,6 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-
-export interface Currency {
-    code: string;
-    symbol: string;
-    name: string;
-}
-
-export const CURRENCIES: Currency[] = [
-    { code: "INR", symbol: "₹", name: "Indian Rupee" },
-    { code: "USD", symbol: "$", name: "US Dollar" },
-    { code: "EUR", symbol: "€", name: "Euro" },
-    { code: "GBP", symbol: "£", name: "British Pound" },
-    { code: "JPY", symbol: "¥", name: "Japanese Yen" },
-];
-
-interface CurrencyContextType {
-    currency: Currency;
-    setCurrency: (currency: Currency) => void;
-    formatPrice: (amount: number) => string;
-}
-
-const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
-
-export const useCurrency = () => {
-    const context = useContext(CurrencyContext);
-    if (context === undefined) {
-        throw new Error("useCurrency must be used within a CurrencyProvider");
-    }
-    return context;
-};
+import { useState, ReactNode } from "react";
+import { Currency, CURRENCIES } from "@/types/currency";
+import { CurrencyContext } from "@/contexts/CurrencyContext";
 
 interface CurrencyProviderProps {
     children: ReactNode;

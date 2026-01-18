@@ -1,5 +1,7 @@
 // Centralized types for the quote calculator application
 
+export type QuoteStatus = 'PENDING' | 'APPROVED' | 'PRINTING' | 'POST_PROCESSING' | 'DONE' | 'DISPATCHED' | 'DELIVERED' | 'FAILED';
+
 export interface QuoteData {
   id?: string;
   materialCost: number;
@@ -25,6 +27,14 @@ export interface QuoteData {
   filePath?: string;  // Original uploaded file path for printing
   customerId?: string; // Reference to a customer
   clientName?: string; // Snapshot of name for display/legacy
+  // Kanban Fields
+  status?: QuoteStatus;
+  assignedMachineId?: string;
+  actualPrintTime?: number; // hours (for "Actuals vs Estimates" analytics)
+  statusTimeline?: { [_key in QuoteStatus]?: string }; // ISO dates for when it entered each stage
+  priority?: 'Low' | 'Medium' | 'High';
+  dueDate?: string; // ISO date string
+  assignedEmployeeId?: string; // ID of assigned employee
 }
 
 export interface Customer {
@@ -39,6 +49,15 @@ export interface Customer {
   createdAt: string;
   averageRating?: number;
   reviewCount?: number;
+}
+
+export interface Employee {
+  id: string;
+  name: string;
+  jobPosition: string;
+  email?: string;
+  phone?: string;
+  createdAt: string;
 }
 
 export interface QuoteParameters {
@@ -98,6 +117,9 @@ export interface FDMFormData {
   filePath?: string; // Optional file path for uploaded G-code
   customerId?: string;
   clientName?: string;
+  priority?: string;
+  dueDate?: string;
+  assignedEmployeeId?: string; // ID of assigned employee
   // Painting params (Beta)
   paintingTime?: string; // Hours spent on painting labor
   paintingLayers?: string; // Number of paint coats/layers
@@ -198,4 +220,9 @@ export interface CompanySettings {
   taxId?: string;
   logoUrl?: string; // Optional logo buffer/base64
   footerText?: string;
+}
+
+export interface KanbanColumn {
+  id: QuoteStatus;
+  title: string;
 }

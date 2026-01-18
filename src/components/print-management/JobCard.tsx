@@ -2,9 +2,9 @@ import { memo, useRef } from "react";
 import { Draggable } from "@hello-pangea/dnd";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ProductionJob } from "@/contexts/ProductionContext"; // Ensure export
-import { useProduction } from "@/contexts/ProductionContext";
-import { useCurrency } from "@/components/shared/CurrencyProvider";
+import { ProductionJob } from "@/types/production";
+import { useProduction } from "@/hooks/useProduction";
+import { useCurrency } from "@/hooks/useCurrency";
 import {
     Clock,
     MoreVertical,

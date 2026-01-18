@@ -11,7 +11,7 @@ import { Customer } from "@/types/quote";
 import { getCustomers, saveCustomer, deleteCustomer } from "@/lib/core/sessionStorage";
 import { toast } from "sonner";
 import { CustomerDetailsDialog } from "@/components/crm/CustomerDetailsDialog";
-import { useCurrency } from "@/components/shared/CurrencyProvider";
+import { useCurrency } from "@/hooks/useCurrency";
 import { Badge } from "@/components/ui/badge";
 
 interface CustomerStats {

@@ -1,4 +1,4 @@
-import { QuoteData, Material, Machine, CostConstant, FDMFormData, ResinFormData } from "@/types/quote";
+import { QuoteData, Material, Machine, FDMFormData, ResinFormData } from "@/types/quote";
 
 interface CalculationParams {
   material: Material;
@@ -91,6 +91,9 @@ export const calculateFDMQuote = ({
     filePath: formData.filePath, // Include file path for printing
     customerId,
     clientName,
+    priority: formData.priority as 'Low' | 'Medium' | 'High' | undefined,
+    dueDate: formData.dueDate,
+    assignedEmployeeId: formData.assignedEmployeeId,
     parameters: {
       ...formData,
       materialName: material.name,

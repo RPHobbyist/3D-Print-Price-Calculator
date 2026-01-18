@@ -3,8 +3,8 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Trash2, Package, FileDown, X } from 'lucide-react';
-import { useBatchQuote } from '@/contexts/BatchQuoteContext';
-import { useCurrency } from '@/components/shared/CurrencyProvider';
+import { useBatchQuote } from '@/hooks/useBatchQuote';
+import { useCurrency } from "@/hooks/useCurrency";
 import { toast } from 'sonner';
 
 const BatchSummary = memo(() => {

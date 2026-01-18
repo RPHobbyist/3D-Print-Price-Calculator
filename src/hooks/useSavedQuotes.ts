@@ -21,7 +21,7 @@ const deductInventoryFromQuote = (quote: QuoteData) => {
   if (selectedSpoolId) {
     const success = sessionStore.deductFromSpool(selectedSpoolId, totalDeduction);
     if (success) {
-
+      // Inventory deducted successfully
       return;
     }
   }
@@ -48,7 +48,7 @@ const deductInventoryFromQuote = (quote: QuoteData) => {
 
   const success = sessionStore.deductFromSpool(targetSpool.id, totalDeduction);
   if (success) {
-
+    // Inventory deducted successfully
   }
 };
 
@@ -68,7 +68,7 @@ const restoreInventoryFromQuote = (quote: QuoteData) => {
   if (selectedSpoolId) {
     const success = sessionStore.restoreToSpool(selectedSpoolId, totalRestoration);
     if (success) {
-
+      // Inventory restored successfully
     }
   }
   // Note: We don't auto-restore for fallback matches as it might restore to the wrong spool

@@ -10,7 +10,7 @@ import { ConsumablesSelector } from "./ConsumablesSelector";
 import { SpoolSelector } from "./SpoolSelector";
 import ResinFileUpload from "./ResinFileUpload";
 import { ResinFileData } from "@/lib/parsers/resinFileParser";
-import { useCurrency } from "@/components/shared/CurrencyProvider";
+import { useCurrency } from "@/hooks/useCurrency";
 import { ClientSelector } from "@/components/shared/ClientSelector";
 import { SurfaceAreaUpload } from "./SurfaceAreaUpload";
 
@@ -240,7 +240,7 @@ const ResinCalculatorTable = memo(({ onCalculate }: ResinCalculatorProps) => {
         />
       </FormFieldRow>
 
-      <FormFieldRow label="Print Time (hours)" required highlight>
+      <FormFieldRow label="Print Time (hours)" required>
         <TextField
           type="number"
           step="0.1"
@@ -250,7 +250,7 @@ const ResinCalculatorTable = memo(({ onCalculate }: ResinCalculatorProps) => {
         />
       </FormFieldRow>
 
-      <FormFieldRow label="Resin Volume (ml)" required highlight>
+      <FormFieldRow label="Resin Volume (ml)" required>
         <TextField
           type="number"
           step="0.1"
@@ -318,7 +318,7 @@ const ResinCalculatorTable = memo(({ onCalculate }: ResinCalculatorProps) => {
         />
       </FormFieldRow>
 
-      <FormFieldRow label="Quantity" highlight>
+      <FormFieldRow label="Quantity">
         <TextField
           type="number"
           step="1"

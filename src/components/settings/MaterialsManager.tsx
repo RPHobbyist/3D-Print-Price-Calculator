@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Pencil, Trash2, ChevronDown, ChevronRight, Package } from "lucide-react";
 import { toast } from "sonner";
-import { useCurrency } from "@/components/shared/CurrencyProvider";
+import { useCurrency } from "@/hooks/useCurrency";
 import { Material } from "@/types/quote";
 import * as sessionStore from "@/lib/core/sessionStorage";
 import { MaterialInventory } from "./MaterialInventory";

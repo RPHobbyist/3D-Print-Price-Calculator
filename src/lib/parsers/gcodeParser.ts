@@ -474,7 +474,7 @@ export async function parse3mf(file: File): Promise<GcodeData> {
       surfaceAreaMm2: surfaceAreaMm2 > 0 ? Math.round(surfaceAreaMm2 * 100) / 100 : undefined,
     };
 
-  } catch (error) {
+  } catch {
     // Error parsing 3MF file
     return { printTimeHours: 0, filamentWeightGrams: 0 };
   }

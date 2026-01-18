@@ -11,7 +11,7 @@ import { BambuDevice, PrinterConnection, PrintOptions } from "@/types/printer";
 import { toast } from "sonner";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
-import { useCurrency } from "@/components/shared/CurrencyProvider";
+import { useCurrency } from "@/hooks/useCurrency";
 
 // New Hooks & Components
 import { useQuotesFilter } from "@/hooks/useQuotesFilter";
@@ -20,16 +20,51 @@ import { QuoteDetailsDialog } from "@/components/saved-quotes/QuoteDetailsDialog
 
 interface SavedQuotesTableProps {
   quotes: QuoteData[];
-  onDeleteQuote: (index: number) => void;
-  onUpdateNotes: (index: number, notes: string) => void;
-  onDuplicateQuote?: (index: number) => void;
+  onDeleteQuote: (id: string) => void;
+  onUpdateNotes: (id: string, notes: string) => void;
+  onDuplicateQuote?: (quote: QuoteData) => void;
 }
 
+// Status helper functions
+const getStatusLabel = (status?: string) => {
+  switch (status) {
+    case 'APPROVED': return 'Approved';
+    case 'PRINTING': return 'Printing';
+    case 'POST_PROCESSING': return 'Post-Processing';
+    case 'DONE': return 'Done';
+    case 'DISPATCHED': return 'Dispatched';
+    case 'DELIVERED': return 'Delivered';
+    case 'FAILED': return 'Failed';
+    default: return 'Pending';
+  }
+};
+
+const getStatusStyle = (status?: string) => {
+  switch (status) {
+    case 'APPROVED': return 'bg-emerald-100 text-emerald-700';
+    case 'PRINTING': return 'bg-blue-100 text-blue-700';
+    case 'POST_PROCESSING': return 'bg-amber-100 text-amber-700';
+    case 'DONE': return 'bg-green-100 text-green-700';
+    case 'DISPATCHED': return 'bg-purple-100 text-purple-700';
+    case 'DELIVERED': return 'bg-teal-100 text-teal-700';
+    case 'FAILED': return 'bg-red-100 text-red-700';
+    default: return 'bg-slate-100 text-slate-600';
+  }
+};
+
+const getPriorityStyle = (priority?: string) => {
+  switch (priority) {
+    case 'High': return 'bg-red-100 text-red-700';
+    case 'Low': return 'bg-slate-100 text-slate-600';
+    default: return 'bg-amber-100 text-amber-700'; // Medium
+  }
+};
+
 const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplicateQuote }: SavedQuotesTableProps) => {
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [editNotes, setEditNotes] = useState("");
   const [viewingQuote, setViewingQuote] = useState<QuoteData | null>(null);
-  const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [sendingQuote, setSendingQuote] = useState<QuoteData | null>(null);
   const [printers, setPrinters] = useState<BambuDevice[]>([]);
   const [connections, setConnections] = useState<Record<string, PrinterConnection>>({});
@@ -158,25 +193,25 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
     toast.success("Quotes exported to Excel!");
   }, [quotes, formatPrice]);
 
-  const handleEditClick = useCallback((index: number) => {
-    setEditingIndex(index);
-    setEditNotes(quotes[index].notes || "");
-  }, [quotes]);
+  const handleEditClick = useCallback((quote: QuoteData) => {
+    setEditingId(quote.id || null);
+    setEditNotes(quote.notes || "");
+  }, []);
 
   const handleSaveNotes = useCallback(() => {
-    if (editingIndex !== null) {
-      onUpdateNotes(editingIndex, editNotes);
-      setEditingIndex(null);
+    if (editingId !== null) {
+      onUpdateNotes(editingId, editNotes);
+      setEditingId(null);
       setEditNotes("");
     }
-  }, [editingIndex, editNotes, onUpdateNotes]);
+  }, [editingId, editNotes, onUpdateNotes]);
 
   const handleDeleteConfirm = useCallback(() => {
-    if (deleteIndex !== null) {
-      onDeleteQuote(deleteIndex);
-      setDeleteIndex(null);
+    if (deleteId !== null) {
+      onDeleteQuote(deleteId);
+      setDeleteId(null);
     }
-  }, [deleteIndex, onDeleteQuote]);
+  }, [deleteId, onDeleteQuote]);
 
   if (quotes.length === 0) {
     return (
@@ -238,12 +273,11 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
                 <TableHead className="font-semibold text-foreground">Project Name</TableHead>
                 <TableHead className="font-semibold text-foreground">Client</TableHead>
                 <TableHead className="font-semibold text-foreground">Type</TableHead>
-                <TableHead className="font-semibold text-foreground">Colour</TableHead>
-                <TableHead className="font-semibold text-foreground">Material</TableHead>
-                <TableHead className="font-semibold text-foreground">Machine</TableHead>
+                <TableHead className="font-semibold text-foreground">Status</TableHead>
+                <TableHead className="font-semibold text-foreground">Priority</TableHead>
+                <TableHead className="font-semibold text-foreground">Due Date</TableHead>
                 <TableHead className="text-right font-semibold text-foreground">Total ({currency.symbol})</TableHead>
                 <TableHead className="font-semibold text-foreground">Notes</TableHead>
-                <TableHead className="text-right font-semibold text-foreground">Date</TableHead>
                 <TableHead className="w-36 font-semibold text-foreground">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -268,17 +302,24 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
                           {quote.printType}
                         </span>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{quote.printColour || "-"}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{quote.parameters.materialName}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{quote.parameters.machineName}</TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusStyle(quote.status)}`}>
+                          {getStatusLabel(quote.status)}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${getPriorityStyle(quote.priority)}`}>
+                          {quote.priority || 'Medium'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {quote.dueDate ? new Date(quote.dueDate).toLocaleDateString() : "-"}
+                      </TableCell>
                       <TableCell className="text-right font-bold text-foreground tabular-nums">
                         {formatPrice(quote.totalPrice)}
                       </TableCell>
-                      <TableCell className="max-w-[150px] truncate text-sm text-muted-foreground">
+                      <TableCell className="max-w-[120px] truncate text-sm text-muted-foreground" title={quote.notes || ""}>
                         {quote.notes || "-"}
-                      </TableCell>
-                      <TableCell className="text-right text-sm text-muted-foreground tabular-nums">
-                        {quote.createdAt ? new Date(quote.createdAt).toLocaleDateString() : "-"}
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
@@ -296,7 +337,7 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
                               variant="ghost"
                               size="icon"
                               onClick={() => {
-                                if (originalIndex !== -1) onDuplicateQuote(originalIndex);
+                                if (onDuplicateQuote) onDuplicateQuote(quote);
                               }}
                               className="text-muted-foreground hover:text-success hover:bg-success/10 h-8 w-8"
                               title="Duplicate quote"
@@ -321,9 +362,7 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => {
-                              if (originalIndex !== -1) handleEditClick(originalIndex);
-                            }}
+                            onClick={() => handleEditClick(quote)}
                             className="text-muted-foreground hover:text-accent hover:bg-accent/10 h-8 w-8"
                             title="Edit notes"
                           >
@@ -332,9 +371,7 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => {
-                              if (originalIndex !== -1) setDeleteIndex(originalIndex);
-                            }}
+                            onClick={() => setDeleteId(quote.id || null)}
                             className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-8 w-8"
                             title="Delete quote"
                           >
@@ -361,11 +398,11 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
               )}
             </TableBody>
           </Table >
-        </div >
-      </Card >
+        </div>
+      </Card>
 
       {/* Delete Confirmation Dialog */}
-      < Dialog open={deleteIndex !== null} onOpenChange={(open) => !open && setDeleteIndex(null)}>
+      <Dialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>
         <DialogContent className="bg-card border-border">
           <DialogHeader>
             <DialogTitle className="text-foreground flex items-center gap-2">
@@ -373,12 +410,12 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
               Confirm Delete
             </DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              Are you sure you want to delete the quote "{deleteIndex !== null && quotes[deleteIndex]?.projectName}"?
+              Are you sure you want to delete this quote?
               This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setDeleteIndex(null)}>
+            <Button variant="outline" onClick={() => setDeleteId(null)}>
               Cancel
             </Button>
             <Button variant="destructive" onClick={handleDeleteConfirm}>
@@ -389,11 +426,11 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
       </Dialog >
 
       {/* Edit Notes Dialog */}
-      < Dialog open={editingIndex !== null} onOpenChange={(open) => !open && setEditingIndex(null)}>
+      <Dialog open={editingId !== null} onOpenChange={(open) => !open && setEditingId(null)}>
         <DialogContent className="bg-card border-border">
           <DialogHeader>
             <DialogTitle className="text-foreground">
-              Edit Notes - {editingIndex !== null && quotes[editingIndex]?.projectName}
+              Edit Notes
             </DialogTitle>
           </DialogHeader>
           <Textarea
@@ -403,7 +440,7 @@ const SavedQuotesTable = memo(({ quotes, onDeleteQuote, onUpdateNotes, onDuplica
             className="min-h-[120px] bg-background border-input focus:ring-2 focus:ring-ring"
           />
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setEditingIndex(null)}>
+            <Button variant="outline" onClick={() => setEditingId(null)}>
               Cancel
             </Button>
             <Button onClick={handleSaveNotes} className="bg-gradient-primary text-primary-foreground">

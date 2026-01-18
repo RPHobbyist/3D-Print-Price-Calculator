@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Customer, CustomerReview } from "@/types/quote";
 import { getCustomerStats, getReviews, deleteReview } from "@/lib/core/sessionStorage";
-import { useCurrency } from "@/components/shared/CurrencyProvider";
+import { useCurrency } from "@/hooks/useCurrency";
 import { Building2, MapPin, Calendar, Receipt, TrendingUp, Mail, Phone, Clock, Users, Star, Plus, Trash2, MessageSquare } from "lucide-react";
 import { CustomerReviewDialog } from "./CustomerReviewDialog";
 import { toast } from "sonner";
@@ -23,15 +23,9 @@ export const CustomerDetailsDialog = ({ customer, open, onOpenChange }: Customer
     const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
 
-    const stats = useMemo(() => {
-        if (!customer) return null;
-        return getCustomerStats(customer.id);
-    }, [customer, open, refreshKey]);
+    const stats = !customer ? null : getCustomerStats(customer.id);
 
-    const reviews = useMemo(() => {
-        if (!customer) return [];
-        return getReviews(customer.id);
-    }, [customer, open, refreshKey]);
+    const reviews = !customer ? [] : getReviews(customer.id);
 
     const handleDeleteReview = (reviewId: string) => {
         deleteReview(reviewId);
