@@ -123,8 +123,9 @@ export interface FDMFormData {
   // Painting params (Beta)
   paintingTime?: string; // Hours spent on painting labor
   paintingLayers?: string; // Number of paint coats/layers
-  paintCostPerMl?: string; // Cost per ml of paint
-  paintUsagePerCm2?: string; // ml of paint used per cm² per layer
+  selectedPaintId?: string; // Selected paint consumable
+  selectedPaintId2?: string; // Secondary paint consumable
+  paintingLayers2?: string; // Number of coats for secondary paint
   surfaceAreaCm2?: string; // Surface area in cm² (auto-filled from 3MF)
 }
 
@@ -149,8 +150,9 @@ export interface ResinFormData {
   // Painting params (Beta)
   paintingTime?: string; // Hours spent on painting labor
   paintingLayers?: string; // Number of paint coats/layers
-  paintCostPerMl?: string; // Cost per ml of paint
-  paintUsagePerCm2?: string; // ml of paint used per cm² per layer
+  selectedPaintId?: string; // Selected paint consumable
+  selectedPaintId2?: string; // Secondary paint consumable
+  paintingLayers2?: string; // Number of coats for secondary paint
   surfaceAreaCm2?: string; // Surface area in cm² (auto-filled from 3MF)
 }
 

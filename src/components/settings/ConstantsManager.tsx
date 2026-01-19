@@ -9,11 +9,13 @@ import { toast } from "sonner";
 import { CostConstant } from "@/types/quote";
 import { processVisibilityFromDescription, addVisibilityTag } from "@/lib/utils";
 import * as sessionStore from "@/lib/core/sessionStorage";
+import { useCurrency } from "@/hooks/useCurrency";
 
 const ConstantsManager = () => {
   const [constants, setConstants] = useState<CostConstant[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const { currency } = useCurrency();
   const [formData, setFormData] = useState({
     name: "",
     value: "",
@@ -33,7 +35,7 @@ const ConstantsManager = () => {
       const processedData = rawData.map((item: CostConstant) => {
         return {
           ...item,
-          ...processVisibilityFromDescription(item.description)
+          ...processVisibilityFromDescription(item.description, item.is_visible)
         };
       });
 
@@ -72,7 +74,7 @@ const ConstantsManager = () => {
 
       sessionStore.saveConstant(constantData);
 
-      toast.success(editingId ? "Consumable updated successfully" : "Consumable added successfully");
+      toast.success(editingId ? "Constant updated successfully" : "Constant added successfully");
       resetForm();
       fetchConstants();
 
@@ -128,12 +130,12 @@ const ConstantsManager = () => {
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-4 p-4 border border-border rounded-lg bg-secondary/10">
         <h3 className="text-lg font-semibold text-foreground">
-          {editingId ? "Edit Consumable" : "Add New Consumable"}
+          {editingId ? "Edit Constant" : "Add New Constant"}
         </h3>
 
         <div className="grid md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Consumable Name *</Label>
+            <Label htmlFor="name">Constant Name *</Label>
             <Input
               id="name"
               value={formData.name}
@@ -162,7 +164,7 @@ const ConstantsManager = () => {
               id="unit"
               value={formData.unit}
               onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-              placeholder="e.g., ₹/kWh, ₹/hr, %"
+              placeholder="e.g., $/kWh, $/hr, %"
               required
             />
           </div>
@@ -190,7 +192,7 @@ const ConstantsManager = () => {
         <div className="flex gap-2">
           <Button type="submit" className="bg-gradient-accent">
             <Plus className="w-4 h-4 mr-2" />
-            {editingId ? "Update" : "Add"} Consumable
+            {editingId ? "Update" : "Add"} Constant
           </Button>
           {editingId && (
             <Button type="button" variant="outline" onClick={resetForm}>
@@ -217,7 +219,7 @@ const ConstantsManager = () => {
             {constants.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                  No consumables added yet. Add your first consumable above.
+                  No constants added yet. Add your first constant above.
                 </TableCell>
               </TableRow>
             ) : (
@@ -225,7 +227,7 @@ const ConstantsManager = () => {
                 <TableRow key={constant.id}>
                   <TableCell className="font-medium">{constant.name}</TableCell>
                   <TableCell>{constant.value}</TableCell>
-                  <TableCell>{constant.unit}</TableCell>
+                  <TableCell>{constant.unit.replace(/\$/g, currency?.symbol || "$")}</TableCell>
                   <TableCell className="text-center">
                     {constant.is_visible !== false ? (
                       <Eye className="w-4 h-4 mx-auto text-muted-foreground" />
@@ -234,7 +236,7 @@ const ConstantsManager = () => {
                     )}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {constant.description || "-"}
+                    {constant.description ? constant.description.replace(/cm2/g, "cm²") : "-"}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex gap-2 justify-end">

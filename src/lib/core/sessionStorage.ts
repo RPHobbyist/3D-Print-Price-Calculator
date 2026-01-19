@@ -65,10 +65,15 @@ const defaultMachines: Machine[] = [
 
 // Default Constants/Consumables
 const defaultConstants: CostConstant[] = [
-    { id: "electricity", name: "Electricity Rate", value: 0.12, unit: "$/kWh", is_visible: true, description: "Cost per kilowatt-hour" },
-    { id: "labor", name: "Labor Rate", value: 15, unit: "$/hr", is_visible: true, description: "Hourly labor cost" },
-    { id: "overhead", name: "Overhead Rate", value: 10, unit: "%", is_visible: true, description: "Overhead percentage" },
-    { id: "markup", name: "Default Markup", value: 30, unit: "%", is_visible: true, description: "Default profit margin" },
+    { id: "electricity", name: "Electricity Rate", value: 0.12, unit: "$/kWh", is_visible: false, description: "Cost per kilowatt-hour" },
+    { id: "labor", name: "Labor Rate", value: 15, unit: "$/hr", is_visible: false, description: "Hourly labor cost" },
+    { id: "overhead", name: "Overhead Rate", value: 10, unit: "%", is_visible: false, description: "Overhead percentage" },
+    { id: "markup", name: "Default Markup", value: 30, unit: "%", is_visible: false, description: "Default profit margin" },
+    // Paint Consumables
+    { id: "paint-acrylic-standard", name: "Acrylic Paint (Standard)", value: 0.10, unit: "$/ml", is_visible: true, description: "Standard hobby painting. Usage Rate: 0.02ml/cm2" },
+    { id: "paint-spray-primer", name: "Spray Primer", value: 0.08, unit: "$/ml", is_visible: true, description: "Base coat primer. Usage Rate: 0.03ml/cm2" },
+    { id: "paint-clear-coat", name: "Clear Coat Varnish", value: 0.12, unit: "$/ml", is_visible: true, description: "Protective finish. Usage Rate: 0.02ml/cm2" },
+    { id: "paint-enamel", name: "Enamel Paint", value: 0.15, unit: "$/ml", is_visible: true, description: "Durable detail work. Usage Rate: 0.02ml/cm2" },
 ];
 
 // Session Storage Keys
@@ -97,6 +102,46 @@ const initializeDefaults = () => {
         localStorage.setItem(STORAGE_KEYS.SPOOLS, JSON.stringify([]));
         localStorage.setItem(STORAGE_KEYS.COMPANY, JSON.stringify(null));
         localStorage.setItem(STORAGE_KEYS.INITIALIZED, "true");
+    }
+
+    // Migration: Add default paint consumables if they don't exist
+    const existingConstants: CostConstant[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.CONSTANTS) || "[]");
+    const paintConsumables = defaultConstants.filter(c => c.id.startsWith("paint-"));
+    let needsUpdate = false;
+
+    for (const paint of paintConsumables) {
+        const index = existingConstants.findIndex(c => c.id === paint.id);
+
+        if (index === -1) {
+            // New paint, add it
+            existingConstants.push(paint);
+            needsUpdate = true;
+        } else {
+            // Check if existing paint needs update (migration from flat to calculated)
+            // Legacy values: 5, 8, 6, 7. New values are < 1.
+            const existing = existingConstants[index];
+            if (existing.unit === "flat" && existing.value > 1) {
+                // Update to new default
+                existingConstants[index] = paint;
+                needsUpdate = true;
+            }
+        }
+    }
+
+    // Migration: Ensure system constants are hidden (not visible in paint/consumable selection)
+    const systemIds = ["electricity", "labor", "overhead", "markup"];
+    const systemNames = ["Electricity Rate", "Labor Rate", "Overhead Rate", "Default Markup"];
+
+    for (let i = 0; i < existingConstants.length; i++) {
+        const c = existingConstants[i];
+        if ((systemIds.includes(c.id) || systemNames.includes(c.name)) && c.is_visible !== false) {
+            existingConstants[i].is_visible = false;
+            needsUpdate = true;
+        }
+    }
+
+    if (needsUpdate) {
+        localStorage.setItem(STORAGE_KEYS.CONSTANTS, JSON.stringify(existingConstants));
     }
 };
 
@@ -225,7 +270,18 @@ export const deleteMachine = (id: string): void => {
 // Constants
 export const getConstants = (): CostConstant[] => {
     initializeDefaults();
-    return JSON.parse(localStorage.getItem(STORAGE_KEYS.CONSTANTS) || "[]");
+    const constants = JSON.parse(localStorage.getItem(STORAGE_KEYS.CONSTANTS) || "[]");
+
+    // Enforce system constants to be hidden
+    const systemIds = ["electricity", "labor", "overhead", "markup"];
+    const systemNames = ["Electricity Rate", "Labor Rate", "Overhead Rate", "Default Markup"];
+
+    return constants.map((c: CostConstant) => {
+        if (systemIds.includes(c.id) || systemNames.includes(c.name)) {
+            return { ...c, is_visible: false };
+        }
+        return c;
+    });
 };
 
 export const saveConstant = (constant: Omit<CostConstant, "id"> & { id?: string }): CostConstant => {
@@ -252,6 +308,8 @@ export const deleteConstant = (id: string): void => {
     const constants = getConstants().filter(c => c.id !== id);
     localStorage.setItem(STORAGE_KEYS.CONSTANTS, JSON.stringify(constants));
 };
+
+
 
 // Reset all session data
 export const resetSessionData = (): void => {

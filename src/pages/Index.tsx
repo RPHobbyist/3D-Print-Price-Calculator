@@ -1,4 +1,4 @@
-import { useState, useCallback, memo, lazy, Suspense, useEffect } from "react";
+import { useState, useCallback, memo, lazy, Suspense } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Printer, RotateCcw, Settings, Loader2, LayoutDashboard } from "lucide-react";
@@ -18,7 +18,7 @@ import { CurrencySelector } from "@/components/shared/CurrencySelector";
 import { QuoteData } from "@/types/quote";
 import { useSavedQuotes } from "@/hooks/useSavedQuotes";
 import { useBatchQuote } from "@/hooks/useBatchQuote";
-import { toast } from "sonner";
+
 
 import WhatsNewDialog from "@/components/feedback/WhatsNewDialog";
 import { FeedbackDialog } from "@/components/feedback/FeedbackDialog";
@@ -62,27 +62,7 @@ const Index = memo(() => {
     await duplicateQuote(quote);
   }, [duplicateQuote]);
 
-  useEffect(() => {
-    // Check if user has seen the new CRM announcement
-    const hasSeenNewCRM = localStorage.getItem("crm-feature-seen-v1");
-    if (!hasSeenNewCRM) {
-      setTimeout(() => {
-        toast.info("New Feature: CRM! 🚀", {
-          description: "Manage detailed customer profiles, track order history, and view analytics.",
-          action: {
-            label: "Check it out",
-            onClick: () => navigate("/settings?tab=customers"),
-          },
-          cancel: {
-            label: "Close",
-            onClick: () => { },
-          },
-          duration: 8000,
-        });
-        localStorage.setItem("crm-feature-seen-v1", "true");
-      }, 1500);
-    }
-  }, [navigate]);
+
 
   return (
     <div className="min-h-screen bg-background flex flex-col">

@@ -35,8 +35,7 @@ const initialFormData: ResinFormData = {
   selectedConsumableIds: [],
   paintingTime: "",
   paintingLayers: "",
-  paintCostPerMl: "",
-  paintUsagePerCm2: "",
+  selectedPaintId: "",
   surfaceAreaCm2: "",
 };
 
@@ -53,7 +52,7 @@ const ResinCalculatorTable = memo(({ onCalculate }: ResinCalculatorProps) => {
     if (formData.paintingLayers && parseInt(formData.paintingLayers) > 0 && !isPaintingEnabled) {
       setIsPaintingEnabled(true);
     }
-  }, [formData.paintingLayers]);
+  }, [formData.paintingLayers, isPaintingEnabled]);
 
   const updateField = useCallback(<K extends keyof ResinFormData>(field: K, value: ResinFormData[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -115,6 +114,9 @@ const ResinCalculatorTable = memo(({ onCalculate }: ResinCalculatorProps) => {
     const electricityRate = getConstantValue("electricity");
     const laborRate = getConstantValue("labor");
 
+    const selectedPaintConsumable = constants.find(c => c.id === formData.selectedPaintId);
+    const paintConsumableValue = selectedPaintConsumable ? selectedPaintConsumable.value : 0;
+
     if (!electricityRate || electricityRate <= 0) {
       toast.error("Electricity Rate is required. Please set it in Settings → Consumables.");
       return;
@@ -124,19 +126,22 @@ const ResinCalculatorTable = memo(({ onCalculate }: ResinCalculatorProps) => {
       toast.error("Labor Rate is required. Please set it in Settings → Consumables.");
       return;
     }
-    // Include selectedSpoolId in formData for inventory tracking
-    const formDataWithSpool = {
-      ...formData,
-      selectedSpoolId: selectedSpoolId || undefined,
-    };
+
+    const selectedPaint = formData.selectedPaintId ? constants.find(c => c.id === formData.selectedPaintId) : undefined;
+    const selectedPaint2 = formData.selectedPaintId2 ? constants.find(c => c.id === formData.selectedPaintId2) : undefined;
 
     const quoteData = calculateResinQuote({
-      formData: formDataWithSpool,
+      formData: {
+        ...formData,
+        selectedSpoolId: selectedSpoolId || undefined, // Ensure spool ID is passed
+      },
       material: selectedMaterial,
       machine: selectedMachine,
-      electricityRate: getConstantValue("electricity"),
-      laborRate: getConstantValue("labor"),
+      electricityRate: electricityRate,
+      laborRate: laborRate,
       consumables: selectedConsumables,
+      paintConsumable: selectedPaint, // Pass the full object
+      paintConsumable2: selectedPaint2, // Pass secondary paint
       customerId: formData.customerId,
       clientName: formData.clientName,
     });
@@ -357,6 +362,7 @@ const ResinCalculatorTable = memo(({ onCalculate }: ResinCalculatorProps) => {
                 } else {
                   updateField("paintingLayers", "");
                   updateField("paintingTime", "");
+                  updateField("selectedPaintId", "");
                 }
               }}
             />
@@ -384,36 +390,76 @@ const ResinCalculatorTable = memo(({ onCalculate }: ResinCalculatorProps) => {
               </div>
             </FormFieldRow>
 
+            <FormFieldRow label="Choose paint">
+              <SelectField
+                value={formData.selectedPaintId || "none"}
+                onChange={(v) => updateField("selectedPaintId", v === "none" ? "" : v)}
+                placeholder="Select paint..."
+                options={[
+                  { id: "none", label: "-- None --" },
+                  ...(Array.isArray(constants) ? constants : [])
+                    .filter(c => c && typeof c.name === 'string' && c.is_visible !== false)
+                    .map(c => {
+                      let usageRate = "";
+                      const usageMatch = c.description?.match(/Usage Rate:\s*([\d.]+)/i);
+                      if (usageMatch) {
+                        usageRate = ` @ ${usageMatch[1]}ml/cm²`;
+                      }
+
+                      return {
+                        id: c.id,
+                        label: c.name,
+                        sublabel: currency ? `${c.value} ${c.unit ? `(${c.unit.replace('$', currency.symbol)})` : ''}${usageRate}` : `${c.value}`
+                      };
+                    })]}
+              />
+            </FormFieldRow>
+
             <FormFieldRow label="Coating Layers">
               <TextField
                 type="number"
                 step="1"
                 value={formData.paintingLayers}
                 onChange={(v) => updateField("paintingLayers", v)}
-                placeholder="2"
+                placeholder="1"
               />
             </FormFieldRow>
 
-            <FormFieldRow label={`Paint Cost (${currency.symbol}/ml)`}>
-              <TextField
-                type="number"
-                step="0.01"
-                value={formData.paintCostPerMl}
-                onChange={(v) => updateField("paintCostPerMl", v)}
-                placeholder="0.05"
+            <div className="my-2 border-t border-dashed border-border/50"></div>
+
+            <FormFieldRow label="Secondary Paint">
+              <SelectField
+                value={formData.selectedPaintId2 || "none"}
+                onChange={(v) => updateField("selectedPaintId2", v === "none" ? "" : v)}
+                placeholder="Select second paint..."
+                options={[
+                  { id: "none", label: "-- None --" },
+                  ...(Array.isArray(constants) ? constants : [])
+                    .filter(c => c && typeof c.name === 'string' && c.is_visible !== false)
+                    .map(c => {
+                      let usageRate = "";
+                      const usageMatch = c.description?.match(/Usage Rate:\s*([\d.]+)/i);
+                      if (usageMatch) {
+                        usageRate = ` @ ${usageMatch[1]}ml/cm²`;
+                      }
+
+                      return {
+                        id: c.id,
+                        label: c.name,
+                        sublabel: currency ? `${c.value} ${c.unit ? `(${c.unit.replace('$', currency.symbol)})` : ''}${usageRate}` : `${c.value}`
+                      };
+                    })
+                ]}
               />
             </FormFieldRow>
 
-            <FormFieldRow
-              label="Paint Usage (ml/cm²)"
-              hint={`How to calculate:\n(Initial Paint - Remaining Paint) / Surface Area\n\nExample:\nStarted with 50ml, left with 45ml = 5ml used.\n5ml / 500cm² = 0.01 ml/cm²`}
-            >
+            <FormFieldRow label="2nd Coating Layers">
               <TextField
                 type="number"
-                step="0.001"
-                value={formData.paintUsagePerCm2 || ""}
-                onChange={(v) => updateField("paintUsagePerCm2", v)}
-                placeholder="0.01"
+                step="1"
+                value={formData.paintingLayers2}
+                onChange={(v) => updateField("paintingLayers2", v)}
+                placeholder="1"
               />
             </FormFieldRow>
 

@@ -1,4 +1,4 @@
-import { QuoteData, Material, Machine, FDMFormData, ResinFormData } from "@/types/quote";
+import { QuoteData, Material, Machine, FDMFormData, ResinFormData, CostConstant } from "@/types/quote";
 
 interface CalculationParams {
   material: Material;
@@ -15,6 +15,8 @@ interface ConsumableInfo {
 interface FDMCalculationInput extends CalculationParams {
   formData: FDMFormData;
   consumables?: ConsumableInfo[];
+  paintConsumable?: CostConstant;
+  paintConsumable2?: CostConstant;
   customerId?: string;
   clientName?: string;
 }
@@ -22,6 +24,8 @@ interface FDMCalculationInput extends CalculationParams {
 interface ResinCalculationInput extends CalculationParams {
   formData: ResinFormData;
   consumables?: ConsumableInfo[];
+  paintConsumable?: CostConstant;
+  paintConsumable2?: CostConstant;
   customerId?: string;
   clientName?: string;
 }
@@ -33,6 +37,8 @@ export const calculateFDMQuote = ({
   electricityRate,
   laborRate,
   consumables = [],
+  paintConsumable,
+  paintConsumable2,
   customerId,
   clientName,
 }: FDMCalculationInput): QuoteData => {
@@ -53,15 +59,47 @@ export const calculateFDMQuote = ({
   // Painting Calculation
   const paintingTime = formData.paintingTime ? parseFloat(formData.paintingTime) : 0;
   const paintingLayers = formData.paintingLayers ? parseInt(formData.paintingLayers) : 0;
-  const paintCostPerMl = formData.paintCostPerMl ? parseFloat(formData.paintCostPerMl) : 0;
-  const paintUsagePerCm2 = formData.paintUsagePerCm2 ? parseFloat(formData.paintUsagePerCm2) : 0; // ml per cm² per layer
+  // Painting fields removed from FormData, using flat consumable value
   const surfaceAreaCm2 = formData.surfaceAreaCm2 ? parseFloat(formData.surfaceAreaCm2) : 0;
   const surfaceAreaCm2ForStorage = surfaceAreaCm2; // Keep cm² value for storage
 
   const paintingLaborCost = paintingTime * laborRate;
-  // New formula: area(cm²) × usage(ml/cm²) × layers × cost($/ml)
-  const paintingMaterialCost = surfaceAreaCm2 * paintUsagePerCm2 * paintingLayers * paintCostPerMl;
-  const paintingCost = paintingLaborCost + paintingMaterialCost;
+
+  // Revised formula: Supports both flat rate AND calculated ($/ml) paints
+  let paintingMaterialCost = 0;
+
+  if (paintConsumable) {
+    // Check if it's a calculated paint ($/ml)
+    if (paintConsumable.unit === '$/ml' || paintConsumable.unit.includes('/ml')) {
+      // Extract usage rate from description (e.g. "Usage Rate: 0.02ml/cm2")
+      // matches "Usage Rate: 0.02" with optional unit suffix
+      const usageRateMatch = paintConsumable.description?.match(/Usage Rate:\s*([\d.]+)/i);
+      const usageRate = usageRateMatch ? parseFloat(usageRateMatch[1]) : 0.02; // Default to 0.02 if not found
+
+      paintingMaterialCost = paintConsumable.value * surfaceAreaCm2 * Math.max(1, paintingLayers) * usageRate;
+    } else {
+      // Flat rate
+      paintingMaterialCost = paintConsumable.value;
+    }
+  }
+
+  // Second Painting Calculation (Primary Paint)
+  // Re-use logic for second paint if present
+  let paintingMaterialCost2 = 0;
+  const paintingLayers2 = formData.paintingLayers2 ? parseInt(formData.paintingLayers2) : 0;
+
+  if (paintConsumable2) {
+    if (paintConsumable2.unit === '$/ml' || paintConsumable2.unit.includes('/ml')) {
+      const usageRateMatch = paintConsumable2.description?.match(/Usage Rate:\s*([\d.]+)/i);
+      const usageRate = usageRateMatch ? parseFloat(usageRateMatch[1]) : 0.02;
+
+      paintingMaterialCost2 = paintConsumable2.value * surfaceAreaCm2 * Math.max(1, paintingLayers2) * usageRate;
+    } else {
+      paintingMaterialCost2 = paintConsumable2.value;
+    }
+  }
+
+  const paintingCost = paintingLaborCost + paintingMaterialCost + paintingMaterialCost2;
 
   const subtotalBeforeOverhead = materialCost + machineTimeCost + electricityCost + laborCost + consumablesTotal + paintingCost;
   const overheadCost = (subtotalBeforeOverhead * overheadPercentage) / 100;
@@ -100,11 +138,8 @@ export const calculateFDMQuote = ({
       machineName: machine.name,
       consumables,
       consumablesTotal,
-      paintingTime,
-      paintingLayers,
-      paintCostPerMl,
-      paintUsagePerCm2,
-      surfaceAreaCm2: formData.surfaceAreaCm2 ? parseFloat(formData.surfaceAreaCm2) : undefined,
+      paintConsumableValue: paintingMaterialCost,
+      paintConsumableValue2: paintingMaterialCost2,
     },
     surfaceAreaCm2: surfaceAreaCm2ForStorage,
   };
@@ -117,6 +152,8 @@ export const calculateResinQuote = ({
   electricityRate,
   laborRate,
   consumables = [],
+  paintConsumable,
+  paintConsumable2,
   customerId,
   clientName,
 }: ResinCalculationInput): QuoteData => {
@@ -141,15 +178,40 @@ export const calculateResinQuote = ({
   // Painting Calculation
   const paintingTime = formData.paintingTime ? parseFloat(formData.paintingTime) : 0;
   const paintingLayers = formData.paintingLayers ? parseInt(formData.paintingLayers) : 0;
-  const paintCostPerMl = formData.paintCostPerMl ? parseFloat(formData.paintCostPerMl) : 0;
-  const paintUsagePerCm2 = formData.paintUsagePerCm2 ? parseFloat(formData.paintUsagePerCm2) : 0; // ml per cm² per layer
+  // Painting fields removed from FormData, using flat consumable value
   const surfaceAreaCm2 = formData.surfaceAreaCm2 ? parseFloat(formData.surfaceAreaCm2) : 0;
   const surfaceAreaCm2ForStorage = surfaceAreaCm2; // Keep cm² value for storage
 
   const paintingLaborCost = paintingTime * laborRate;
-  // New formula: area(cm²) × usage(ml/cm²) × layers × cost($/ml)
-  const paintingMaterialCost = surfaceAreaCm2 * paintUsagePerCm2 * paintingLayers * paintCostPerMl;
-  const paintingCost = paintingLaborCost + paintingMaterialCost;
+
+  // Primary Paint
+  let paintingMaterialCost = 0;
+
+  if (paintConsumable) {
+    if (paintConsumable.unit === '$/ml' || paintConsumable.unit.includes('/ml')) {
+      const usageRateMatch = paintConsumable.description?.match(/Usage Rate:\s*([\d.]+)/i);
+      const usageRate = usageRateMatch ? parseFloat(usageRateMatch[1]) : 0.02;
+      paintingMaterialCost = paintConsumable.value * surfaceAreaCm2 * Math.max(1, paintingLayers) * usageRate;
+    } else {
+      paintingMaterialCost = paintConsumable.value;
+    }
+  }
+
+  // Secondary Paint
+  let paintingMaterialCost2 = 0;
+  const paintingLayers2 = formData.paintingLayers2 ? parseInt(formData.paintingLayers2) : 0;
+
+  if (paintConsumable2) {
+    if (paintConsumable2.unit === '$/ml' || paintConsumable2.unit.includes('/ml')) {
+      const usageRateMatch = paintConsumable2.description?.match(/Usage Rate:\s*([\d.]+)/i);
+      const usageRate = usageRateMatch ? parseFloat(usageRateMatch[1]) : 0.02;
+      paintingMaterialCost2 = paintConsumable2.value * surfaceAreaCm2 * Math.max(1, paintingLayers2) * usageRate;
+    } else {
+      paintingMaterialCost2 = paintConsumable2.value;
+    }
+  }
+
+  const paintingCost = paintingLaborCost + paintingMaterialCost + paintingMaterialCost2;
 
   const subtotalBeforeOverhead = materialCost + machineTimeCost + electricityCost + laborCost + consumablesTotal + paintingCost;
   const overheadCost = (subtotalBeforeOverhead * overheadPercentage) / 100;
@@ -186,8 +248,9 @@ export const calculateResinQuote = ({
       consumablesTotal,
       paintingTime,
       paintingLayers,
-      paintCostPerMl,
-      paintUsagePerCm2,
+      paintingLayers2,
+      paintConsumableValue: paintingMaterialCost,
+      paintConsumableValue2: paintingMaterialCost2,
       surfaceAreaCm2: formData.surfaceAreaCm2 ? parseFloat(formData.surfaceAreaCm2) : undefined,
     },
     surfaceAreaCm2: surfaceAreaCm2ForStorage,

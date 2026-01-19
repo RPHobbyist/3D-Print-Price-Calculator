@@ -1,7 +1,8 @@
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Database, Printer, Package, Users, Building2, UserCircle } from "lucide-react";
+import { Database, Printer, Package, Users, Building2, UserCircle, Brush } from "lucide-react";
 import MaterialsManager from "@/components/settings/MaterialsManager";
+
 import MachinesManager from "@/components/settings/MachinesManager";
 import ConstantsManager from "@/components/settings/ConstantsManager";
 import SettingsExportImport from "@/components/settings/SettingsExportImport";
@@ -87,6 +88,7 @@ const Settings = () => {
                   <Package className="w-4 h-4 mr-2" />
                   Materials
                 </TabsTrigger>
+
                 <TabsTrigger
                   value="machines"
                   className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-card rounded-lg px-5 py-2.5 transition-all duration-200"
@@ -125,9 +127,12 @@ const Settings = () => {
               </TabsList>
             </div>
 
+
             <TabsContent value="materials" className="p-6 mt-0 animate-fade-in">
               <MaterialsManager />
             </TabsContent>
+
+
 
             <TabsContent value="machines" className="p-6 mt-0 animate-fade-in">
               <MachinesManager />
