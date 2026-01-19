@@ -2,18 +2,33 @@ import { memo } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { HelpCircle } from "lucide-react";
 
 interface FormFieldProps {
   label: string;
   required?: boolean;
   highlight?: boolean;
+  hint?: string;
   children: React.ReactNode;
 }
 
-export const FormFieldRow = memo(({ label, required, highlight, children }: FormFieldProps) => (
+export const FormFieldRow = memo(({ label, required, highlight, hint, children }: FormFieldProps) => (
   <div className={`grid grid-cols-1 sm:grid-cols-[180px_1fr] gap-1 sm:gap-4 py-3 px-2 sm:px-4 items-start sm:items-center border-b border-border/50 hover:bg-muted/30 transition-colors ${highlight ? 'bg-accent/5' : ''}`}>
-    <div className="font-medium text-sm sm:text-base">
+    <div className="font-medium text-sm sm:text-base flex items-center gap-1.5">
       {label} {required && <span className="text-destructive">*</span>}
+      {hint && (
+        <TooltipProvider>
+          <Tooltip delayDuration={300}>
+            <TooltipTrigger asChild>
+              <HelpCircle className="w-4 h-4 text-muted-foreground/70 hover:text-primary cursor-help" />
+            </TooltipTrigger>
+            <TooltipContent className="max-w-[300px] p-4">
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">{hint}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
     </div>
     <div>{children}</div>
   </div>

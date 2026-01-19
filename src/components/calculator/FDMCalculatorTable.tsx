@@ -58,6 +58,15 @@ const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
     setEmployees(getEmployees());
   }, []);
 
+  const [isPaintingEnabled, setIsPaintingEnabled] = useState(false);
+
+  // Sync isPaintingEnabled with initial data if needed (e.g. when editing a quote)
+  useEffect(() => {
+    if (formData.paintingLayers && parseInt(formData.paintingLayers) > 0 && !isPaintingEnabled) {
+      setIsPaintingEnabled(true);
+    }
+  }, [formData.paintingLayers]);
+
   const updateField = useCallback(<K extends keyof FDMFormData>(field: K, value: FDMFormData[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   }, []);
@@ -415,8 +424,9 @@ const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
             <input
               type="checkbox"
               className="w-5 h-5 rounded border-input bg-background"
-              checked={!!formData.paintingLayers && parseInt(formData.paintingLayers) > 0}
+              checked={isPaintingEnabled}
               onChange={(e) => {
+                setIsPaintingEnabled(e.target.checked);
                 if (e.target.checked) {
                   updateField("paintingLayers", "1");
                   updateField("paintingTime", "0.5");
@@ -430,7 +440,7 @@ const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
           </div>
         </FormFieldRow>
 
-        {!!formData.paintingLayers && (
+        {isPaintingEnabled && (
           <div className="animate-in fade-in slide-in-from-top-2 duration-300">
             <FormFieldRow label="Surface Area (cm²)">
               <div className="flex gap-2 w-full">
@@ -456,7 +466,7 @@ const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
 
 
 
-            <FormFieldRow label="Labor Steps / Layers">
+            <FormFieldRow label="Coating Layers">
               <TextField
                 type="number"
                 step="1"
@@ -476,7 +486,10 @@ const FDMCalculatorTable = memo(({ onCalculate }: FDMCalculatorProps) => {
               />
             </FormFieldRow>
 
-            <FormFieldRow label="Paint Usage (ml/cm²)">
+            <FormFieldRow
+              label="Paint Usage (ml/cm²)"
+              hint={`How to calculate:\n(Initial Paint - Remaining Paint) / Surface Area\n\nExample:\nStarted with 50ml, left with 45ml = 5ml used.\n5ml / 500cm² = 0.01 ml/cm²`}
+            >
               <TextField
                 type="number"
                 step="0.001"

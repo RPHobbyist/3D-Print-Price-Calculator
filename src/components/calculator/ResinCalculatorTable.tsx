@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, memo } from "react";
+import { useState, useCallback, useMemo, memo, useEffect } from "react";
 import { Calculator } from "lucide-react";
 import { toast } from "sonner";
 import { QuoteData, ResinFormData } from "@/types/quote";
@@ -45,6 +45,15 @@ const ResinCalculatorTable = memo(({ onCalculate }: ResinCalculatorProps) => {
   const [formData, setFormData] = useState<ResinFormData>(initialFormData);
   const [selectedSpoolId, setSelectedSpoolId] = useState<string>("");
   const { currency } = useCurrency();
+
+  const [isPaintingEnabled, setIsPaintingEnabled] = useState(false);
+
+  // Sync isPaintingEnabled with initial data if needed
+  useEffect(() => {
+    if (formData.paintingLayers && parseInt(formData.paintingLayers) > 0 && !isPaintingEnabled) {
+      setIsPaintingEnabled(true);
+    }
+  }, [formData.paintingLayers]);
 
   const updateField = useCallback(<K extends keyof ResinFormData>(field: K, value: ResinFormData[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -339,8 +348,9 @@ const ResinCalculatorTable = memo(({ onCalculate }: ResinCalculatorProps) => {
             <input
               type="checkbox"
               className="w-5 h-5 rounded border-input bg-background"
-              checked={!!formData.paintingLayers && parseInt(formData.paintingLayers) > 0}
+              checked={isPaintingEnabled}
               onChange={(e) => {
+                setIsPaintingEnabled(e.target.checked);
                 if (e.target.checked) {
                   updateField("paintingLayers", "1");
                   updateField("paintingTime", "0.5");
@@ -354,7 +364,7 @@ const ResinCalculatorTable = memo(({ onCalculate }: ResinCalculatorProps) => {
           </div>
         </FormFieldRow>
 
-        {!!formData.paintingLayers && (
+        {isPaintingEnabled && (
           <div className="animate-in fade-in slide-in-from-top-2 duration-300">
             <FormFieldRow label="Surface Area (cm²)">
               <div className="flex gap-2 items-center">
@@ -374,7 +384,7 @@ const ResinCalculatorTable = memo(({ onCalculate }: ResinCalculatorProps) => {
               </div>
             </FormFieldRow>
 
-            <FormFieldRow label="Labor Steps / Layers">
+            <FormFieldRow label="Coating Layers">
               <TextField
                 type="number"
                 step="1"
@@ -394,7 +404,10 @@ const ResinCalculatorTable = memo(({ onCalculate }: ResinCalculatorProps) => {
               />
             </FormFieldRow>
 
-            <FormFieldRow label="Paint Usage (ml/cm²)">
+            <FormFieldRow
+              label="Paint Usage (ml/cm²)"
+              hint={`How to calculate:\n(Initial Paint - Remaining Paint) / Surface Area\n\nExample:\nStarted with 50ml, left with 45ml = 5ml used.\n5ml / 500cm² = 0.01 ml/cm²`}
+            >
               <TextField
                 type="number"
                 step="0.001"
