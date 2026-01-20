@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Youtube } from "lucide-react";
+import { Youtube, Download } from "lucide-react";
 import { FeatureSuggestion } from "@/components/feedback/FeatureSuggestion";
 import { Link } from "react-router-dom";
 import { lazy, Suspense } from "react";
@@ -68,6 +68,16 @@ export const Footer = () => {
                 >
                     <Youtube className="w-4 h-4" />
                     Tutorial
+                </a>
+
+                <a
+                    href={SYSTEM_CONFIG.downloadUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 hover:text-green-500 transition-colors whitespace-nowrap"
+                >
+                    <Download className="w-4 h-4" />
+                    Download Software
                 </a>
 
                 <FeatureSuggestion />
