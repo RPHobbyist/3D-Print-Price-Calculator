@@ -41,7 +41,7 @@ const GithubIcon = () => (
 
 export const Footer = () => {
     return (
-        <footer className="border-t border-border bg-card/50 backdrop-blur-sm mt-auto px-6 py-2 flex items-center justify-between text-xs text-muted-foreground">
+        <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-sm px-6 py-2 flex items-center justify-between text-xs text-muted-foreground">
             {/* Left: Links and credits */}
             <div className="flex flex-wrap items-center gap-4">
                 <span>Made by <a href={SYSTEM_CONFIG.vendorLink} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors underline-offset-2 hover:underline">{SYSTEM_CONFIG.vendor}</a></span>

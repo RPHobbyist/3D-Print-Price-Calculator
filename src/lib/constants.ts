@@ -640,4 +640,4 @@ copy of the Program in return for a fee.
 
                      END OF TERMS AND CONDITIONS`;
 
-export const GITHUB_URL = "https://github.com/RPHobbyist/3D-Print-Price-Calculator";
+export const GITHUB_URL = "https://github.com/RPHobbyist/3D-Print-Price-Calculator.git";

@@ -160,7 +160,7 @@ const Index = memo(() => {
       </header>
 
 
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 relative">
+      <main className="container mx-auto px-4 py-8 pb-20 sm:px-6 lg:px-8 max-w-7xl animate-fade-in stagger-1">
         {/* Stats Dashboard */}
         {stats.totalQuotes > 0 && (
           <div className="mb-8">

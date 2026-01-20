@@ -36,7 +36,7 @@ const _d = (s: string): string => {
 export const SYSTEM_CONFIG = {
     // Encrypted Assets
     get githubUrl() {
-        return _d("aHR0cHM6Ly9naXRodWIuY29tL1JwLUhvYmJ5aXN0LzNkLXByaW50LXByaWNlLWNhbGN1bGF0b3I=");
+        return _d("aHR0cHM6Ly9naXRodWIuY29tL1JQSG9iYnlpc3QvM0QtUHJpbnQtUHJpY2UtQ2FsY3VsYXRvci5naXQ=");
     },
     get youtubeUrl() {
         return "https://www.youtube.com/playlist?list=PLwLQ_Xr7StXiMV7_xrYweyu3AdNJex-H9";
