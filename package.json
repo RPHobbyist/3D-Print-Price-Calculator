@@ -3,6 +3,7 @@
   "productName": "3D Print Price Calculator",
   "description": "A 3D printing cost calculation tool.",
   "author": "Rp Hobbyist <rphobbyist@gmail.com>",
+  "license": "AGPL-3.0",
   "private": true,
   "version": "1.0.0",
   "type": "module",

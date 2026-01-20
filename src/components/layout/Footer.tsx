@@ -1,3 +1,21 @@
+/*
+ * 3D Print Price Calculator
+ * Copyright (C) 2025 Rp Hobbyist
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 import { Youtube } from "lucide-react";
 import { FeatureSuggestion } from "@/components/feedback/FeatureSuggestion";
 import { Link } from "react-router-dom";
@@ -26,9 +44,9 @@ export const Footer = () => {
         <footer className="border-t border-border bg-card/50 backdrop-blur-sm mt-auto px-6 py-2 flex items-center justify-between text-xs text-muted-foreground">
             {/* Left: Links and credits */}
             <div className="flex flex-wrap items-center gap-4">
-                <span>Made by <a href={SYSTEM_CONFIG.vendorLink} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors underline-offset-2 hover:underline">RP Hobbyist</a></span>
+                <span>Made by <a href={SYSTEM_CONFIG.vendorLink} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors underline-offset-2 hover:underline">{SYSTEM_CONFIG.vendor}</a></span>
 
-                <Suspense fallback={<span className="text-muted-foreground/60">MIT Open Source License</span>}>
+                <Suspense fallback={<span className="text-muted-foreground/60">GNU AGPLv3 License</span>}>
                     <LicenseDialog />
                 </Suspense>
 

@@ -16,8 +16,14 @@ A professional, open-source 3D printing price calculator and quote management to
 
 ## License
 
-Distributed under the MIT License. See `LICENSE` for more information.
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+
+This project is open source and available under the **GNU Affero General Public License v3 (AGPLv3)**.
+
+You are free to use, modify, and distribute this software, but **if you run a modified version as a network service, you must release your source code to the community**.
+
+See the `LICENSE` file for more information.
 
 ---
 
-Made with ❤️ by Rp Hobbyist
+Made by Rp Hobbyist

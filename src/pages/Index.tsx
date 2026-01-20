@@ -1,33 +1,62 @@
+/*
+ * 3D Print Price Calculator
+ * Copyright (C) 2025 Rp Hobbyist
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 import { useState, useCallback, memo, lazy, Suspense } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Printer, RotateCcw, Settings, Loader2, LayoutDashboard } from "lucide-react";
+import { Printer, RotateCcw, Settings, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import FDMCalculatorTable from "@/components/calculator/FDMCalculatorTable";
 import ResinCalculatorTable from "@/components/calculator/ResinCalculatorTable";
 import QuoteSummary from "@/components/quotes/QuoteSummary";
-import BatchSummary from "@/components/quotes/BatchSummary";
-const SavedQuotesTable = lazy(() => import("@/components/quotes/SavedQuotesTable"));
-const QuotesDashboard = lazy(() => import("@/components/dashboard/QuotesDashboard").then(module => ({ default: module.QuotesDashboard })));
 import { useNavigate, Link } from "react-router-dom";
 import { SYSTEM_CONFIG } from "@/lib/core/core-system";
-
 import { Footer } from "@/components/layout/Footer";
-
 import { CurrencySelector } from "@/components/shared/CurrencySelector";
 import { QuoteData } from "@/types/quote";
 import { useSavedQuotes } from "@/hooks/useSavedQuotes";
 import { useBatchQuote } from "@/hooks/useBatchQuote";
-
-
 import WhatsNewDialog from "@/components/feedback/WhatsNewDialog";
 import { FeedbackDialog } from "@/components/feedback/FeedbackDialog";
+import { LicenseUpdateAnnouncement } from "@/components/feedback/LicenseUpdateAnnouncement";
+
+const SavedQuotesTable = lazy(() => import("@/components/quotes/SavedQuotesTable"));
+const QuotesDashboard = lazy(() => import("@/components/dashboard/QuotesDashboard").then(module => ({ default: module.QuotesDashboard })));
+
 const Index = memo(() => {
   const navigate = useNavigate();
+  // Initialize as false to prevent WhatsNewDialog from checking until we say so
+  const [canShowWhatsNew, setCanShowWhatsNew] = useState<boolean>(false);
   const [showWhatsNew, setShowWhatsNew] = useState<boolean | undefined>(undefined);
   const [showFeedback, setShowFeedback] = useState(false);
   const [quoteData, setQuoteData] = useState<QuoteData | null>(null);
+
+  // Combine the gate with the explicit state
+  // If showWhatsNew is set (true/false), use it.
+  // If showWhatsNew is undefined (auto-mode), use canShowWhatsNew to decide:
+  //   - If canShowWhatsNew is true -> pass undefined (allowed to check)
+  //   - If canShowWhatsNew is false -> pass false (blocked)
+  const effectiveShowWhatsNew = showWhatsNew !== undefined
+    ? showWhatsNew
+    : (canShowWhatsNew ? undefined : false);
+
   const [resetKey, setResetKey] = useState(0);
+
   const {
     quotes,
     loading,
@@ -62,7 +91,9 @@ const Index = memo(() => {
     await duplicateQuote(quote);
   }, [duplicateQuote]);
 
-
+  const handleLicenseAcknowledged = useCallback(() => {
+    setCanShowWhatsNew(true);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -108,7 +139,6 @@ const Index = memo(() => {
                 variant="outline"
                 size="sm"
                 onClick={() => {
-
                   setShowFeedback(true);
                 }}
                 className="h-8 px-3 bg-background hover:bg-muted text-xs sm:text-sm border-input"
@@ -178,9 +208,6 @@ const Index = memo(() => {
           {/* Quote Summary Section */}
           <div className="lg:sticky lg:top-24 h-fit animate-fade-in stagger-2 space-y-6">
             <QuoteSummary quoteData={quoteData} onSaveQuote={handleSaveQuote} />
-
-            {/* Batch Queue */}
-            <BatchSummary />
           </div>
         </div>
 
@@ -192,9 +219,9 @@ const Index = memo(() => {
               <p className="text-muted-foreground text-sm">Your recently calculated quotes.</p>
             </div>
             <Button variant="outline" size="sm" asChild>
-              <Link to="/order-management">
-                <LayoutDashboard className="w-4 h-4 mr-2" />
-                Open Order Manager
+              <Link to="/saved-quotes">
+                <RotateCcw className="w-4 h-4 mr-2" />
+                View All History
               </Link>
             </Button>
           </div>
@@ -233,8 +260,15 @@ const Index = memo(() => {
       <Footer />
 
       {/* Dialogs */}
-      <WhatsNewDialog externalOpen={showWhatsNew} onExternalOpenChange={setShowWhatsNew} />
-      <FeedbackDialog open={showFeedback} onOpenChange={setShowFeedback} />
+      <WhatsNewDialog
+        externalOpen={effectiveShowWhatsNew}
+        onExternalOpenChange={setShowWhatsNew}
+      />
+      <FeedbackDialog
+        open={showFeedback}
+        onOpenChange={setShowFeedback}
+      />
+      <LicenseUpdateAnnouncement onAcknowledge={handleLicenseAcknowledged} />
     </div>
   );
 });
