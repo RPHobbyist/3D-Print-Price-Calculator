@@ -13,6 +13,46 @@ A professional, open-source 3D printing price calculator and quote management to
 - **Machine Presets**: Store hourly rates and specifications for multiple printers.
 - **Quote Dashboard**: Save, view, and export past quotes.
 - **Responsive Design**: Built with a mobile-first approach using Shadcn UI.
+- **Cross-Platform**: Available as a web app and a Desktop application (via Electron).
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v16+)
+- npm
+
+### Installation
+
+1.  Clone the repository:
+    ```bash
+    git clone https://github.com/RPHobbyist/3d-print-price-calculator.git
+    ```
+2.  Install dependencies:
+    ```bash
+    npm install
+    ```
+3.  Start the development server:
+    ```bash
+    npm run dev
+    ```
+
+## Building for Production
+
+To build the web application:
+```bash
+npm run build
+```
+To build the desktop application:
+```bash
+# Verify electron-builder scripts in package.json
+npm run electron:build
+```
+
+## Contributing
+
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on how to get started.
+Please adhere to our [Code of Conduct](CODE_OF_CONDUCT.md) in all interactions.
 
 ## License
 
