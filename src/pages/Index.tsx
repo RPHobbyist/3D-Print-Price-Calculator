@@ -218,12 +218,21 @@ const Index = memo(() => {
               <h2 className="text-2xl font-bold tracking-tight">Recent Quotes</h2>
               <p className="text-muted-foreground text-sm">Your recently calculated quotes.</p>
             </div>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/saved-quotes">
-                <RotateCcw className="w-4 h-4 mr-2" />
-                View All History
-              </Link>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/order-management">
+                  <Printer className="w-4 h-4 mr-2" />
+                  Manage Orders
+                </Link>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/saved-quotes">
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  View All History
+                </Link>
+              </Button>
+            </div>
+
           </div>
 
           {loading ? (

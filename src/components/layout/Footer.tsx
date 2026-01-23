@@ -84,7 +84,11 @@ export const Footer = () => {
                 <Link to="/print-management" className="hover:text-primary transition-colors hover:underline">
                     Print Management
                 </Link>
+                <Link to="/order-management" className="hover:text-primary transition-colors hover:underline">
+                    Order Management
+                </Link>
             </div>
+
 
             {/* Right: Privacy notice */}
             <div className="flex items-center gap-2 text-muted-foreground/80 whitespace-nowrap hidden sm:flex">
