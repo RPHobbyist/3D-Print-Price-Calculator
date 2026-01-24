@@ -1,5 +1,5 @@
 /*
- * 3D Print Price Calculator
+ * PolymagicPrice
  * Copyright (C) 2025 Rp Hobbyist
  *
  * This program is free software: you can redistribute it and/or modify
@@ -63,7 +63,7 @@ export const LicenseUpdateAnnouncement = ({ onAcknowledge }: { onAcknowledge: ()
                             We have updated our license to the <strong>GNU Affero General Public License v3 (AGPLv3)</strong>.
                         </p>
                         <p className="mb-4 text-justify">
-                            This change ensures that 3D Print Price Calculator remains open and free forever.
+                            This change ensures that PolymagicPrice remains open and free forever.
                             It guarantees that anyone who builds upon this project, whether as a downloadable tool or a web service, must also share their improvements with the community.
                         </p>
                         <p className="text-sm text-muted-foreground">

@@ -1,6 +1,6 @@
 {
-  "name": "3d-print-price-calculator",
-  "productName": "3D Print Price Calculator",
+  "name": "polymagicprice",
+  "productName": "PolymagicPrice",
   "description": "A 3D printing cost calculation tool.",
   "author": "Rp Hobbyist <rphobbyist@gmail.com>",
   "license": "AGPL-3.0",

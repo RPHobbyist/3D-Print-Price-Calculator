@@ -1,5 +1,5 @@
 /*
- * 3D Print Price Calculator
+ * PolymagicPrice
  * Copyright (C) 2025 Rp Hobbyist
  *
  * This program is free software: you can redistribute it and/or modify
@@ -50,7 +50,7 @@ export const SYSTEM_CONFIG = {
 
     // Protected Identifiers
     get appName() {
-        return _d("M0QgUHJpbnQgUHJpY2UgQ2FsY3VsYXRvcg==");
+        return _d("UG9seW1hZ2ljUHJpY2U=");
     },
 
     get vendor() {

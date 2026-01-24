@@ -1,5 +1,5 @@
 /*
- * 3D Print Price Calculator
+ * PolymagicPrice
  * Copyright (C) 2025 Rp Hobbyist
  *
  * This program is free software: you can redistribute it and/or modify
@@ -640,4 +640,4 @@ copy of the Program in return for a fee.
 
                      END OF TERMS AND CONDITIONS`;
 
-export const GITHUB_URL = "https://github.com/RPHobbyist/3D-Print-Price-Calculator.git";
+export const GITHUB_URL = "https://github.com/RPHobbyist/PolymagicPrice.git";

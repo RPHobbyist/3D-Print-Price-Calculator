@@ -1,5 +1,5 @@
 /*
- * 3D Print Price Calculator
+ * PolymagicPrice
  * Copyright (C) 2025 Rp Hobbyist
  *
  * This program is free software: you can redistribute it and/or modify

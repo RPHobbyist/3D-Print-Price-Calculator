@@ -1,5 +1,5 @@
 /*
- * 3D Print Price Calculator
+ * PolymagicPrice
  * Copyright (C) 2025 Rp Hobbyist
  *
  * This program is free software: you can redistribute it and/or modify
@@ -47,13 +47,13 @@ export const FeatureSuggestion = () => {
         setLoading(true);
 
         // Create mailto link with suggestion details
-        const subject = encodeURIComponent("3D Print Price Calculator - Feature Suggestion");
+        const subject = encodeURIComponent("PolymagicPrice - Feature Suggestion");
         const body = encodeURIComponent(
-            `Feature Suggestion for 3D Print Price Calculator\n\n` +
+            `Feature Suggestion for PolymagicPrice\n\n` +
             `From: ${name || "Anonymous"}\n` +
             `Email: ${email || "Not provided"}\n\n` +
             `Suggestion:\n${suggestion}\n\n` +
-            `---\nSent from 3D Print Price Calculator`
+            `---\nSent from PolymagicPrice`
         );
 
         // Open mailto link

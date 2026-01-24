@@ -23,7 +23,7 @@ export const LicenseDialog = () => {
                 </DialogHeader>
                 <div className="mt-4 text-sm bg-muted/50 p-4 rounded-md overflow-x-auto overflow-y-auto h-[60vh]">
                     <div className="mb-6 font-mono text-sm text-justify">
-                        <p className="font-bold text-left mb-1">3D Print Price Calculator</p>
+                        <p className="font-bold text-left mb-1">PolymagicPrice</p>
                         <p className="text-left mb-4">Copyright (C) 2025 Rp Hobbyist</p>
 
                         <p className="mb-4 leading-relaxed">
