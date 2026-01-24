@@ -34,6 +34,7 @@ import { useBatchQuote } from "@/hooks/useBatchQuote";
 import WhatsNewDialog from "@/components/feedback/WhatsNewDialog";
 import { FeedbackDialog } from "@/components/feedback/FeedbackDialog";
 import { LicenseUpdateAnnouncement } from "@/components/feedback/LicenseUpdateAnnouncement";
+import { BrandAnnouncement } from "@/components/feedback/BrandAnnouncement";
 
 const SavedQuotesTable = lazy(() => import("@/components/quotes/SavedQuotesTable"));
 const QuotesDashboard = lazy(() => import("@/components/dashboard/QuotesDashboard").then(module => ({ default: module.QuotesDashboard })));
@@ -278,6 +279,7 @@ const Index = memo(() => {
         onOpenChange={setShowFeedback}
       />
       <LicenseUpdateAnnouncement onAcknowledge={handleLicenseAcknowledged} />
+      <BrandAnnouncement />
     </div>
   );
 });
