@@ -5,7 +5,7 @@
   "author": "Rp Hobbyist <rphobbyist@gmail.com>",
   "license": "AGPL-3.0",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
