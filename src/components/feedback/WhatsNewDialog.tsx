@@ -19,7 +19,7 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Package, CalendarDays, Building2, Paintbrush, ArrowRight, Users, Hammer } from "lucide-react";
+import { Package, CalendarDays, Building2, Paintbrush, ArrowRight, Users, Hammer, PlaySquare } from "lucide-react";
 
 const CURRENT_VERSION = "1.3.0"; // Bumped version for new features
 const STORAGE_KEY = "last_seen_version";
@@ -132,7 +132,13 @@ export const WhatsNewDialog = ({
                 </div>
 
                 {/* Footer */}
-                <DialogFooter className="p-6 pt-2 bg-muted/20 border-t border-border">
+                <DialogFooter className="p-6 pt-2 bg-muted/20 border-t border-border flex-col sm:flex-row gap-3">
+                    <Button variant="outline" className="w-full sm:w-auto gap-2 text-base px-6 h-12" asChild>
+                        <a href="https://www.youtube.com/playlist?list=PLwLQ_Xr7StXiMV7_xrYweyu3AdNJex-H9" target="_blank" rel="noopener noreferrer">
+                            <PlaySquare className="w-4 h-4" />
+                            Watch Tutorials
+                        </a>
+                    </Button>
                     <Button onClick={handleClose} className="w-full sm:w-auto gap-2 text-base px-8 h-12 shadow-lg hover:shadow-xl transition-all">
                         Let's Explore
                         <ArrowRight className="w-4 h-4" />

@@ -26,7 +26,7 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Zap, Shield } from "lucide-react";
+import { ArrowRight, Zap, Shield, PlaySquare } from "lucide-react";
 
 const STORAGE_KEY = "brand_announcement_acknowledged";
 
@@ -76,22 +76,33 @@ export const BrandAnnouncement = () => {
                             </DialogHeader>
 
                             <div className="mt-8 space-y-4">
-                                <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50 border border-border/50 hover:bg-muted transition-colors">
-                                    <div className="p-2 bg-primary/10 rounded-lg">
-                                        <Zap className="w-5 h-5 text-primary" />
+                                <div className="flex flex-col gap-4 text-left max-w-md mx-auto">
+                                    <div className="flex items-start gap-3">
+                                        <div className="mt-1 bg-primary/10 p-2 rounded-full">
+                                            <Zap className="h-5 w-5 text-primary" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold">Faster Estimation</h4>
+                                            <p className="text-sm text-muted-foreground">Optimized algorithms for lightning-fast price calculation.</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h3 className="font-semibold">Pure Performance</h3>
-                                        <p className="text-sm text-muted-foreground">Faster calculations and more stable exports.</p>
+                                    <div className="flex items-start gap-3">
+                                        <div className="mt-1 bg-primary/10 p-2 rounded-full">
+                                            <Shield className="h-5 w-5 text-primary" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold">Open Source Magic</h4>
+                                            <p className="text-sm text-muted-foreground">Fully AGPLv3 compliant. Your data, your tool, your magic.</p>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50 border border-border/50 hover:bg-muted transition-colors">
-                                    <div className="p-2 bg-accent/10 rounded-lg">
-                                        <Shield className="w-5 h-5 text-accent" />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-semibold">Open and Transparent</h3>
-                                        <p className="text-sm text-muted-foreground">Now officially under the GNU AGPLv3 License.</p>
+                                    <div className="flex items-start gap-3">
+                                        <div className="mt-1 bg-primary/10 p-2 rounded-full">
+                                            <PlaySquare className="h-5 w-5 text-primary" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold">New Video Tutorials</h4>
+                                            <p className="text-sm text-muted-foreground">Check out our new <a href="https://www.youtube.com/playlist?list=PLwLQ_Xr7StXiMV7_xrYweyu3AdNJex-H9" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">YouTube Playlist</a> for tips and tricks.</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
