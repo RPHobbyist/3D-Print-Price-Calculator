@@ -26,7 +26,6 @@ import ResinCalculatorTable from "@/components/calculator/ResinCalculatorTable";
 import QuoteSummary from "@/components/quotes/QuoteSummary";
 import { useNavigate, Link } from "react-router-dom";
 import { SYSTEM_CONFIG } from "@/lib/core/core-system";
-import { Footer } from "@/components/layout/Footer";
 import { CurrencySelector } from "@/components/shared/CurrencySelector";
 import { QuoteData } from "@/types/quote";
 import { useSavedQuotes } from "@/hooks/useSavedQuotes";
@@ -267,7 +266,6 @@ const Index = memo(() => {
         </div>
       </main>
 
-      <Footer />
 
       {/* Dialogs */}
       <WhatsNewDialog

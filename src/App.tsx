@@ -27,6 +27,7 @@ import { ProductionProvider } from "@/contexts/ProductionProvider";
 import { CurrencyProvider } from "@/components/shared/CurrencyProvider";
 import { useAppProtection } from "@/hooks/useAppProtection";
 import OrderManagement from "./pages/OrderManagement";
+import Layout from "./components/layout/Layout";
 
 // Lazy load pages for code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -73,8 +74,10 @@ const App = () => {
               <HashRouter>
                 <Suspense fallback={<PageLoader />}>
                   <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/settings" element={<Settings />} />
+                    <Route element={<Layout />}>
+                      <Route path="/" element={<Index />} />
+                      <Route path="/settings" element={<Settings />} />
+                    </Route>
                     <Route path="/saved-quotes" element={<SavedQuotes />} />
                     <Route path="/order-management" element={<OrderManagement />} />
 

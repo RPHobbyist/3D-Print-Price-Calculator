@@ -30,7 +30,6 @@ import CompanySettings from "@/components/settings/CompanySettings";
 import { useSearchParams } from "react-router-dom";
 import { SYSTEM_CONFIG } from "@/lib/core/core-system";
 import { NavLink } from "@/components/layout/NavLink";
-import { Footer } from "@/components/layout/Footer";
 import { CurrencySelector } from "@/components/shared/CurrencySelector";
 import { PrinterConnectionDialog } from "@/components/printer/PrinterConnectionDialog";
 import { useState, useEffect } from "react";
@@ -184,7 +183,6 @@ const Settings = () => {
         onConnected={setConnectedPrinter}
       />
 
-      <Footer />
     </div >
   );
 };
