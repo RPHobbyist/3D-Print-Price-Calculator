@@ -16,11 +16,17 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Youtube, Download } from "lucide-react";
+import { Youtube, Download, ShieldCheck, Info } from "lucide-react";
 import { FeatureSuggestion } from "@/components/feedback/FeatureSuggestion";
 import { Link } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import { SYSTEM_CONFIG } from "@/lib/core/core-system";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // Lazy load the license dialog to reduce initial bundle size
 const LicenseDialog = lazy(() => import("@/components/feedback/LicenseDialog").then(m => ({ default: m.LicenseDialog })));
@@ -41,12 +47,16 @@ const GithubIcon = () => (
 
 export const Footer = () => {
     return (
-        <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-sm px-6 py-2 flex items-center justify-between text-xs text-muted-foreground">
+        <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/50 bg-card/80 backdrop-blur-md px-4 sm:px-6 py-1 flex flex-col sm:flex-row items-center justify-between gap-2 text-sm text-muted-foreground shadow-lg">
             {/* Left: Links and credits */}
-            <div className="flex flex-wrap items-center gap-4">
-                <span>Made by <a href={SYSTEM_CONFIG.vendorLink} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors underline-offset-2 hover:underline">{SYSTEM_CONFIG.vendor}</a></span>
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1">
+                <span className="flex items-center gap-1">
+                    Made by <a href={SYSTEM_CONFIG.vendorLink} target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-primary transition-colors hover:underline decoration-primary/30 underline-offset-2">{SYSTEM_CONFIG.vendor}</a>
+                </span>
 
-                <Suspense fallback={<span className="text-muted-foreground/60">GNU AGPLv3 License</span>}>
+                <div className="h-3 w-[1px] bg-border hidden md:block" />
+
+                <Suspense fallback={<span className="text-muted-foreground/60">License</span>}>
                     <LicenseDialog />
                 </Suspense>
 
@@ -54,53 +64,65 @@ export const Footer = () => {
                     href={SYSTEM_CONFIG.githubUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1 hover:text-primary transition-colors whitespace-nowrap"
+                    className="flex items-center gap-1.5 hover:text-foreground transition-colors whitespace-nowrap group"
                 >
                     <GithubIcon />
-                    GitHub
+                    <span className="group-hover:underline decoration-foreground/20">GitHub</span>
                 </a>
 
                 <a
                     href={SYSTEM_CONFIG.youtubeUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1 hover:text-red-500 transition-colors whitespace-nowrap"
+                    className="flex items-center gap-1.5 hover:text-red-500 transition-colors whitespace-nowrap group"
                 >
                     <Youtube className="w-4 h-4" />
-                    Tutorial
+                    <span className="group-hover:underline decoration-red-500/20">Tutorial</span>
                 </a>
 
                 <a
                     href={SYSTEM_CONFIG.downloadUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1 hover:text-green-500 transition-colors whitespace-nowrap"
+                    className="flex items-center gap-1.5 hover:text-green-500 transition-colors whitespace-nowrap group"
                 >
                     <Download className="w-4 h-4" />
-                    Download Software
+                    <span className="group-hover:underline decoration-green-500/20">Download</span>
                 </a>
 
                 <FeatureSuggestion />
-                <Link to="/print-management" className="hover:text-primary transition-colors hover:underline">
+
+                <Link to="/print-management" className="hover:text-primary transition-colors hover:underline decoration-primary/20">
                     Print Management
                 </Link>
-                <Link to="/order-management" className="hover:text-primary transition-colors hover:underline">
+                <Link to="/order-management" className="hover:text-primary transition-colors hover:underline decoration-primary/20">
                     Order Management
                 </Link>
             </div>
 
 
-            {/* Right: Privacy notice */}
-            <div className="flex items-center gap-2 text-muted-foreground/80 whitespace-nowrap hidden sm:flex">
-                <span>🔒</span>
-                <span>Your privacy matters — No user data is collected or stored on external servers</span>
+            {/* Right: Privacy notice with Tooltip for performance (LCP) */}
+            <div className="flex items-center gap-3">
+                <TooltipProvider>
+                    <Tooltip delayDuration={300}>
+                        <TooltipTrigger asChild>
+                            <div className="flex items-center gap-2 px-2.5 py-1 rounded-full hover:bg-secondary/50 text-foreground/80 cursor-help transition-all duration-200">
+                                <ShieldCheck className="w-3.5 h-3.5 text-success" />
+                                <span className="font-medium">Private & Secure</span>
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-xs text-xs p-3 glass border-border shadow-xl">
+                            <div className="flex gap-2">
+                                <Info className="w-4 h-4 text-primary shrink-0" />
+                                <p>Your privacy matters — No user data is collected or stored on external servers. All data remains in your local storage.</p>
+                            </div>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
             </div>
-            <div className="sm:hidden text-center w-full mt-2 text-[10px] text-muted-foreground/60">
-                🔒 Privacy: Local storage only
-            </div>
+
         </footer>
     );
 };
 
 export default Footer;
-
